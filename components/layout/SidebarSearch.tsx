@@ -9,13 +9,11 @@ import { useProducts } from "@/lib/useProducts";
 interface SearchSidebarProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  isDark: boolean;
 }
 
 export default function SearchSidebar({
   isOpen,
   setIsOpen,
-  isDark,
 }: SearchSidebarProps) {
   const [query, setQuery] = useState("");
   const { products: allProducts, loading } = useProducts();
@@ -40,9 +38,7 @@ export default function SearchSidebar({
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-full w-full sm:w-4/5 sm:max-w-md ${
-          isDark ? "bg-stone-900" : "bg-stone-100"
-        } shadow-md z-40 transform transition-transform duration-300 ${
+        className={`fixed top-0 right-0 h-full w-full sm:w-4/5 sm:max-w-md bg-stone-100 shadow-md z-40 transform transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         } overflow-y-auto`}
       >
@@ -64,11 +60,7 @@ export default function SearchSidebar({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Введіть запит..."
-            className={`p-3 border text-lg rounded w-full focus:outline-none ${
-              isDark
-                ? "bg-stone-800 text-white border-stone-700 placeholder-stone-400"
-                : "bg-white text-black border-stone-300 placeholder-stone-500"
-            }`}
+            className="p-3 border text-lg rounded w-full focus:outline-none bg-white text-black border-stone-300 placeholder-stone-500"
           />
 
           {/* Search Results */}
@@ -86,9 +78,7 @@ export default function SearchSidebar({
                     <Link
                       href={`/product/${product.id}`}
                       onClick={() => setIsOpen(false)}
-                      className={`flex items-center gap-4 p-2 rounded hover:bg-opacity-80 transition ${
-                        isDark ? "hover:bg-stone-800" : "hover:bg-stone-200"
-                      }`}
+                      className="flex items-center gap-4 p-2 rounded hover:bg-opacity-80 transition hover:bg-stone-200"
                     >
                       <Image
                         src={getProductImageSrc(product.first_media, "https://placehold.co/64x64")}

@@ -1,21 +1,21 @@
 // /app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import { Roboto } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import { SidebarProvider } from "@/lib/SidebarContext";
-import { ThemeProvider } from "@/lib/ThemeContext";
 import ClientLayoutShell from "@/components/admin/ClientLayoutShell";
 
-const outfit = Roboto({
-  subsets: ["cyrillic"],
+const montserrat = Montserrat({
+  subsets: ["latin", "cyrillic"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "CHARS — Admin Panel",
+  title: "13VPLUS — Admin Panel",
   icons: {
-    icon: "/images/light-theme/chars-logo-header-light.png",
-    shortcut: "/images/light-theme/chars-logo-header-light.png",
-    apple: "/images/light-theme/chars-logo-header-light.png",
+    icon: "/images/13VPLUS BLACK PNG 2.png",
+    shortcut: "/images/13VPLUS BLACK PNG 2.png",
+    apple: "/images/13VPLUS BLACK PNG 2.png",
   },
 };
 
@@ -28,16 +28,14 @@ export default function RootLayout({
     <html lang="uk">
       <head>
         {/* Additional favicon for compatibility */}
-        <link rel="icon" type="image/png" href="/images/light-theme/chars-logo-header-light.png" />
-        <link rel="shortcut icon" type="image/png" href="/images/light-theme/chars-logo-header-light.png" />
-        <link rel="apple-touch-icon" href="/images/light-theme/chars-logo-header-light.png" />
+        <link rel="icon" type="image/png" href="/images/13VPLUS BLACK PNG 2.png" />
+          <link rel="shortcut icon" type="image/png" href="/images/13VPLUS BLACK PNG 2.png" />
+        <link rel="apple-touch-icon" href="/images/13VPLUS BLACK PNG 2.png" />
       </head>
-      <body className={`${outfit.className} dark:bg-gray-900`}>
-        <ThemeProvider>
+      <body className={montserrat.className}>
           <SidebarProvider>
             <ClientLayoutShell>{children}</ClientLayoutShell>
           </SidebarProvider>
-        </ThemeProvider>
       </body>
     </html>
   );

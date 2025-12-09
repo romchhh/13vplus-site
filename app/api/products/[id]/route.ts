@@ -21,11 +21,11 @@ export async function GET(
 
     const product = await sqlGetProduct(id);
 
-    if (!product || product.length === 0) {
+    if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    return NextResponse.json(product[0]);
+    return NextResponse.json(product);
   } catch (error) {
     console.error("[GET /products/:id]", error);
     return NextResponse.json(
@@ -78,7 +78,15 @@ export async function PUT(
       : null;
     const priority = body.priority ? Number(body.priority) : 0;
     const hasLining = body.has_lining === true;
-    const liningDescription = body.lining_description || ""; // Add this line to handle it
+    const liningDescription = body.lining_description || "";
+
+    console.log("[PUT /api/products/:id] Updating product:", {
+      id,
+      limited_edition: body.limited_edition,
+      limitedEdition: limitedEdition,
+      top_sale: body.top_sale,
+      topSale,
+    });
 
     await sqlPutProduct(id, {
       name: body.name,

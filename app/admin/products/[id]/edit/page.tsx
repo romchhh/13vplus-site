@@ -13,12 +13,18 @@ import DropzoneComponent from "@/components/admin/form/form-elements/DropZone";
 import ToggleSwitch from "@/components/admin/form/ToggleSwitch";
 
 const multiOptions = [
-  { value: "ONESIZE", text: "ONESIZE", selected: false },
-  { value: "XL", text: "XL", selected: false },
-  { value: "L", text: "L", selected: false },
-  { value: "M", text: "M", selected: false },
-  { value: "S", text: "S", selected: false },
+  { value: "O/S", text: "O/S", selected: false },
+  { value: "160 cm", text: "160 cm", selected: false },
+  { value: "XXS", text: "XXS", selected: false },
   { value: "XS", text: "XS", selected: false },
+  { value: "XS/S", text: "XS/S", selected: false },
+  { value: "S", text: "S", selected: false },
+  { value: "M", text: "M", selected: false },
+  { value: "M/L", text: "M/L", selected: false },
+  { value: "L", text: "L", selected: false },
+  { value: "L/XL", text: "L/XL", selected: false },
+  { value: "XL", text: "XL", selected: false },
+  { value: "ONESIZE", text: "ONESIZE", selected: false },
 ];
 
 const seasonOptions = [
@@ -93,27 +99,30 @@ export default function EditProductPage() {
 
         const productData = await productRes.json();
         const categoryData = await categoriesRes.json();
+        
+        // Safely handle media data
+        const mediaArray = Array.isArray(productData.media) ? productData.media : [];
         setMediaFiles(
-          productData.media.map((item: { url: string; type: string }) => ({
+          mediaArray.map((item: { url: string; type: string }) => ({
             type: item.type,
             url: item.url,
           }))
         );
 
         setFormData({
-          name: productData.name,
-          description: productData.description,
-          price: String(productData.price),
+          name: productData.name || "",
+          description: productData.description || "",
+          price: String(productData.price || ""),
           oldPrice: String(productData.old_price || ""),
           discountPercentage: String(productData.discount_percentage || ""),
           priority: String(productData.priority || 0),
-          sizes: productData.sizes.map((s: { size: string }) => s.size),
-          media: productData.media,
-          topSale: productData.top_sale,
-          limitedEdition: productData.limited_edition,
-          season: productData.season,
-          color: productData.color,
-          categoryId: productData.category_id,
+          sizes: (productData.sizes || []).map((s: { size: string }) => s.size),
+          media: mediaArray,
+          topSale: productData.top_sale || false,
+          limitedEdition: productData.limited_edition || false,
+          season: productData.season || [],
+          color: productData.color || "",
+          categoryId: productData.category_id || null,
           subcategoryId: productData.subcategory_id || null,
           fabricComposition: productData.fabric_composition || "",
           hasLining: productData.has_lining || false,
@@ -438,7 +447,7 @@ export default function EditProductPage() {
                               const val = Math.max(0, Number(e.target.value) || 0);
                               setSizeStocks((prev) => ({ ...prev, [sz]: val }));
                             }}
-                            className="w-20 border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:text-white"
+                            className="w-20 border border-gray-300 rounded-lg px-2 py-1 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                           />
                         </div>
                       ))}
@@ -454,7 +463,7 @@ export default function EditProductPage() {
                     handleChange("categoryId", selectedCategoryId);
                     handleChange("subcategoryId", null); // ✅ Reset subcategory
                   }}
-                  className="w-full border rounded px-3 py-2 text-sm dark:bg-gray-800 dark:text-white"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
                   <option value="">Виберіть категорію</option>
                   {categoryOptions.map((cat) => (
@@ -472,7 +481,7 @@ export default function EditProductPage() {
                       onChange={(e) =>
                         handleChange("subcategoryId", Number(e.target.value))
                       }
-                      className="w-full border rounded px-3 py-2 text-sm dark:bg-gray-800 dark:text-white"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     >
                       <option value="">Виберіть підкатегорію</option>
                       {subcategoryOptions
@@ -579,7 +588,7 @@ export default function EditProductPage() {
                 </div>
 
                 {/* Блок: Склад тканини і Підкладка */}
-                <div className="border rounded-lg p-4 space-y-4 bg-gray-50 dark:bg-gray-800/50 mt-4">
+                <div className="border border-gray-300 rounded-lg p-4 space-y-4 bg-white mt-4">
                   <div>
                     <Label>Склад тканини</Label>
                     <TextArea

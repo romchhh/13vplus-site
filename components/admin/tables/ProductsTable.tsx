@@ -143,24 +143,24 @@ export default function ProductsTable() {
   }, []);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+    <div className="overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm">
       <div className="overflow-x-auto">
         <div className="min-w-[1200px]">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/[0.05]">
-            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50">
+            <h2 className="text-lg font-semibold text-gray-900">
               Продукти
             </h2>
             <div className="flex gap-2">
               <button
                 onClick={clearCache}
-                className="inline-block rounded-md bg-gray-400 px-4 py-2 text-white text-sm hover:bg-gray-600 transition"
+                className="inline-block rounded-md bg-gray-500 px-4 py-2 text-white text-sm font-medium hover:bg-gray-600 transition shadow-sm"
                 title="Очистити кеш та перезавантажити дані"
               >
                 🔄 Оновити
               </button>
               <Link
                 href="/admin/products/add"
-                className="inline-block rounded-md bg-green-400 px-4 py-2 text-white text-sm hover:bg-green-600 transition"
+                className="inline-block rounded-md bg-green-500 px-4 py-2 text-white text-sm font-medium hover:bg-green-600 transition shadow-sm"
               >
                 + Додати продукт
               </Link>
@@ -169,88 +169,88 @@ export default function ProductsTable() {
 
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-gray-50">
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Фото
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Назва
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Опис
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Ціна
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Розміри
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Категорія
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Сезон
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Колір
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Топ продаж?
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Лімітована серія?
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Створено
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Дії
                 </TableCell>
               </TableRow>
             </TableHeader>
 
-            <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+            <TableBody className="divide-y divide-gray-200 bg-white">
               {loading ? (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
-                    className="text-center py-6 text-gray-500 dark:text-gray-400"
+                    colSpan={12}
+                    className="text-center py-6 text-gray-600"
                   >
                     Завантаження...
                   </TableCell>
@@ -258,8 +258,8 @@ export default function ProductsTable() {
               ) : products.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
-                    className="text-center py-6 text-gray-500 dark:text-gray-400"
+                    colSpan={12}
+                    className="text-center py-6 text-gray-600"
                   >
                     Продуктів не знайдено.
                   </TableCell>
@@ -268,7 +268,7 @@ export default function ProductsTable() {
                 paginatedProducts.map((product) => (
                   <TableRow
                     key={product.id}
-                    className="hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                    className="hover:bg-gray-50 transition-colors"
                   >
                     <TableCell className="px-5 py-4">
                       {product.first_media ? (
@@ -282,59 +282,59 @@ export default function ProductsTable() {
                           />
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400">—</span>
+                        <span className="text-xs text-gray-500">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    <TableCell className="px-5 py-4 text-sm text-gray-900 font-medium">
                       {product.name}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400 max-w-[360px]">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700 max-w-[360px]">
                       {(product.description || "").length > 20
                         ? `${product.description.slice(0, 20)}…`
                         : product.description}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700 font-medium">
                       {product.price} ₴
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {product.sizes && product.sizes.length > 0
                         ? product.sizes
                             .map((s) => SIZE_MAP[s.size] || s.size)
                             .join(", ")
                         : "—"}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {product.category_name || "—"}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {Array.isArray(product.season)
                         ? product.season.length > 0
                           ? product.season.join(", ")
                           : "—"
                         : product.season || "—"}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {product.color || "—"}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {product.top_sale ? "✅" : "—"}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {product.limited_edition ? "✅" : "—"}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {new Date(product.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="px-5 py-4 space-x-2">
                       <Link
                         href={`/admin/products/${product.id}/edit`}
-                        className="inline-block rounded-md bg-blue-400 px-3 py-1 text-white text-sm hover:bg-blue-600 transition"
+                        className="inline-block rounded-md bg-blue-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-blue-600 transition shadow-sm"
                       >
                         Редагувати
                       </Link>
                       <button
                         onClick={() => handleDelete(product.id)}
-                        className="inline-block rounded-md bg-red-400 px-3 py-1 text-white text-sm hover:bg-red-600 transition"
+                        className="inline-block rounded-md bg-red-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-red-600 transition shadow-sm"
                       >
                         Видалити
                       </button>
@@ -347,7 +347,7 @@ export default function ProductsTable() {
 
           {/* Pagination */}
           {!loading && products.length > productsPerPage && (
-            <div className="flex justify-end px-5 py-4 border-t border-gray-100 dark:border-white/[0.05]">
+            <div className="flex justify-end px-5 py-4 border-t border-gray-200 bg-gray-50">
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}

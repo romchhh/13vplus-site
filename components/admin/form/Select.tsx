@@ -27,7 +27,7 @@ const Select: React.FC<SelectProps> = ({
 
   return (
     <select
-      className={`h-11 w-full appearance-none rounded-lg border border-gray-300 px-4 py-2.5 pr-11 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 ${value ? "text-gray-800 dark:text-white/90" : "text-gray-400 dark:text-gray-400"} ${className}`}
+      className={`h-11 w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-11 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${value ? "text-gray-900" : "text-gray-500"} ${className}`}
       value={value || ""} // fallback to empty string
       onChange={handleChange}
     >
@@ -35,7 +35,7 @@ const Select: React.FC<SelectProps> = ({
       <option
         value=""
         disabled
-        className="text-gray-700 dark:bg-gray-900 dark:text-gray-400"
+        className="text-gray-500 bg-white"
       >
         {placeholder}
       </option>
@@ -44,7 +44,7 @@ const Select: React.FC<SelectProps> = ({
         <option
           key={option.value}
           value={option.value}
-          className="text-gray-700 dark:bg-gray-900 dark:text-gray-400"
+          className="text-gray-900 bg-white"
         >
           {option.label}
         </option>

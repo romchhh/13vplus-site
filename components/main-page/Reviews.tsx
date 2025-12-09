@@ -1,33 +1,29 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
-import { useAppContext } from "@/lib/GeneralProvider";
 
 export default function Reviews() {
-  const { isDark } = useAppContext();
-
   return (
     <section
       id="reviews"
-      className={`scroll-mt-5 max-w-[1920px] w-full mx-auto relative ${
-        isDark ? "bg-stone-900" : "bg-[#e3dfd7]"
-      } px-6 py-12 md:py-20`}
+      className="scroll-mt-5 max-w-[1920px] w-full mx-auto relative bg-white px-6 py-16 lg:py-24"
     >
-      {/* Content section */}
-      <div className="flex flex-col lg:flex-row justify-between lg:items-end gap-8">
-        <div className="text-4xl lg:text-7xl font-medium font-['Montserrat'] lg:leading-[74.69px]">
-          Враження
-          <br />
-          наших клієнтів
+      <div className="flex flex-col lg:flex-row justify-between lg:items-end gap-8 lg:gap-16">
+        <div>
+          <h2 className="text-4xl lg:text-6xl font-bold font-['Montserrat'] uppercase tracking-wider text-black leading-tight mb-6">
+            Враження
+            <br />
+            наших клієнтів
+          </h2>
         </div>
 
-        <div className="text-base lg:text-2xl font-normal font-['Arial'] leading-relaxed">
-          Більше відгуків дивіться у<br />
-          нашому{" "}
+        <div className="text-base lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed">
+          Більше відгуків дивіться у нашому{" "}
           <Link
-            href="https://www.instagram.com/chars_ua_brand/"
-            className="underline italic hover:text-blue-600 transition-colors"
+            href="https://www.instagram.com/13vplus"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-black transition-colors"
           >
             Instagram
           </Link>{" "}

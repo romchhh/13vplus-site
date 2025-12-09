@@ -26,7 +26,6 @@ import "swiper/css/scrollbar";
 
 export default function FinalCard() {
   // GENERAL
-  const { isDark } = useAppContext();
   const { items, updateQuantity, removeItem, clearBasket } = useBasket();
 
   // CUSTOMER
@@ -540,21 +539,21 @@ export default function FinalCard() {
                       </div>
                     )}
                     <div className="flex flex-col flex-1 gap-1">
-                      <div className="text-base font-['Inter'] ">
+                      <div className="text-base font-['Helvetica Neue'] ">
                         {item.name}
                       </div>
-                      <div className="text-base  font-['Helvetica']">
+                      <div className="text-base  font-['Helvetica Neue']">
                         {item.size}
                       </div>
                       {item.color && (
-                        <div className="text-base font-['Helvetica']">
+                        <div className="text-base font-['Helvetica Neue']">
                           Колір: {item.color}
                         </div>
                       )}
-                      <div className="text-base  font-['Helvetica']">
+                      <div className="text-base  font-['Helvetica Neue']">
                         Кількість: {item.quantity}x
                       </div>
-                      <div className="text-base text-zinc-600 font-['Helvetica']">
+                      <div className="text-base text-zinc-600 font-['Helvetica Neue']">
                         {item.discount_percentage ? (
                           <div className="flex items-center gap-2">
                             {/* Discounted price */}
@@ -627,10 +626,10 @@ export default function FinalCard() {
             <Link
               href="/"
               className={`w-80 h-16 ${
-                isDark ? "bg-stone-100 text-black" : "bg-stone-900 text-white"
+                "bg-stone-100 text-black"
               } inline-flex justify-center items-center gap-2.5 p-2.5 rounded`}
             >
-              <span className=" text-xl font-medium font-['Inter'] tracking-tight leading-snug">
+              <span className=" text-xl font-medium font-['Helvetica Neue'] tracking-tight leading-snug">
                 На головну
               </span>
             </Link>
@@ -645,25 +644,17 @@ export default function FinalCard() {
       {items.length == 0 ? (
         <div className="py-12 px-4 sm:py-20 flex flex-col items-center gap-10 sm:gap-14 w-full max-w-2xl mx-auto">
           <Image
-            src={`${
-              isDark
-                ? "/images/dark-theme/basket.svg"
-                : "/images/light-theme/basket.svg"
-            }`}
+            src="/images/light-theme/basket.svg"
             alt="shopping basket icon"
             width={200}
             height={200}
           />
-          <span className="text-center text-2xl sm:text-4xl md:text-6xl font-normal font-['Inter'] leading-tight sm:leading-[64.93px]">
+          <span className="text-center text-2xl sm:text-4xl md:text-6xl font-normal font-['Helvetica Neue'] leading-tight sm:leading-[64.93px]">
             Ваш кошик порожній
           </span>
           <Link
             href="/catalog"
-            className={`${
-              isDark
-                ? "bg-stone-100 text-stone-900"
-                : "bg-stone-900 text-stone-100"
-            } w-full sm:w-80 h-14 sm:h-16 px-6 py-3 inline-flex items-center justify-center gap-2.5 text-base sm:text-xl text-center `}
+            className="bg-stone-900 text-stone-100 w-full sm:w-80 h-14 sm:h-16 px-6 py-3 inline-flex items-center justify-center gap-2.5 text-base sm:text-xl text-center"
           >
             Продовжити покупки
           </Link>
@@ -671,7 +662,7 @@ export default function FinalCard() {
       ) : (
         <>
           <div className="flex flex-col sm:flex-row justify-center gap-10 sm:gap-50">
-            <div className="mt-10 text-center sm:text-left text-3xl sm:text-6xl font-normal font-['Inter'] leading-snug sm:leading-[64.93px] mb-5">
+            <div className="mt-10 text-center sm:text-left text-3xl sm:text-6xl font-normal font-['Helvetica Neue'] leading-snug sm:leading-[64.93px] mb-5">
               Заповніть всі поля
             </div>
 
@@ -686,7 +677,7 @@ export default function FinalCard() {
             >
               <label
                 htmlFor="name"
-                className="text-xl sm:text-2xl font-normal font-['Arial']"
+                className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
               >
                 Ім’я та прізвище *
               </label>
@@ -694,7 +685,7 @@ export default function FinalCard() {
                 type="text"
                 id="name"
                 placeholder="Ваше імʼя та прізвище"
-                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Arial'] rounded"
+                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 required
@@ -703,7 +694,7 @@ export default function FinalCard() {
 
               <label
                 htmlFor="email"
-                className="text-xl sm:text-2xl font-normal font-['Arial']"
+                className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
               >
                 Email
               </label>
@@ -711,7 +702,7 @@ export default function FinalCard() {
                 type="email"
                 id="email"
                 placeholder="Ваш Email"
-                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Arial'] rounded"
+                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
@@ -719,7 +710,7 @@ export default function FinalCard() {
 
               <label
                 htmlFor="phone"
-                className="text-xl sm:text-2xl font-normal font-['Arial']"
+                className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
               >
                 Телефон *
               </label>
@@ -729,7 +720,7 @@ export default function FinalCard() {
                 placeholder="Ваш телефон"
                 pattern="^\+?\d{10,15}$"
                 title="Введіть номер телефону у форматі +380xxxxxxxxx"
-                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Arial'] rounded"
+                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 required
@@ -739,13 +730,13 @@ export default function FinalCard() {
               {/* Add delivery method, city, and post office fields */}
               <label
                 htmlFor="deliveryMethod"
-                className="text-xl sm:text-2xl font-normal font-['Arial']"
+                className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
               >
                 Спосіб доставки *
               </label>
               <select
                 id="deliveryMethod"
-                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Arial'] rounded"
+                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
                 value={deliveryMethod}
                 onChange={(e) => setDeliveryMethod(e.target.value)}
                 required
@@ -771,7 +762,7 @@ export default function FinalCard() {
                   <div className="flex flex-col">
                     <label
                       htmlFor="city"
-                      className="text-xl sm:text-2xl font-normal font-['Arial']"
+                      className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
                     >
                       {deliveryMethod === "nova_poshta_courier"
                         ? "Місто для доставки кур’єром *"
@@ -783,7 +774,7 @@ export default function FinalCard() {
                       value={city}
                       onChange={handleCityChange} // Update city on input change
                       placeholder="Введіть назву міста"
-                      className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Arial'] rounded"
+                      className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
                       required
                     />
                     {loadingCities ? (
@@ -812,7 +803,7 @@ export default function FinalCard() {
                     <div className="flex flex-col">
                       <label
                         htmlFor="postOffice"
-                        className="text-xl sm:text-2xl font-normal font-['Arial']"
+                        className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
                       >
                         Адреса доставки (вулиця, будинок, квартира) *
                       </label>
@@ -822,7 +813,7 @@ export default function FinalCard() {
                         value={postOffice}
                         onChange={(e) => setPostOffice(e.target.value)}
                         placeholder="Напр.: вул. Січових Стрільців, 10, кв. 25"
-                        className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Arial'] rounded"
+                        className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
                         required
                       />
                     </div>
@@ -830,7 +821,7 @@ export default function FinalCard() {
                     <div className="flex flex-col">
                       <label
                         htmlFor="postOffice"
-                        className="text-xl sm:text-2xl font-normal font-['Arial']"
+                        className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
                       >
                         {deliveryMethod === "nova_poshta_locker"
                           ? "Поштомат *"
@@ -846,7 +837,7 @@ export default function FinalCard() {
                             ? "Введіть назву поштомата"
                             : "Введіть назву відділення"
                         }
-                        className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Arial'] rounded"
+                        className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
                         required
                       />
                       {loadingPostOffices ? (
@@ -886,7 +877,7 @@ export default function FinalCard() {
 
               <label
                 htmlFor="comment"
-                className="text-xl sm:text-2xl font-normal font-['Arial']"
+                className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
               >
                 Коментар
               </label>
@@ -894,20 +885,20 @@ export default function FinalCard() {
                 type="text"
                 id="comment"
                 placeholder="Ваш коментар"
-                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Arial'] rounded"
+                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
 
               <label
                 htmlFor="paymentType"
-                className="text-xl sm:text-2xl font-normal font-['Arial']"
+                className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
               >
                 Спосіб оплати *
               </label>
               <select
                 id="paymentType"
-                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Arial'] rounded"
+                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
                 value={paymentType}
                 onChange={(e) => setPaymentType(e.target.value)}
                 required
@@ -918,9 +909,7 @@ export default function FinalCard() {
               </select>
 
               <button
-                className={`${
-                  isDark ? "bg-white text-black" : "bg-black text-white"
-                } p-4 sm:p-5 rounded mt-3 font-semibold`}
+                className="bg-black text-white p-4 sm:p-5 rounded mt-3 font-semibold"
                 type="submit"
                 disabled={loading}
               >
@@ -952,10 +941,10 @@ export default function FinalCard() {
                       height={160}
                     />
                     <div className="flex flex-col flex-1 gap-1">
-                      <div className="text-base font-normal font-['Inter'] leading-normal">
+                      <div className="text-base font-normal font-['Helvetica Neue'] leading-normal">
                         {item.name}
                       </div>
-                      <div className="text-zinc-600 text-base font-normal font-['Helvetica'] leading-relaxed tracking-wide">
+                      <div className="text-zinc-600 text-base font-normal font-['Helvetica Neue'] leading-relaxed tracking-wide">
                         {item.discount_percentage ? (
                           <div className="flex items-center gap-2">
                             {/* Discounted price */}
@@ -981,11 +970,11 @@ export default function FinalCard() {
                           <span className="font-medium">{item.price}₴</span>
                         )}
                       </div>
-                      <div className="text-base font-normal font-['Helvetica'] leading-relaxed tracking-wide">
+                      <div className="text-base font-normal font-['Helvetica Neue'] leading-relaxed tracking-wide">
                         {item.size}
                       </div>
                       {item.color && (
-                        <div className="text-base font-normal font-['Helvetica'] leading-relaxed tracking-wide">
+                        <div className="text-base font-normal font-['Helvetica Neue'] leading-relaxed tracking-wide">
                           Колір: {item.color}
                         </div>
                       )}
@@ -993,7 +982,7 @@ export default function FinalCard() {
                       <div className="flex justify-start items-center gap-3 mt-auto">
                         <div className="w-20 h-9 border border-neutral-400/60 flex justify-around items-center rounded">
                           <button
-                            className="text-zinc-500 text-base font-normal font-['Inter'] leading-normal"
+                            className="text-zinc-500 text-base font-normal font-['Helvetica Neue'] leading-normal"
                             onClick={() =>
                               updateQuantity(
                                 item.id,
@@ -1004,11 +993,11 @@ export default function FinalCard() {
                           >
                             +
                           </button>
-                          <div className="text-base font-normal font-['Inter'] leading-normal">
+                          <div className="text-base font-normal font-['Helvetica Neue'] leading-normal">
                             {item.quantity}
                           </div>
                           <button
-                            className="text-zinc-500 text-base font-normal font-['Inter'] leading-normal"
+                            className="text-zinc-500 text-base font-normal font-['Helvetica Neue'] leading-normal"
                             onClick={() =>
                               updateQuantity(
                                 item.id,
@@ -1039,9 +1028,9 @@ export default function FinalCard() {
               )}
 
               {/* Total price container */}
-              <div className="p-5 border-t flex justify-between text-base sm:text-2xl font-normal font-['Arial'] mt-4">
+              <div className="p-5 border-t flex justify-between text-base sm:text-2xl font-normal font-['Helvetica Neue'] mt-4">
                 <div>Всього</div>
-                <div className="font-['Helvetica'] leading-relaxed tracking-wide">
+                <div className="font-['Helvetica Neue'] leading-relaxed tracking-wide">
                   {items
                     .reduce((total, item) => {
                       const price = item.discount_percentage

@@ -5,13 +5,11 @@ import Link from "next/link";
 interface SidebarSeasonProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  isDark: boolean;
 }
 
 export default function SidebarSeason({
   isOpen,
   setIsOpen,
-  isDark,
 }: SidebarSeasonProps) {
   const season_data = [
     {
@@ -44,9 +42,7 @@ export default function SidebarSeason({
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full w-full sm:w-4/5 sm:max-w-md ${
-          isDark ? "bg-stone-900" : "bg-stone-100"
-        } shadow-md z-40 transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-full sm:w-4/5 sm:max-w-md bg-stone-100 shadow-md z-40 transform transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } overflow-y-auto`}
       >

@@ -67,7 +67,14 @@ export function useProducts(options: UseProductsOptions = {}) {
           cacheKey = CACHE_KEYS.PRODUCTS_SEASON(season);
         }
 
-        const data = await cachedFetch<Product[]>(url, cacheKey);
+        // Use shorter cache duration for limited edition (1 minute instead of 5)
+        const cacheDuration = limitedEdition ? 60 * 1000 : undefined;
+        
+        // For limited edition, add timestamp to bypass cache if needed
+        const urlWithCache = limitedEdition ? `${url}?t=${Date.now()}` : url;
+        
+        const data = await cachedFetch<Product[]>(urlWithCache, cacheKey, cacheDuration);
+        console.log(`[useProducts] Fetched ${data.length} limited edition products:`, data.map(p => ({ id: p.id, name: p.name, hasMedia: !!p.first_media })));
         setProducts(data);
       } catch (err: unknown) {
         if (err instanceof Error) {

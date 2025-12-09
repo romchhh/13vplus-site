@@ -15,14 +15,14 @@ export async function GET(
 
   try {
     const result = await sqlGetCategory(id);
-    if (!result.length) {
+    if (!result) {
       return NextResponse.json(
         { error: "Category not found" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(result[0]);
+    return NextResponse.json(result);
   } catch (error) {
     console.error("[GET /api/categories/:id]", error);
     return NextResponse.json(
@@ -46,7 +46,7 @@ export async function PUT(
 
   try {
     const body = await req.json();
-    const { name, priority } = body;
+    const { name, priority, mediaType, mediaUrl } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -66,7 +66,7 @@ export async function PUT(
     }
 
     // Default priority to 0 if undefined
-    const updated = await sqlPutCategory(id, name, priority ?? 0);
+    const updated = await sqlPutCategory(id, name, priority ?? 0, mediaType, mediaUrl);
     return NextResponse.json(updated);
   } catch (error) {
     console.error("[PUT /api/categories/:id]", error);

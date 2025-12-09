@@ -51,11 +51,11 @@
 
 /* Preload critical fonts */
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Montserrat';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local('Inter Regular'), local('Inter-Regular');
+  src: local('Montserrat Regular'), local('Montserrat-Regular');
 }
 
 /* Reduce layout shift */

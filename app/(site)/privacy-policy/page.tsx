@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Політика конфіденційності | CHARS",
-  description: "Політика конфіденційності персональних даних CHARS",
+  title: "Політика конфіденційності | 13VPLUS",
+  description: "Політика конфіденційності персональних даних 13VPLUS",
 };
 
 export default function PrivacyPolicyPage() {
@@ -30,7 +30,7 @@ export default function PrivacyPolicyPage() {
             <p className="text-lg opacity-80">
               Ця Політика конфіденційності персональних даних (далі – Політика
               конфіденційності) діє щодо всієї інформації, яку Інтернет-магазин
-              «CHARS», може отримати про Користувача під час використання сайту
+              «13VPLUS», може отримати про Користувача під час використання сайту
               Інтернет-магазину, програм та продуктів Інтернет-магазину.
             </p>
           </section>

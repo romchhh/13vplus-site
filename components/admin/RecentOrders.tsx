@@ -43,16 +43,16 @@ export default function RecentOrders() {
   }, []);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6">
+    <div className="overflow-hidden rounded-2xl border border-gray-300 bg-white px-4 pb-3 pt-4 shadow-sm sm:px-6">
       <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+          <h3 className="text-lg font-semibold text-gray-900">
             Recent Orders
           </h3>
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200">
+          <button className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-900 shadow-sm hover:bg-gray-50 hover:text-gray-700">
             See all
           </button>
         </div>
@@ -60,66 +60,66 @@ export default function RecentOrders() {
 
       <div className="max-w-full overflow-x-auto">
         {loading ? (
-          <p className="text-gray-500 dark:text-gray-400">Loading orders...</p>
+          <p className="text-gray-600">Loading orders...</p>
         ) : error ? (
-          <p className="text-red-500">Error: {error}</p>
+          <p className="text-red-600">Error: {error}</p>
         ) : (
           <Table>
-            <TableHeader className="border-gray-100 dark:border-gray-800 border-y">
+            <TableHeader className="border-gray-200 border-y bg-gray-50">
               <TableRow>
                 <TableCell
                   isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  className="py-3 font-medium text-gray-900 text-start text-theme-xs"
                 >
                   Customer
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  className="py-3 font-medium text-gray-900 text-start text-theme-xs"
                 >
                   Delivery Method
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  className="py-3 font-medium text-gray-900 text-start text-theme-xs"
                 >
                   City / Post Office
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  className="py-3 font-medium text-gray-900 text-start text-theme-xs"
                 >
                   Status
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  className="py-3 font-medium text-gray-900 text-start text-theme-xs"
                 >
                   Date
                 </TableCell>
               </TableRow>
             </TableHeader>
 
-            <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <TableBody className="divide-y divide-gray-200 bg-white">
               {orders.map((order) => (
-                <TableRow key={order.id}>
+                <TableRow key={order.id} className="hover:bg-gray-50">
                   <TableCell className="py-3">
                     <div className="flex flex-col">
-                      <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                      <p className="font-medium text-gray-900 text-theme-sm">
                         {order.customer_name}
                       </p>
-                      <span className="text-gray-500 text-theme-xs dark:text-gray-400">
+                      <span className="text-gray-600 text-theme-xs">
                         {order.email} | {order.phone_number}
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                  <TableCell className="py-3 text-gray-700 text-theme-sm">
                     {order.delivery_method}
                   </TableCell>
-                  <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                  <TableCell className="py-3 text-gray-700 text-theme-sm">
                     {order.city} / {order.post_office}
                   </TableCell>
-                  <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                  <TableCell className="py-3 text-gray-700 text-theme-sm">
                     <Badge
                       size="sm"
                       color={
@@ -133,7 +133,7 @@ export default function RecentOrders() {
                       {order.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                  <TableCell className="py-3 text-gray-700 text-theme-sm">
                     {new Date(order.created_at).toLocaleDateString()}
                   </TableCell>
                 </TableRow>

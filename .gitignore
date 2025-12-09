@@ -42,3 +42,4 @@ next-env.d.ts
 
 # images
 /product-images/*
+/lib/generated/prisma

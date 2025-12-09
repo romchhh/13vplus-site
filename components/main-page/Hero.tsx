@@ -3,9 +3,10 @@
 import SidebarMenu from "@/components/layout/SidebarMenu";
 import { useAppContext } from "@/lib/GeneralProvider";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 export default function Hero() {
-  const { isDark, isSidebarOpen, setIsSidebarOpen } = useAppContext();
+  const { isSidebarOpen, setIsSidebarOpen } = useAppContext();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showPlayButton, setShowPlayButton] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -95,7 +96,7 @@ export default function Hero() {
             <video
               ref={videoRef}
               className="absolute inset-0 w-full h-full object-cover object-center bg-black"
-              src="/images/CHARS02.webm"
+              src="/images/hero-video.webm"
               autoPlay
               loop
               muted
@@ -155,20 +156,30 @@ export default function Hero() {
             )}
           </>
         
-        <div className="relative z-10 flex flex-col justify-end md:justify-evenly p-10 md:p-35 gap-55 md:gap-70 h-full" style={{ zIndex: 2 }}>
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="cursor-pointer mx-auto w-40 sm:w-52 md:w-60 lg:w-72 h-12 sm:h-14 md:h-16 lg:h-16 p-2 bg-transparent border border-white text-white inline-flex justify-center items-center gap-2 hover:opacity-80 transition-opacity duration-300 font-['Inter'] mb-32 md:mb-0"
+        <div className="relative z-10 flex flex-col justify-end md:justify-center p-10 md:p-20 gap-8 md:gap-12 h-full" style={{ zIndex: 2 }}>
+          {/* Luxury text overlay */}
+          <div className="flex flex-col items-center justify-center gap-5 md:gap-7 mb-24 md:mb-20">
+            <h1 className="text-white text-5xl sm:text-6xl md:text-7xl lg:text-6xl xl:text-7xl font-bold font-['Montserrat'] uppercase text-center leading-tight" style={{ letterSpacing: '0.15em' }}>
+              Urban Stillness
+            </h1>
+            <p className="text-white text-xl sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-bold font-['Montserrat'] uppercase text-center opacity-90" style={{ letterSpacing: '0.2em' }}>
+              Winter Collection
+            </p>
+          </div>
+
+          {/* Catalog button */}
+          <Link
+            href="/catalog"
+            className="cursor-pointer mx-auto w-48 sm:w-56 md:w-64 lg:w-72 h-14 sm:h-16 md:h-18 lg:h-20 p-2 bg-transparent border-2 border-white text-white inline-flex justify-center items-center gap-2 hover:bg-white hover:text-black transition-all duration-300 font-['Montserrat'] group"
           >
-            <div className="text-center justify-center text-white text-base sm:text-lg md:text-xl lg:text-2xl font-normal capitalize leading-none tracking-tight">
-              Каталог
+            <div className="text-center justify-center text-base sm:text-lg md:text-xl lg:text-2xl font-normal uppercase tracking-wider leading-none">
+              Переглянути
             </div>
-          </button>
+          </Link>
         </div>
       </div>
 
       <SidebarMenu
-        isDark={isDark}
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
       />

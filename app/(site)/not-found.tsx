@@ -17,7 +17,7 @@ export default function NotFound() {
       </div>
 
       <div className="text-center max-w-4xl mx-auto relative z-10">
-        {/* Large 404 with CHARS style */}
+        {/* Large 404 with 13VPLUS style */}
         <div className="mb-12">
           <div className={`${montserrat.className} text-[200px] md:text-[300px] font-bold leading-none tracking-widest opacity-10 dark:opacity-20`}>
             404
@@ -43,7 +43,7 @@ export default function NotFound() {
         {/* Decorative line */}
         <div className="w-32 h-1 bg-black dark:bg-white mx-auto mb-12"></div>
 
-        {/* Action buttons with CHARS style */}
+        {/* Action buttons with 13VPLUS style */}
         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
           <Link
             href="/"
@@ -107,10 +107,10 @@ export default function NotFound() {
             Якщо ви вважаєте, що це помилка, будь ласка, зв&apos;яжіться з нами
           </p>
           <Link 
-            href="mailto:Charsukrainianbrand@gmail.com"
+            href="mailto:13vplusukraineanbrand@gmail.com"
             className="text-sm opacity-50 hover:opacity-100 transition-opacity duration-300 mt-2 inline-block"
           >
-            Charsukrainianbrand@gmail.com
+            13vplusukraineanbrand@gmail.com
           </Link>
         </div>
       </div>

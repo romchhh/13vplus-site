@@ -66,24 +66,30 @@ interface Product {
   id: number;
   name: string;
   price: number;
+  discount_percentage?: number | null;
   first_media?: { url: string; type: string } | null;
   sizes?: { size: string; stock: string }[];
   color?: string;
 }
 
+interface Color {
+  color: string;
+  hex?: string;
+}
+
 export default function Catalog() {
-  const { isDark, isSidebarOpen, setIsSidebarOpen } = useAppContext();
+  const { isSidebarOpen, setIsSidebarOpen } = useAppContext();
   const searchParams = useSearchParams();
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [colors, setColors] = useState<string[]>([]);
+  const [colors, setColors] = useState<Color[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [sortOrder, setSortOrder] = useState<"recommended" | "newest" | "asc" | "desc" | "sale">("recommended");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [minPrice, setMinPrice] = useState<number | null>(null);
@@ -106,9 +112,24 @@ export default function Catalog() {
   }, [products, selectedSizes, minPrice, maxPrice, selectedColors]);
 
   const sortedProducts = useMemo(() => {
-    return [...filteredProducts].sort((a, b) =>
-      sortOrder === "asc" ? a.price - b.price : b.price - a.price
-    );
+    const sorted = [...filteredProducts];
+    switch (sortOrder) {
+      case "asc":
+        return sorted.sort((a, b) => a.price - b.price);
+      case "desc":
+        return sorted.sort((a, b) => b.price - a.price);
+      case "newest":
+        return sorted.sort((a, b) => b.id - a.id);
+      case "sale":
+        return sorted.sort((a, b) => {
+          const aHasSale = a.discount_percentage ? 1 : 0;
+          const bHasSale = b.discount_percentage ? 1 : 0;
+          return bHasSale - aHasSale;
+        });
+      case "recommended":
+      default:
+        return sorted;
+    }
   }, [filteredProducts, sortOrder]);
 
   // Read filters from URL params
@@ -155,12 +176,11 @@ export default function Catalog() {
     // Fetch colors
     async function fetchColors() {
       try {
-        const data = await cachedFetch<{ color: string }[]>(
+        const data = await cachedFetch<Color[]>(
           "/api/colors",
           CACHE_KEYS.COLORS
         );
-        const colorNames = data.map((item) => item.color);
-        setColors(colorNames);
+        setColors(data);
       } catch (err: unknown) {
         console.error("Error fetching colors:", err);
         setError("Failed to fetch colors");
@@ -208,7 +228,7 @@ export default function Catalog() {
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-0.5 sm:gap-1">
           {sortedProducts.map((product) => {
             // Debug logging
             if (product.first_media) {
@@ -219,10 +239,10 @@ export default function Catalog() {
             <Link
               href={`/product/${product.id}`}
               key={product.id}
-              className="flex flex-col gap-4 group"
+              className="flex flex-col gap-2 group"
             >
               {/* Image or Video */}
-              <div className="relative w-full aspect-[2/3] bg-gray-200 group-hover:filter group-hover:brightness-90 transition duration-300 overflow-hidden">
+              <div className="relative w-full aspect-[2/3] bg-white group-hover:filter group-hover:brightness-90 transition duration-300 overflow-hidden">
                 {product.first_media?.type === "video" ? (
                   <VideoWithAutoplay
                     src={`/api/images/${product.first_media.url}`}
@@ -251,7 +271,6 @@ export default function Catalog() {
       </section>
 
       <SidebarFilter
-        isDark={isDark}
         isOpen={isFilterOpen}
         setIsOpen={setIsFilterOpen}
         openAccordion={openAccordion}
@@ -266,12 +285,16 @@ export default function Catalog() {
         setMaxPrice={setMaxPrice}
         selectedColors={selectedColors}
         setSelectedColors={setSelectedColors}
+        selectedCategories={[]}
+        setSelectedCategories={() => {}}
         colors={colors}
+        categories={[]}
+        products={products}
+        filteredCount={filteredProducts.length}
       />
 
       {/* Menu Sidebar */}
       <SidebarMenu
-        isDark={isDark}
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
       />

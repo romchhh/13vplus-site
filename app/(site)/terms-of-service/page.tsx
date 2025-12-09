@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Договір публічної оферти | CHARS",
-  description: "Договір публічної оферти CHARS",
+  title: "Договір публічної оферти | 13VPLUS",
+  description: "Договір публічної оферти 13VPLUS",
 };
 
 export default function TermsOfServicePage() {
@@ -21,7 +21,7 @@ export default function TermsOfServicePage() {
           <h1 className="text-5xl md:text-6xl font-bold mb-4 tracking-tight">
             Договір публічної оферти
           </h1>
-          <div className="w-20 h-1 bg-black dark:bg-white mt-6"></div>
+          <div className="w-20 h-1 bg-black mt-6"></div>
         </div>
 
         {/* Content */}
@@ -47,34 +47,34 @@ export default function TermsOfServicePage() {
               Визначення термінів
             </h2>
             <div className="space-y-4">
-              <div className="p-5 border border-black/10 dark:border-white/10 rounded-lg space-y-2">
+              <div className="p-5 border border-black/10 rounded-lg space-y-2">
                 <p className="font-semibold">Сайт</p>
                 <p className="text-sm opacity-70">
                   Веб-сайт, що розміщений в мережі Інтернет за адресою:
-                  https://chars.com, включаючи всі його веб-сторінки.
+                  https://13vplus.com, включаючи всі його веб-сторінки.
                 </p>
               </div>
-              <div className="p-5 border border-black/10 dark:border-white/10 rounded-lg space-y-2">
+              <div className="p-5 border border-black/10 rounded-lg space-y-2">
                 <p className="font-semibold">Товар</p>
                 <p className="text-sm opacity-70">
                   Товари, зображення та/або опис яких розміщено на Сайті.
                 </p>
               </div>
-              <div className="p-5 border border-black/10 dark:border-white/10 rounded-lg space-y-2">
+              <div className="p-5 border border-black/10 rounded-lg space-y-2">
                 <p className="font-semibold">Публічна оферта</p>
                 <p className="text-sm opacity-70">
                   Спрямована невизначеному колу осіб публічна
                   пропозиція Продавця, що стосується укладення договору купівлі-продажу Товарів.
                 </p>
               </div>
-              <div className="p-5 border border-black/10 dark:border-white/10 rounded-lg space-y-2">
+              <div className="p-5 border border-black/10 rounded-lg space-y-2">
                 <p className="font-semibold">Користувач/Покупець</p>
                 <p className="text-sm opacity-70">
                   Особа, що переглядає інформацію на Сайті
                   та/або замовляє, та/або отримує Товари.
                 </p>
               </div>
-              <div className="p-5 border border-black/10 dark:border-white/10 rounded-lg space-y-2">
+              <div className="p-5 border border-black/10 rounded-lg space-y-2">
                 <p className="font-semibold">Замовлення</p>
                 <p className="text-sm opacity-70">
                   Належним чином оформлений та розміщений запит
@@ -203,7 +203,7 @@ export default function TermsOfServicePage() {
 
           <section className="space-y-4">
             <h2 className="text-2xl md:text-3xl font-semibold mb-6">6. Повернення Товару</h2>
-            <div className="p-5 border border-black/10 dark:border-white/10 rounded-lg space-y-3">
+            <div className="p-5 border border-black/10 rounded-lg space-y-3">
               <p className="opacity-80">
                 Повернення Товару належної якості здійснюється відповідно до Закону України
                 «Про захист прав споживачів».
@@ -222,16 +222,16 @@ export default function TermsOfServicePage() {
             <div>
               <p className="font-semibold mb-3">Продавець має право:</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="p-4 border-l-2 border-black/20 dark:border-white/20">
+                <div className="p-4 border-l-2 border-black/20">
                   <p className="text-sm opacity-70">
                     В односторонньому порядку призупинити продаж Товарів у випадку порушення
                     Користувачем/Покупцем умов
                   </p>
                 </div>
-                <div className="p-4 border-l-2 border-black/20 dark:border-white/20">
+                <div className="p-4 border-l-2 border-black/20">
                   <p className="text-sm opacity-70">На власний розсуд змінювати ціну на Товари</p>
                 </div>
-                <div className="p-4 border-l-2 border-black/20 dark:border-white/20 md:col-span-2">
+                <div className="p-4 border-l-2 border-black/20 md:col-span-2">
                   <p className="text-sm opacity-70">
                     У разі відсутності замовлених Товарів, виключити зазначений Товар із Замовлення
                   </p>
@@ -246,10 +246,10 @@ export default function TermsOfServicePage() {
               <div>
                 <p className="font-semibold mb-3">Користувач/Покупець має право:</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="p-4 border-l-2 border-black/20 dark:border-white/20">
+                  <div className="p-4 border-l-2 border-black/20">
                     <p className="text-sm opacity-70">Обрати Товари, оформлювати та направляти Замовлення</p>
                   </div>
-                  <div className="p-4 border-l-2 border-black/20 dark:border-white/20">
+                  <div className="p-4 border-l-2 border-black/20">
                     <p className="text-sm opacity-70">Вимагати від Продавця виконання умов та обов&apos;язків</p>
                   </div>
                 </div>
@@ -257,12 +257,12 @@ export default function TermsOfServicePage() {
               <div>
                 <p className="font-semibold mb-3">Користувач/Покупець зобов&apos;язується:</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="p-4 border-l-2 border-black/20 dark:border-white/20">
+                  <div className="p-4 border-l-2 border-black/20">
                     <p className="text-sm opacity-70">
                       Належним чином оплатити та отримати оформлене Замовлення
                     </p>
                   </div>
-                  <div className="p-4 border-l-2 border-black/20 dark:border-white/20">
+                  <div className="p-4 border-l-2 border-black/20">
                     <p className="text-sm opacity-70">
                       Надати Продавцю повну інформацію, що необхідна для здійснення доставки Замовлення
                     </p>
@@ -274,7 +274,7 @@ export default function TermsOfServicePage() {
 
           <section className="space-y-4">
             <h2 className="text-2xl md:text-3xl font-semibold mb-6">9. Термін дії Договору</h2>
-            <div className="p-5 border-l-4 border-black/30 dark:border-white/30">
+            <div className="p-5 border-l-4 border-black/30">
               <p className="opacity-80">
                 Цей Договір набирає чинності з дня оформлення Замовлення або реєстрації
                 Користувача/Покупця на Сайті і діє до виконання всіх умов Договору.
@@ -284,7 +284,7 @@ export default function TermsOfServicePage() {
 
           <section className="space-y-4">
             <h2 className="text-2xl md:text-3xl font-semibold mb-6">10. Реквізити</h2>
-            <div className="bg-black/5 dark:bg-white/5 p-8 rounded-2xl border border-black/10 dark:border-white/10 space-y-6">
+            <div className="bg-black/5 p-8 rounded-2xl border border-black/10 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <p className="text-sm font-semibold mb-2 opacity-60">Отримувач</p>
@@ -314,7 +314,7 @@ export default function TermsOfServicePage() {
             </div>
           </section>
 
-          <section className="mt-16 pt-8 border-t border-black/10 dark:border-white/10">
+          <section className="mt-16 pt-8 border-t border-black/10">
             <p className="text-sm opacity-50">
               Дата останнього оновлення: 27 жовтня 2025 року
             </p>

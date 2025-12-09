@@ -5,43 +5,14 @@ import { useState, useEffect } from "react";
 import { useBasket } from "@/lib/BasketProvider";
 import Image from "next/image";
 import Alert from "@/components/shared/Alert";
+import CartAlert from "@/components/shared/CartAlert";
 import { getFirstProductImage } from "@/lib/getFirstProductImage";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper/modules";
-import { useRouter } from "next/navigation";
+import { Navigation, Autoplay } from "swiper/modules";
+import type { Swiper as SwiperType } from "swiper";
 import "swiper/css";
 import "swiper/css/navigation";
 
-// Add custom styles for smooth transitions
-const swiperStyles = `
-  .swiper {
-    touch-action: pan-y pinch-zoom;
-    will-change: transform;
-    -webkit-overflow-scrolling: touch;
-    overflow: hidden;
-  }
-  .swiper-wrapper {
-    transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-  .swiper-slide {
-    transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-  }
-  .swiper-slide-transition-allow {
-    will-change: transform;
-  }
-  .swiper-slide img,
-  .swiper-slide video {
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-touch-callout: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-`;
-import { Swiper as SwiperType } from "swiper";
 
 const SIZE_MAP: Record<string, string> = {
   "1": "XL",
@@ -56,15 +27,15 @@ interface ProductClientProps {
     id: number;
     name: string;
     price: number;
-    old_price?: number;
-    discount_percentage?: number;
-    description?: string;
+    old_price?: number | null;
+    discount_percentage?: number | null;
+    description?: string | null;
     media?: { url: string; type: string }[];
-    sizes?: { size: string; stock: string }[];
+    sizes?: { size: string; stock: number }[];
     colors?: { label: string; hex?: string | null }[];
-    fabric_composition?: string;
+    fabric_composition?: string | null;
     has_lining?: boolean;
-    lining_description?: string;
+    lining_description?: string | null;
   };
 }
 
@@ -75,29 +46,19 @@ interface RelatedProduct {
 }
 
 export default function ProductClient({ product: initialProduct }: ProductClientProps) {
-  const router = useRouter();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const quantity = 1;
-  const { isDark } = useAppContext();
   const [relatedProducts, setRelatedProducts] = useState<RelatedProduct[]>([]);
   const [product, setProduct] = useState(initialProduct);
   const [isLoading, setIsLoading] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [swiper, setSwiper] = useState<SwiperType | null>(null);
   
   // Use basket hook - component is client-side only with 'use client'
   const { addItem } = useBasket();
+  const { setIsBasketOpen } = useAppContext();
 
-  // Inject custom styles for smoother transitions
-  useEffect(() => {
-    const style = document.createElement("style");
-    style.textContent = swiperStyles;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, [swiperStyles]);
-
-  const [showToast, setShowToast] = useState(false);
+  const [showCartAlert, setShowCartAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [alertType, setAlertType] = useState<
     "success" | "error" | "warning" | "info"
@@ -217,15 +178,15 @@ export default function ProductClient({ product: initialProduct }: ProductClient
       quantity,
       imageUrl: getFirstProductImage(media),
       color: selectedColor || undefined,
-      discount_percentage: product.discount_percentage,
+      discount_percentage: product.discount_percentage ?? undefined,
     });
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    setShowCartAlert(true);
+    setTimeout(() => setShowCartAlert(false), 5000);
   };
 
   const media = product.media || [];
-  const sizes = (product.sizes as { size: string; stock?: number | string }[] | undefined)
-    ?.filter((s) => Number(s.stock ?? 0) > 0)
+  const sizes = (product.sizes || [])
+    ?.filter((s) => (s.stock ?? 0) > 0)
     .map((s) => s.size) || [
     "xs",
     "s",
@@ -235,23 +196,12 @@ export default function ProductClient({ product: initialProduct }: ProductClient
   ];
   const outOfStock = sizes.length === 0;
 
-  // SWIPER
-  const [swiper, setSwiper] = useState<SwiperType | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  
-  // Update swiper when product changes
-  useEffect(() => {
-    if (swiper && media.length > 0) {
-      setActiveImageIndex(0);
-      swiper.slideTo(0);
-    }
-  }, [product.id, swiper, media.length]);
 
   // Avoid SSR hydration flicker
   useEffect(() => setIsMounted(true), []);
   if (!isMounted || !media?.length) return null;
 
-  // Manual next/prev handling (to avoid loop flickers)
   const handleNext = () => {
     if (!swiper) return;
     if (activeImageIndex >= media.length - 1) {
@@ -270,83 +220,45 @@ export default function ProductClient({ product: initialProduct }: ProductClient
     }
   };
 
-  // COLORS
-
   return (
-    <section className="max-w-[1920px] w-full mx-auto">
-      <div className="flex flex-col lg:flex-row justify-around p-4 md:p-10 gap-10">
-        <div 
-          className={`relative w-full lg:w-1/2 flex justify-center transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}
-          style={{ touchAction: 'pan-y pinch-zoom' }}
-        >
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center z-10">
-              <div className="w-8 h-8 border-2 border-gray-300 border-t-black dark:border-t-white rounded-full animate-spin"></div>
-            </div>
-          )}
+    <section className="max-w-[1920px] w-full mx-auto bg-white">
+      <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 p-6 md:p-10 lg:p-16 lg:items-start">
+        {/* Images Slider - Left Side */}
+        <div className="w-full lg:w-1/2 relative lg:h-[calc(100vh-8rem)]">
           <Swiper
-            modules={[Navigation]}
+            modules={[Navigation, Autoplay]}
             onSwiper={setSwiper}
             slidesPerView={1}
-            spaceBetween={10}
-            speed={500}
-            allowTouchMove={!isLoading}
-            centeredSlides={true}
+            spaceBetween={0}
             onSlideChange={(s) => setActiveImageIndex(s.activeIndex)}
-            className="product-swiper w-full max-w-[800px]"
-            key={product.id}
-            touchRatio={1}
-            touchAngle={45}
-            resistance={true}
-            resistanceRatio={0.85}
-            followFinger={true}
-            threshold={5}
-            longSwipes={true}
-            longSwipesRatio={0.5}
-            longSwipesMs={300}
-            watchSlidesProgress={true}
-            cssMode={false}
+            autoplay={{
+              delay: 5000,
+              disableOnInteraction: false,
+            }}
+            className="w-full h-full"
           >
             {media.map((item, i) => (
-              <SwiperSlide key={i} style={{ touchAction: 'pan-y pinch-zoom' }}>
-                <div 
-                  className="flex justify-center items-center max-h-[85vh] overflow-hidden"
-                  style={{ 
-                    WebkitUserSelect: 'none',
-                    userSelect: 'none',
-                    WebkitTouchCallout: 'none'
-                  }}
-                >
+              <SwiperSlide key={i}>
+                <div className="relative w-full h-full bg-white flex items-start justify-center lg:h-[calc(100vh-8rem)]">
                   {item.type === "video" ? (
                     <video
-                      className="object-contain w-full max-h-[85vh]"
+                      className="object-contain w-full h-full"
                       src={`/api/images/${item.url}`}
                       autoPlay
                       loop
                       muted
                       playsInline
-                      style={{ 
-                        WebkitUserSelect: 'none',
-                        userSelect: 'none',
-                        pointerEvents: 'auto'
-                      }}
                     />
                   ) : (
                     <Image
                       src={`/api/images/${item.url}`}
-                      alt={`Product media ${i}`}
-                      width={800}
-                      height={1160}
-                      priority={i === activeImageIndex}
-                      quality={i === activeImageIndex ? 90 : 80}
-                      className="object-contain w-auto h-auto"
-                      style={{ 
-                        maxHeight: "85vh",
-                        WebkitUserSelect: 'none',
-                        userSelect: 'none',
-                        pointerEvents: 'auto'
-                      }}
-                      draggable={false}
+                      alt={`Product view ${i + 1}`}
+                      fill
+                      className="object-contain"
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      priority={i === 0}
+                      placeholder="blur"
+                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                     />
                   )}
                 </div>
@@ -358,145 +270,87 @@ export default function ProductClient({ product: initialProduct }: ProductClient
             <>
               <button
                 onClick={handlePrev}
-                aria-label="Previous image"
-                className="absolute left-2 top-[42.5vh] -translate-y-1/2 z-10 hidden lg:flex items-center justify-center w-8 h-8 border border-gray-300 dark:border-gray-600 rounded-full bg-white/80 dark:bg-black/80 backdrop-blur-sm hover:bg-white dark:hover:bg-black transition-all"
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-white/80 rounded-full hover:bg-white transition-all"
+                aria-label="Previous"
               >
-                <svg 
-                  className="w-4 h-4 text-gray-700 dark:text-gray-300" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-
               <button
                 onClick={handleNext}
-                aria-label="Next image"
-                className="absolute right-2 top-[42.5vh] -translate-y-1/2 z-10 hidden lg:flex items-center justify-center w-8 h-8 border border-gray-300 dark:border-gray-600 rounded-full bg-white/80 dark:bg-black/80 backdrop-blur-sm hover:bg-white dark:hover:bg-black transition-all"
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-white/80 rounded-full hover:bg-white transition-all"
+                aria-label="Next"
               >
-                <svg 
-                  className="w-4 h-4 text-gray-700 dark:text-gray-300" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
             </>
           )}
+
+          {/* Model info text */}
+          {selectedSize && (
+            <div className="mt-4 text-sm font-['Montserrat'] text-gray-600">
+              Зріст моделі 173 см, розмір на ній - {selectedSize}
+            </div>
+          )}
         </div>
 
-        {/* Info Section */}
-        <div className="flex flex-col gap-6 md:gap-10 px-4 md:px-0 w-full lg:w-1/2">
-          {/* Availability */}
-          <div className="text-base md:text-lg font-normal font-['Helvetica'] leading-relaxed tracking-wide">
-            В наявності
-          </div>
-
+        {/* Info Section - Right Side */}
+        <div className="flex flex-col gap-6 w-full lg:w-1/2">
           {/* Product Name */}
-          <div className={`text-3xl md:text-5xl lg:text-6xl font-normal font-['Inter'] capitalize leading-tight transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold font-['Montserrat'] uppercase tracking-wider leading-tight">
             {product.name}
-          </div>
+          </h1>
 
           {/* Price */}
-          <div className="w-full flex flex-col sm:flex-row justify-start border-b p-2 sm:p-4 gap-2">
-            <div className="flex justify-start gap-8 text-2xl md:text-3xl font-['Helvetica']">
-              {product.discount_percentage ? (
-                <div className="flex items-center gap-2">
-                  {/* Discounted price */}
-                  <span className="font-medium text-red-600">
-                    {(
-                      product.price *
-                      (1 - product.discount_percentage / 100)
-                    ).toFixed(2)}
-                    ₴
-                  </span>
-
-                  {/* Original (crossed-out) price */}
-                  <span className="line-through">{product.price}₴</span>
-
-                  {/* Optional: show discount percentage */}
-                  <span className="text-green-600 text-sm">
-                    -{product.discount_percentage}%
-                  </span>
-                </div>
-              ) : (
-                <span className="font-medium">{product.price}₴</span>
-              )}
-            </div>
-          </div>
-
-          {/* Size Picker Title */}
-          <div className="flex items-center justify-between">
-            <div className="text-base md:text-lg font-['Inter'] uppercase tracking-tight">
-              Оберіть розмір
-            </div>
-            <button
-              onClick={() => setShowSizeGuide(true)}
-              className="text-sm md:text-base text-gray-600 dark:text-gray-400 underline hover:text-black dark:hover:text-white cursor-pointer transition-all duration-200"
-            >
-              Розмірна сітка
-            </button>
-          </div>
-
-          {/* Size Options */}
-          {sizes.length === 0 ? (
-            <div className="inline-flex items-center gap-2 px-3 py-2 rounded border text-sm uppercase tracking-wide bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800 w-fit">
-              out of stock
-            </div>
-          ) : (
-          <div className="flex flex-wrap gap-2 md:gap-3">
-            {sizes.map((size) => (
-              <div
-                key={size}
-                onClick={() => setSelectedSize(size)}
-                className={`w-19 sm:w-19 md:w-22 p-2 sm:p-3 border-2 flex justify-center text-base md:text-lg font-['Inter'] uppercase cursor-pointer transition-all duration-200 ${
-                  selectedSize === size
-                    ? "border-black dark:border-white font-bold scale-105 shadow-md"
-                    : "border-gray-300 dark:border-gray-600 hover:border-gray-600 dark:hover:border-gray-400 hover:scale-105 hover:shadow-md"
-                }`}
-              >
-                {SIZE_MAP[size] || size}
+          <div className="text-2xl md:text-3xl font-bold font-['Montserrat'] tracking-tight">
+            {product.discount_percentage ? (
+              <div className="flex items-center gap-3">
+                <span className="text-gray-900">
+                  {(
+                    product.price *
+                    (1 - product.discount_percentage / 100)
+                  ).toFixed(0)} ₴
+                </span>
+                <span className="text-gray-400 line-through text-xl">
+                  {product.price} ₴
+                </span>
               </div>
-            ))}
+            ) : (
+              <span className="text-gray-900">{product.price} ₴</span>
+            )}
           </div>
-          )}
 
           {/* Color Picker */}
           {(product.colors && product.colors.length > 0) || relatedProducts.length > 0 ? (
             <div className="flex flex-col gap-3">
-              <div className="text-sm md:text-base font-['Inter'] uppercase tracking-tight">
-                Колір
+              <div className="text-sm md:text-base font-['Montserrat'] uppercase tracking-wide text-gray-900">
+                Колір: {selectedColor || (product.colors && product.colors[0]?.label) || ""}
               </div>
               
-              <div className="flex flex-wrap items-center gap-3 md:gap-4">
+              <div className="flex flex-wrap items-center gap-3">
                 {/* Current product colors */}
                 {product.colors && product.colors.length > 0 && 
                   product.colors.map((c, idx) => {
-                    const isActive = selectedColor === c.label;
+                    const isActive = selectedColor === c.label || (!selectedColor && idx === 0);
                     return (
                       <button
                         key={`current-${c.label}-${idx}`}
                         type="button"
                         onClick={() => setSelectedColor(c.label)}
-                        className={`relative w-10 h-10 md:w-11 md:h-11 rounded-full border transition-all duration-200 ${
+                        className={`relative w-10 h-10 rounded-full border-2 transition-all duration-200 ${
                           isActive
-                            ? "border-black dark:border-white scale-100"
-                            : "border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500"
+                            ? "border-gray-900 scale-110"
+                            : "border-gray-300 hover:border-gray-600"
                         }`}
                         aria-label={c.label}
                         title={c.label}
-                        style={{ 
+                        style={{
                           backgroundColor: c.hex || "#ffffff",
                         }}
-                      >
-                        {isActive && (
-                          <div className="absolute inset-0 rounded-full border-2 border-black dark:border-white"></div>
-                        )}
-                      </button>
+                      />
                     );
                   })
                 }
@@ -513,7 +367,7 @@ export default function ProductClient({ product: initialProduct }: ProductClient
                       type="button"
                       onClick={() => handleColorVariantChange(relatedProduct.id)}
                       disabled={isLoading}
-                      className={`relative w-10 h-10 md:w-11 md:h-11 rounded-full border border-gray-300 dark:border-gray-600 transition-all duration-200 hover:border-gray-500 dark:hover:border-gray-400 cursor-pointer ${
+                      className={`relative w-10 h-10 rounded-full border-2 border-gray-300 transition-all duration-200 hover:border-gray-600 cursor-pointer ${
                         isLoading ? 'opacity-50 cursor-wait' : ''
                       }`}
                       aria-label={`Переглянути ${color.label}`}
@@ -526,44 +380,76 @@ export default function ProductClient({ product: initialProduct }: ProductClient
                   );
                 })}
               </div>
-              
-              {selectedColor && (
-                <div className="text-sm font-['Inter'] text-gray-700 dark:text-gray-300 font-light tracking-wide">
-                  {selectedColor}
-                </div>
-              )}
             </div>
           ) : null}
 
+          {/* Size Picker */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="text-sm md:text-base font-['Montserrat'] uppercase tracking-wide text-gray-900">
+                Розмір
+              </div>
+              <button
+                onClick={() => setShowSizeGuide(true)}
+                className="text-sm text-gray-600 underline hover:text-black cursor-pointer transition-all duration-200"
+              >
+                Таблиця розмірів
+              </button>
+            </div>
+
+            {/* Size Options */}
+            {sizes.length === 0 ? (
+              <div className="inline-flex items-center gap-2 px-3 py-2 rounded border text-sm uppercase tracking-wide bg-red-50 text-red-700 border-red-200 w-fit">
+                Немає в наявності
+              </div>
+            ) : (
+            <div className="flex flex-wrap gap-2">
+              {sizes.map((size) => (
+                <button
+                  key={size}
+                  onClick={() => setSelectedSize(size)}
+                  className={`px-4 py-2 border-2 text-sm font-['Montserrat'] uppercase cursor-pointer transition-all duration-200 rounded-full ${
+                    selectedSize === size
+                      ? "border-gray-900 bg-gray-900 text-white font-semibold"
+                      : "border-gray-300 bg-white text-gray-900 hover:border-gray-600"
+                  }`}
+                >
+                  {SIZE_MAP[size] || size}
+                </button>
+              ))}
+            </div>
+            )}
+          </div>
+
           {/* Add to Cart Button */}
-          <div
+          <button
             onClick={outOfStock ? undefined : handleAddToCart}
-            className={`w-full text-center ${
-              isDark
-                ? "bg-white text-black hover:bg-gray-100"
-                : "bg-black text-white hover:bg-gray-800"
-            } p-3 text-lg md:text-xl font-medium font-['Inter'] uppercase tracking-tight transition-all duration-200 ${
+            disabled={outOfStock}
+            className={`w-full text-center bg-black text-white hover:bg-gray-800 py-4 px-6 text-base md:text-lg font-medium font-['Montserrat'] uppercase tracking-wider transition-all duration-200 ${
               outOfStock
                 ? "opacity-50 cursor-not-allowed"
-                : "cursor-pointer hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
+                : "cursor-pointer hover:opacity-90"
             }`}
           >
-            в кошик
-          </div>
+            В КОШИК
+          </button>
 
           {/* Telegram Manager Link */}
           <a
-            href="https://t.me/chars_ua"
+            href="https://t.me/13vplusukraineanbrand"
             target="_blank"
             rel="noopener noreferrer"
-            className={`w-full text-center border ${
-              isDark
-                ? "border-gray-500 text-gray-400 hover:border-white hover:text-white"
-                : "border-gray-400 text-gray-600 hover:border-black hover:text-black"
-            } py-2 px-3 text-sm md:text-base font-light font-['Inter'] cursor-pointer transition-all duration-200`}
+            className="w-full text-center border border-gray-400 text-gray-600 hover:border-black hover:text-black py-3 px-4 text-sm md:text-base font-light font-['Montserrat'] cursor-pointer transition-all duration-200"
           >
             Написати менеджеру
           </a>
+
+          {/* Product Description */}
+          {product.description && (
+            <div className="text-sm md:text-base font-['Montserrat'] text-gray-700 leading-relaxed mt-4">
+              {product.description}
+            </div>
+          )}
 
           {/* Size Guide Modal */}
           {showSizeGuide && (
@@ -584,10 +470,10 @@ export default function ProductClient({ product: initialProduct }: ProductClient
 
                 <div className="p-8 md:p-12">
                   <div className="text-center mb-10">
-                    <h2 className="text-3xl md:text-4xl font-bold text-black tracking-tight font-['Inter']">
+                    <h2 className="text-3xl md:text-4xl font-bold text-black tracking-tight font-['Montserrat']">
                       РОЗМІРНА СІТКА
                     </h2>
-                    <div className="mt-2 text-sm text-gray-500 font-['Helvetica']">
+                    <div className="mt-2 text-sm text-gray-500 font-['Montserrat']">
                       Всі вимірювання вказані в сантиметрах
                     </div>
                   </div>
@@ -596,95 +482,95 @@ export default function ProductClient({ product: initialProduct }: ProductClient
                     <table className="w-full text-black border-collapse">
                       <thead>
                         <tr className="border-b-2 border-black">
-                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Inter']">
+                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Montserrat']">
                             Розмір
                           </th>
-                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Inter']">
+                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Montserrat']">
                             Обхват
                             <br />
                             грудей
                           </th>
-                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Inter']">
+                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Montserrat']">
                             Обхват
                             <br />
                             талії
                           </th>
-                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Inter']">
+                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Montserrat']">
                             Обхват
                             <br />
                             бедер
                           </th>
-                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Inter']">
+                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Montserrat']">
                             Зріст
                           </th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                          <td className="py-5 px-3 text-center font-bold text-lg font-['Inter']">
+                          <td className="py-5 px-3 text-center font-bold text-lg font-['Montserrat']">
                             S
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">88-92</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">77-80</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">93-96</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">175-180</div>
                           </td>
                         </tr>
                         <tr className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                          <td className="py-5 px-3 text-center font-bold text-lg font-['Inter']">
+                          <td className="py-5 px-3 text-center font-bold text-lg font-['Montserrat']">
                             M
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">96-100</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">84-88</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">98-101</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">180-185</div>
                           </td>
                         </tr>
                         <tr className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                          <td className="py-5 px-3 text-center font-bold text-lg font-['Inter']">
+                          <td className="py-5 px-3 text-center font-bold text-lg font-['Montserrat']">
                             L
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">104-108</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">92-97</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">103-106</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">180-190</div>
                           </td>
                         </tr>
                         <tr className="hover:bg-gray-50 transition-colors">
-                          <td className="py-5 px-3 text-center font-bold text-lg font-['Inter']">
+                          <td className="py-5 px-3 text-center font-bold text-lg font-['Montserrat']">
                             XL
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">112-116</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">100-104</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">108-111</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">190+</div>
                           </td>
                         </tr>
@@ -694,8 +580,8 @@ export default function ProductClient({ product: initialProduct }: ProductClient
 
                   <div className="text-center mt-10 pt-6 border-t border-gray-200">
                     <Image
-                      src="/images/light-theme/chars-logo-header-light.png"
-                      alt="CHARS Logo"
+                      src="/images/13VPLUS BLACK PNG 2.png"
+                      alt="13VPLUS Logo"
                       width={120}
                       height={40}
                       className="mx-auto h-10 opacity-80"
@@ -706,12 +592,14 @@ export default function ProductClient({ product: initialProduct }: ProductClient
             </div>
           )}
 
-          {/* Toast */}
-          {showToast && (
-            <div className="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-black text-white px-5 py-3 rounded shadow-lg z-50">
-              Товар додано до кошика!
-            </div>
-          )}
+          {/* Cart Alert */}
+      <CartAlert
+        isVisible={showCartAlert}
+        onGoToCart={() => {
+          setShowCartAlert(false);
+          setIsBasketOpen(true);
+        }}
+      />
 
           {/* Alert */}
           <Alert
@@ -723,10 +611,10 @@ export default function ProductClient({ product: initialProduct }: ProductClient
 
           {/* Description Section */}
           <div className="w-full md:w-[522px]">
-            <div className="mb-3 md:mb-4 text-xl md:text-2xl font-['Inter'] uppercase tracking-tight">
+            <div className="mb-3 md:mb-4 text-xl md:text-2xl font-['Montserrat'] uppercase tracking-tight">
               опис
             </div>
-            <div className="text-sm md:text-lg font-['Inter'] leading-relaxed tracking-wide">
+            <div className="text-sm md:text-lg font-['Montserrat'] leading-relaxed tracking-wide">
               {product.description}
             </div>
           </div>

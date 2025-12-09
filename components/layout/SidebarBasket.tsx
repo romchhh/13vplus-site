@@ -7,13 +7,11 @@ import Image from "next/image";
 interface SidebarBasketProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  isDark: boolean;
 }
 
 export default function SidebarBasket({
   isOpen,
   setIsOpen,
-  isDark,
 }: SidebarBasketProps) {
   const { items, removeItem, updateQuantity } = useBasket();
 
@@ -27,9 +25,7 @@ export default function SidebarBasket({
       )}
 
       <div
-        className={`fixed top-0 right-0 h-full w-full sm:w-4/5 sm:max-w-md ${
-          isDark ? "bg-stone-900" : "bg-stone-100"
-        } shadow-md z-40 transform transition-transform duration-300 ${
+        className={`fixed top-0 right-0 h-full w-full sm:w-4/5 sm:max-w-md bg-white shadow-md z-40 transform transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         } overflow-y-auto`}
       >
@@ -122,9 +118,7 @@ export default function SidebarBasket({
             {items.length > 0 && (
               <Link
                 href="/final"
-                className={`text-center py-3 rounded-md mt-4 ${
-                  isDark ? "bg-white text-black" : "bg-black text-white"
-                }`}
+                className="text-center py-3 rounded-md mt-4 bg-black text-white hover:bg-gray-800 transition-colors"
                 onClick={(e) => {
                   e.preventDefault();
                   setIsOpen(false);

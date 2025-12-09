@@ -274,7 +274,7 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
+      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-300 shadow-sm 
         ${
           isExpanded || isMobileOpen
             ? "w-[290px]"
@@ -294,25 +294,15 @@ const AppSidebar: React.FC = () => {
       >
         <Link href="/">
           {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <Image
-                className="dark:hidden"
-                src="/images/light-theme/chars-logo-header-light.png"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <Image
-                className="hidden dark:block"
-                src="/images/dark-theme/chars-logo-header-dark.png"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
+            <Image
+              src="/images/13VPLUS BLACK PNG 2.png"
+              alt="Logo"
+              width={150}
+              height={40}
+            />
           ) : (
             <Image
-              src="/images/light-theme/chars-logo-header-light.png"
+                src="/images/13VPLUS BLACK PNG 2.png"
               alt="Logo"
               width={32}
               height={32}

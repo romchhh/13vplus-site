@@ -21,7 +21,7 @@ export default function Product() {
   const { addItem } = useBasket();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const quantity = 1;
-  const { isDark } = useAppContext();
+  
   const { id } = useParams();
   
   // Use the optimized hook for product fetching
@@ -132,11 +132,7 @@ export default function Product() {
                 }
               >
                 <Image
-                  src={
-                    isDark
-                      ? "/images/dark-theme/slider-button-left.svg"
-                      : "/images/light-theme/slider-button-left.svg"
-                  }
+                  src="/images/light-theme/slider-button-left.svg"
                   alt="Previous"
                   width={32}
                   height={32}
@@ -154,11 +150,7 @@ export default function Product() {
                 }
               >
                 <Image
-                  src={
-                    isDark
-                      ? "/images/dark-theme/slider-button-right.svg"
-                      : "/images/light-theme/slider-button-right.svg"
-                  }
+                  src="/images/light-theme/slider-button-right.svg"
                   alt="Next"
                   width={32}
                   height={32}
@@ -172,30 +164,30 @@ export default function Product() {
         {/* Info Section */}
         <div className="flex flex-col gap-6 md:gap-10 px-4 md:px-0 w-full lg:w-1/2">
           {/* Availability */}
-          <div className="text-base md:text-lg font-normal font-['Helvetica'] leading-relaxed tracking-wide">
+          <div className="text-base md:text-lg font-normal font-['Montserrat'] leading-relaxed tracking-wide">
             В наявності
           </div>
 
           {/* Product Name */}
-          <div className="text-3xl md:text-5xl lg:text-6xl font-normal font-['Inter'] capitalize leading-tight">
+          <div className="text-3xl md:text-5xl lg:text-6xl font-normal font-['Montserrat'] capitalize leading-tight">
             {product.name}
           </div>
 
           {/* Price */}
           <div className="w-full flex flex-col sm:flex-row justify-start border-b p-2 sm:p-4 gap-2">
-            <div className="text-red-500 text-lg md:text-xl font-['Helvetica']">
+            <div className="text-red-500 text-lg md:text-xl font-['Montserrat']">
               {product.price} ₴
             </div>
           </div>
 
           {/* Size Picker Title */}
-          <div className="text-base md:text-lg font-['Inter'] uppercase tracking-tight">
+          <div className="text-base md:text-lg font-['Montserrat'] uppercase tracking-tight">
             Оберіть розмір
           </div>
 
           {/* Size Options */}
           {sizes.length === 0 ? (
-            <div className="inline-flex items-center gap-2 px-3 py-2 rounded border text-sm uppercase tracking-wide bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800 w-fit">
+            <div className="inline-flex items-center gap-2 px-3 py-2 rounded border text-sm uppercase tracking-wide bg-red-50 text-red-700 border-red-200 w-fit">
               out of stock
             </div>
           ) : (
@@ -204,10 +196,10 @@ export default function Product() {
               <div
                 key={size}
                 onClick={() => setSelectedSize(size)}
-                className={`w-19 sm:w-19 md:w-22 p-2 sm:p-3 border-2 flex justify-center text-base md:text-lg font-['Inter'] uppercase cursor-pointer transition-all duration-200 ${
+                className={`w-19 sm:w-19 md:w-22 p-2 sm:p-3 border-2 flex justify-center text-base md:text-lg font-['Montserrat'] uppercase cursor-pointer transition-all duration-200 ${
                   selectedSize === size
-                    ? "border-black dark:border-white font-bold scale-105 shadow-md"
-                    : "border-gray-300 dark:border-gray-600 hover:border-gray-600 dark:hover:border-gray-400 hover:scale-105 hover:shadow-md"
+                    ? "border-black font-bold scale-105 shadow-md"
+                    : "border-gray-300 hover:border-gray-600 hover:scale-105 hover:shadow-md"
                 }`}
               >
                 {SIZE_MAP[size] || size}
@@ -220,7 +212,7 @@ export default function Product() {
           {product.colors && product.colors.length > 0 && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-3">
-                <div className="text-sm md:text-base font-['Inter'] uppercase tracking-tight">
+                <div className="text-sm md:text-base font-['Montserrat'] uppercase tracking-tight">
                   Колір
                 </div>
               </div>
@@ -254,7 +246,7 @@ export default function Product() {
                 })}
               </div>
               {selectedColor && (
-                <div className="text-base md:text-lg font-['Inter'] text-gray-700">
+                <div className="text-base md:text-lg font-['Montserrat'] text-gray-700">
                   Колір: {selectedColor}
                 </div>
               )}
@@ -264,11 +256,7 @@ export default function Product() {
           {/* Add to Cart Button */}
           <div
             onClick={outOfStock ? undefined : handleAddToCart}
-            className={`w-full text-center ${
-              isDark
-                ? "bg-white text-black hover:bg-gray-100"
-                : "bg-black text-white hover:bg-gray-800"
-            } p-3 text-lg md:text-xl font-medium font-['Inter'] uppercase tracking-tight transition-all duration-200 ${
+            className={`w-full text-center bg-black text-white hover:bg-gray-800 p-3 text-lg md:text-xl font-medium font-['Montserrat'] uppercase tracking-tight transition-all duration-200 ${
               outOfStock
                 ? "opacity-50 cursor-not-allowed"
                 : "cursor-pointer hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
@@ -279,14 +267,10 @@ export default function Product() {
 
           {/* Telegram Manager Link */}
           <a
-            href="https://t.me/chars_ua"
+            href="https://t.me/13vplusukraineanbrand"
             target="_blank"
             rel="noopener noreferrer"
-            className={`w-full text-center border ${
-              isDark 
-                ? "border-gray-500 text-gray-400 hover:border-white hover:text-white" 
-                : "border-gray-400 text-gray-600 hover:border-black hover:text-black"
-            } py-2 px-3 text-sm md:text-base font-light font-['Inter'] cursor-pointer transition-all duration-200`}
+            className="w-full text-center border border-gray-400 text-gray-600 hover:border-black hover:text-black py-2 px-3 text-sm md:text-base font-light font-['Montserrat'] cursor-pointer transition-all duration-200"
           >
             Написати менеджеру
           </a>
@@ -295,7 +279,7 @@ export default function Product() {
           <div className="text-right">
             <button
               onClick={() => setShowSizeGuide(true)}
-              className="text-sm md:text-base text-gray-600 dark:text-gray-400 underline hover:text-black dark:hover:text-white cursor-pointer transition-all duration-200 hover:scale-105"
+              className="text-sm md:text-base text-gray-600 underline hover:text-black cursor-pointer transition-all duration-200 hover:scale-105"
             >
               Розмірна сітка
             </button>
@@ -320,10 +304,10 @@ export default function Product() {
 
                 <div className="p-8 md:p-12">
                   <div className="text-center mb-10">
-                    <h2 className="text-3xl md:text-4xl font-bold text-black tracking-tight font-['Inter']">
+                    <h2 className="text-3xl md:text-4xl font-bold text-black tracking-tight font-['Montserrat']">
                       РОЗМІРНА СІТКА
                     </h2>
-                    <div className="mt-2 text-sm text-gray-500 font-['Helvetica']">
+                    <div className="mt-2 text-sm text-gray-500 font-['Montserrat']">
                       Всі вимірювання вказані в сантиметрах
                     </div>
                   </div>
@@ -332,95 +316,95 @@ export default function Product() {
                     <table className="w-full text-black border-collapse">
                       <thead>
                         <tr className="border-b-2 border-black">
-                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Inter']">
+                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Montserrat']">
                             Розмір
                           </th>
-                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Inter']">
+                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Montserrat']">
                             Обхват
                             <br />
                             грудей
                           </th>
-                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Inter']">
+                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Montserrat']">
                             Обхват
                             <br />
                             талії
                           </th>
-                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Inter']">
+                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Montserrat']">
                             Обхват
                             <br />
                             бедер
                           </th>
-                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Inter']">
+                          <th className="py-4 px-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider font-['Montserrat']">
                             Зріст
                           </th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                          <td className="py-5 px-3 text-center font-bold text-lg font-['Inter']">
+                          <td className="py-5 px-3 text-center font-bold text-lg font-['Montserrat']">
                             S
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">88-92</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">77-80</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">93-96</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">175-180</div>
                           </td>
                         </tr>
                         <tr className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                          <td className="py-5 px-3 text-center font-bold text-lg font-['Inter']">
+                          <td className="py-5 px-3 text-center font-bold text-lg font-['Montserrat']">
                             M
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">96-100</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">84-88</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">98-101</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">180-185</div>
                           </td>
                         </tr>
                         <tr className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                          <td className="py-5 px-3 text-center font-bold text-lg font-['Inter']">
+                          <td className="py-5 px-3 text-center font-bold text-lg font-['Montserrat']">
                             L
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">104-108</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">92-97</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">103-106</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">180-190</div>
                           </td>
                         </tr>
                         <tr className="hover:bg-gray-50 transition-colors">
-                          <td className="py-5 px-3 text-center font-bold text-lg font-['Inter']">
+                          <td className="py-5 px-3 text-center font-bold text-lg font-['Montserrat']">
                             XL
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">112-116</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">100-104</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">108-111</div>
                           </td>
-                          <td className="py-5 px-3 text-center font-['Helvetica']">
+                          <td className="py-5 px-3 text-center font-['Montserrat']">
                             <div className="text-base">190+</div>
                           </td>
                         </tr>
@@ -430,8 +414,8 @@ export default function Product() {
 
                   <div className="text-center mt-10 pt-6 border-t border-gray-200">
                     <Image
-                      src="/images/light-theme/chars-logo-header-light.png"
-                      alt="CHARS Logo"
+                      src="/images/13VPLUS BLACK PNG 2.png"
+                      alt="13VPLUS Logo"
                       width={120}
                       height={40}
                       className="mx-auto h-10 opacity-80"
@@ -459,10 +443,10 @@ export default function Product() {
 
           {/* Description Section */}
           <div className="w-full md:w-[522px]">
-            <div className="mb-3 md:mb-4 text-xl md:text-2xl font-['Inter'] uppercase tracking-tight">
+            <div className="mb-3 md:mb-4 text-xl md:text-2xl font-['Montserrat'] uppercase tracking-tight">
               опис
             </div>
-            <div className="text-sm md:text-lg font-['Inter'] leading-relaxed tracking-wide">
+            <div className="text-sm md:text-lg font-['Montserrat'] leading-relaxed tracking-wide">
               {product.description}
             </div>
           </div>

@@ -1,17 +1,16 @@
-// Mobile-optimized service worker for CHARS e-commerce
-const CACHE_NAME = 'chars-mobile-v3';
-const STATIC_CACHE = 'chars-static-v3';
-const DYNAMIC_CACHE = 'chars-dynamic-v3';
-const IMAGE_CACHE = 'chars-images-v3';
-const MOBILE_CACHE = 'chars-mobile-v3';
+// Mobile-optimized service worker for 13VPLUS e-commerce
+  const CACHE_NAME = '13vplus-mobile-v3';
+const STATIC_CACHE = '13vplus-static-v3';
+const DYNAMIC_CACHE = '13vplus-dynamic-v3';
+const IMAGE_CACHE = '13vplus-images-v3';
+const MOBILE_CACHE = '13vplus-mobile-v3';
 
 // Critical resources to cache immediately
 const STATIC_ASSETS = [
   '/',
   '/catalog',
-  '/images/light-theme/chars-logo-header-light.png',
+  '/images/13VPLUS BLACK PNG 2.png',
   '/images/Знімок екрана 2025-10-17 о 22.25.53.png', // Mobile hero image
-  '/images/dark-theme/chars-logo-header-dark.png',
   '/images/location-icon.svg',
   '/images/email-icon.svg',
   '/images/instagram-icon.svg',

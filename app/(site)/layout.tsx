@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import "./critical.css";
 import "./globals.css";
 import "./mobile-optimizations.css";
@@ -7,35 +7,37 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { AppProvider } from "@/lib/GeneralProvider";
 import { BasketProvider } from "@/lib/BasketProvider";
+import { WishlistProvider } from "@/lib/WishlistProvider";
 import { registerServiceWorker } from "@/lib/registerSW";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { WebVitals } from "@/components/shared/WebVitals";
 import MainContent from "@/components/shared/MainContent";
+import { OrganizationStructuredData } from "@/components/shared/StructuredData";
 
-const inter = Inter({
+const montserrat = Montserrat({
   subsets: ["latin", "cyrillic"],
   display: "swap",
   preload: true,
   fallback: ["system-ui", "arial"],
-  variable: "--font-inter",
+  variable: "--font-montserrat",
   adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
-  title: "CHARS — Український Бренд Чоловічого Одягу | Стиль Без Компромісів",
+  title: "13VPLUS — Жіночий Одяг | Повсякденний, Домашній Одяг та Купальники",
   description:
-    "CHARS — український бренд чоловічого одягу, заснований у 2023 році. Ми створюємо стильний одяг для різних чоловіків без компромісів. Класика, кежуал та спорт.",
+    "13VPLUS — український бренд жіночого одягу. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі. Індивідуальний пошив під ваші параметри. Для жінок від 22 до 50 років.",
   keywords:
-    "CHARS, український бренд одягу, чоловічий одяг, стильний одяг, смарт-кежуал, кежуал-класик, українська мода, одяг для чоловіків, київ",
+    "13VPLUS, жіночий одяг, одяг для жінок, повсякденний одяг, домашній одяг, купальники, український бренд одягу, мінімалізм, лакшері стиль, індивідуальний пошив, одяг на замовлення, українська мода, стильний одяг для жінок",
   icons: {
-    icon: "/images/light-theme/chars-logo-header-light.png",
-    shortcut: "/images/light-theme/chars-logo-header-light.png",
-    apple: "/images/light-theme/chars-logo-header-light.png",
+    icon: "/images/13VPLUS BLACK PNG 2.png",
+    shortcut: "/images/13VPLUS BLACK PNG 2.png",
+    apple: "/images/13VPLUS BLACK PNG 2.png",
   },
   openGraph: {
-    title: "CHARS — Український Бренд Чоловічого Одягу",
+    title: "13VPLUS — Жіночий Одяг | Повсякденний, Домашній Одяг та Купальники",
     description:
-      "Стильний чоловічий одяг без компромісів. Класика, кежуал та спорт.",
+      "Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі. Індивідуальний пошив під ваші параметри.",
     type: "website",
     locale: "uk_UA",
   },
@@ -50,26 +52,29 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
   return (
-    <html lang="uk" className={inter.className}>
+    <html lang="uk" className={montserrat.className}>
       <head>
+        <OrganizationStructuredData url={baseUrl} baseUrl={baseUrl} />
         {/* Mobile viewport optimization */}
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
         <meta name="format-detection" content="telephone=no" />
         
         {/* Favicon and App Icons */}
-        <link rel="icon" type="image/png" href="/images/light-theme/chars-logo-header-light.png" />
-        <link rel="shortcut icon" type="image/png" href="/images/light-theme/chars-logo-header-light.png" />
-        <link rel="apple-touch-icon" href="/images/light-theme/chars-logo-header-light.png" />
+        <link rel="icon" type="image/png" href="/images/13VPLUS BLACK PNG 2.png" />
+        <link rel="shortcut icon" type="image/png" href="/images/13VPLUS BLACK PNG 2.png" />
+        <link rel="apple-touch-icon" href="/images/13VPLUS BLACK PNG 2.png" />
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#000000" />
         <meta name="msapplication-TileColor" content="#000000" />
         
         {/* Preload critical resources */}
-        <link rel="preload" href="/images/light-theme/chars-logo-header-light.png" as="image" />
+        <link rel="preload" href="/images/13VPLUS BLACK PNG 2.png" as="image" />
         {/* Conditional preload: image for mobile, video for desktop */}
         <link rel="preload" href="/images/Знімок екрана 2025-10-17 о 22.25.53.png" as="image" media="(max-width: 767px)" />
-        <link rel="preload" href="/images/IMG_5831.webm" as="video" type="video/webm" media="(min-width: 768px)" />
+        <link rel="preload" href="/images/hero-video.webm" as="video" type="video/webm" media="(min-width: 768px)" />
         <link rel="preload" href="/api/products/top-sale" as="fetch" crossOrigin="anonymous" />
         
         {/* Conditional preload for mobile vs desktop */}
@@ -94,7 +99,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         
         {/* Apple touch icon */}
-        <link rel="apple-touch-icon" href="/images/light-theme/chars-logo-header-light.png" />
+        <link rel="apple-touch-icon" href="/images/13VPLUS BLACK PNG 2.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         
@@ -131,9 +136,11 @@ export default function RootLayout({
         <ErrorBoundary>
           <AppProvider>
             <BasketProvider>
+              <WishlistProvider>
               <Header />
               <MainContent>{children}</MainContent>
               <Footer />
+              </WishlistProvider>
             </BasketProvider>
           </AppProvider>
         </ErrorBoundary>

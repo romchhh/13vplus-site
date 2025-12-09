@@ -1,15 +1,30 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+}
+
+interface Category {
+  id: number;
+  name: string;
+}
+
+interface Color {
+  color: string;
+  hex?: string;
+}
 
 interface SidebarFilterProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   openAccordion: number | null;
   setOpenAccordion: React.Dispatch<React.SetStateAction<number | null>>;
-  isDark: boolean;
-  sortOrder: "asc" | "desc";
-  setSortOrder: React.Dispatch<React.SetStateAction<"asc" | "desc">>;
+  sortOrder: "recommended" | "newest" | "asc" | "desc" | "sale";
+  setSortOrder: React.Dispatch<React.SetStateAction<"recommended" | "newest" | "asc" | "desc" | "sale">>;
   selectedSizes: string[];
   setSelectedSizes: React.Dispatch<React.SetStateAction<string[]>>;
   minPrice: number | null;
@@ -18,7 +33,12 @@ interface SidebarFilterProps {
   setMaxPrice: React.Dispatch<React.SetStateAction<number | null>>;
   selectedColors: string[];
   setSelectedColors: React.Dispatch<React.SetStateAction<string[]>>;
-  colors: string[];
+  selectedCategories: number[];
+  setSelectedCategories: React.Dispatch<React.SetStateAction<number[]>>;
+  colors: Color[];
+  categories: Category[];
+  products: Product[];
+  filteredCount: number;
 }
 
 export default function SidebarFilter({
@@ -26,7 +46,6 @@ export default function SidebarFilter({
   setIsOpen,
   openAccordion,
   setOpenAccordion,
-  isDark,
   sortOrder,
   setSortOrder,
   selectedSizes,
@@ -37,13 +56,33 @@ export default function SidebarFilter({
   setMaxPrice,
   selectedColors,
   setSelectedColors,
+  selectedCategories,
+  setSelectedCategories,
   colors,
+  categories,
+  products,
+  filteredCount,
 }: SidebarFilterProps) {
-  const toggleAccordion = (index: number) => {
-    setOpenAccordion(openAccordion === index ? null : index);
-  };
+  const availableSizes = ["O/S", "160 cm", "XXS", "XS", "XS/S", "S", "M", "M/L", "L", "L/XL"];
 
-  const availableSizes = ["XS", "S", "M", "L", "XL"];
+  // Calculate min and max price from products
+  const priceRange = useMemo(() => {
+    if (products.length === 0) return { min: 0, max: 10000 };
+    const prices = products.map((p) => p.price);
+    return {
+      min: Math.floor(Math.min(...prices)),
+      max: Math.ceil(Math.max(...prices)),
+    };
+  }, [products]);
+
+  // Initialize price range sliders
+  const [localMinPrice, setLocalMinPrice] = useState(minPrice ?? priceRange.min);
+  const [localMaxPrice, setLocalMaxPrice] = useState(maxPrice ?? priceRange.max);
+
+  useEffect(() => {
+    if (minPrice === null) setLocalMinPrice(priceRange.min);
+    if (maxPrice === null) setLocalMaxPrice(priceRange.max);
+  }, [priceRange, minPrice, maxPrice]);
 
   const toggleSize = (size: string) => {
     setSelectedSizes((prev) =>
@@ -57,9 +96,25 @@ export default function SidebarFilter({
     );
   };
 
-  useEffect(() => {
-    console.log("Selected colors updated:", selectedColors);
-  }, [selectedColors]);
+  const toggleCategory = (categoryId: number) => {
+    setSelectedCategories((prev) =>
+      prev.includes(categoryId) ? prev.filter((c) => c !== categoryId) : [...prev, categoryId]
+    );
+  };
+
+  const handleMinPriceChange = (value: number) => {
+    setLocalMinPrice(value);
+    setMinPrice(value);
+  };
+
+  const handleMaxPriceChange = (value: number) => {
+    setLocalMaxPrice(value);
+    setMaxPrice(value);
+  };
+
+  const handleApplyFilters = () => {
+    setIsOpen(false);
+  };
 
   return (
     <div className="relative z-50">
@@ -71,176 +126,220 @@ export default function SidebarFilter({
       )}
 
       <div
-        className={`fixed top-0 right-0 h-full w-full sm:w-4/5 sm:max-w-md ${
-          isDark ? "bg-stone-900" : "bg-stone-100"
-        } shadow-md z-40 transform transition-transform duration-300 ${
+        className={`fixed top-0 right-0 h-full w-full sm:w-4/5 sm:max-w-md bg-white shadow-md z-40 transform transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "translate-x-full"
-        } overflow-y-auto`}
+        } overflow-y-auto flex flex-col`}
       >
-        <div className="p-6 space-y-4">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="text-xl sm:text-2xl uppercase font-semibold">
-              Фільтрувати / Сортувати
+        {/* Header - Black with white text */}
+        <div className="bg-black text-white px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold font-['Montserrat'] uppercase tracking-wider text-center flex-1">
+            ФІЛЬТРИ
+          </h2>
+          <button
+            className="text-white text-2xl hover:text-gray-300 transition-colors"
+            onClick={() => setIsOpen(false)}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+          {/* Sorting Section */}
+          <div>
+            <h3 className="text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4">
+              СОРТУВАННЯ
+            </h3>
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input
+                  type="radio"
+                  name="sort"
+                  checked={sortOrder === "recommended"}
+                  onChange={() => setSortOrder("recommended")}
+                  className="w-4 h-4 text-gray-900 focus:ring-gray-900"
+                />
+                <span className="text-base font-['Montserrat'] text-gray-700 group-hover:text-gray-900">Рекомендовані</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input
+                  type="radio"
+                  name="sort"
+                  checked={sortOrder === "newest"}
+                  onChange={() => setSortOrder("newest")}
+                  className="w-4 h-4 text-gray-900 focus:ring-gray-900"
+                />
+                <span className="text-base font-['Montserrat'] text-gray-700 group-hover:text-gray-900">За новизною</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input
+                  type="radio"
+                  name="sort"
+                  checked={sortOrder === "asc"}
+                  onChange={() => setSortOrder("asc")}
+                  className="w-4 h-4 text-gray-900 focus:ring-gray-900"
+                />
+                <span className="text-base font-['Montserrat'] text-gray-700 group-hover:text-gray-900">За зростанням ціни</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input
+                  type="radio"
+                  name="sort"
+                  checked={sortOrder === "desc"}
+                  onChange={() => setSortOrder("desc")}
+                  className="w-4 h-4 text-gray-900 focus:ring-gray-900"
+                />
+                <span className="text-base font-['Montserrat'] text-gray-700 group-hover:text-gray-900">За спаданням ціни</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input
+                  type="radio"
+                  name="sort"
+                  checked={sortOrder === "sale"}
+                  onChange={() => setSortOrder("sale")}
+                  className="w-4 h-4 text-gray-900 focus:ring-gray-900"
+                />
+                <span className="text-base font-['Montserrat'] text-gray-700 group-hover:text-gray-900">Спочатку акційні</span>
+              </label>
             </div>
-            <button
-              className="text-2xl sm:text-3xl hover:text-[#8C7461]"
-              onClick={() => setIsOpen(false)}
-            >
-              ×
-            </button>
           </div>
 
-          {/* Accordion: Sorting */}
-          <div className="w-full border-b px-2 sm:px-4 py-3 hover:bg-gray-200 transition">
-            <div
-              className="flex justify-between items-center cursor-pointer"
-              onClick={() => toggleAccordion(1)}
-            >
-              <span className="text-xl sm:text-2xl uppercase">
-                Сортувати за
-              </span>
-              <span className="font-semibold text-xl sm:text-2xl">
-                {openAccordion === 1 ? "−" : "+"}
-              </span>
-            </div>
-
-            {openAccordion === 1 && (
-              <div className="pl-4 mt-2 space-y-2">
+          {/* Size Section */}
+          <div>
+            <h3 className="text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4">
+              РОЗМІР
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {availableSizes.map((size) => (
                 <button
-                  className={`block text-left w-full hover:text-[#8C7461] text-base sm:text-lg ${
-                    sortOrder === "asc" ? "font-semibold text-[#8C7461]" : ""
+                  key={size}
+                  onClick={() => toggleSize(size)}
+                  className={`px-4 py-2 text-sm font-['Montserrat'] border-2 transition-colors ${
+                    selectedSizes.includes(size)
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "bg-white text-gray-900 border-gray-300 hover:border-gray-900"
                   }`}
-                  onClick={() => setSortOrder("asc")}
                 >
-                  За зростанням ціни
+                  {size}
                 </button>
-                <button
-                  className={`block text-left w-full hover:text-[#8C7461] text-base sm:text-lg ${
-                    sortOrder === "desc" ? "font-semibold text-[#8C7461]" : ""
-                  }`}
-                  onClick={() => setSortOrder("desc")}
+              ))}
+            </div>
+          </div>
+
+          {/* Color Section */}
+          <div>
+            <h3 className="text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4">
+              КОЛІР
+            </h3>
+            <div className="flex flex-wrap gap-3">
+              {colors.map((colorItem, index) => {
+                const isSelected = selectedColors.includes(colorItem.color);
+                return (
+                  <button
+                    key={index}
+                    onClick={() => toggleColor(colorItem.color)}
+                    className={`w-10 h-10 rounded-full border-2 transition-all ${
+                      isSelected
+                        ? "border-gray-900 scale-110"
+                        : "border-gray-300 hover:border-gray-600"
+                    }`}
+                    style={{
+                      backgroundColor: colorItem.hex || "#ccc",
+                    }}
+                    title={colorItem.color}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Category Section */}
+          <div>
+            <h3 className="text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4">
+              КАТЕГОРІЯ
+            </h3>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {categories.map((category) => (
+                <label
+                  key={category.id}
+                  className="flex items-center gap-3 cursor-pointer group"
                 >
-                  За спаданням ціни
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Accordion: Size */}
-          <div className="w-full border-b px-2 sm:px-4 py-3 hover:bg-gray-200 transition">
-            <div
-              className="flex justify-between items-center cursor-pointer"
-              onClick={() => toggleAccordion(2)}
-            >
-              <span className="text-xl sm:text-2xl uppercase">Розмір</span>
-              <span className="font-semibold text-xl sm:text-2xl">
-                {openAccordion === 2 ? "−" : "+"}
-              </span>
-            </div>
-
-            {openAccordion === 2 && (
-              <div className="pl-4 mt-2 space-y-2">
-                {availableSizes.map((size) => (
-                  <label
-                    key={size}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedSizes.includes(size)}
-                      onChange={() => toggleSize(size)}
-                      className="form-checkbox h-4 w-4 text-[#8C7461]"
-                    />
-                    <span className="text-base sm:text-lg">{size}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Accordion: Color */}
-          <div className="w-full border-b px-2 sm:px-4 py-3 hover:bg-gray-200 transition">
-            <div
-              className="flex justify-between items-center cursor-pointer"
-              onClick={() => toggleAccordion(3)}
-            >
-              <span className="text-xl sm:text-2xl uppercase">Колір</span>
-              <span className="font-semibold text-xl sm:text-2xl">
-                {openAccordion === 3 ? "−" : "+"}
-              </span>
-            </div>
-
-            {openAccordion === 3 && (
-              <div className="pl-4 mt-2 space-y-2">
-                {colors.map((color, index) => (
-                  <label
-                    key={index} // Use the color string as the key
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedColors.includes(color)}
-                      onChange={() => toggleColor(color)}
-                      className="form-checkbox h-4 w-4 text-[#8C7461]"
-                    />
-                    <span className="text-base sm:text-lg">{color}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Accordion: Price */}
-          <div className="w-full border-b px-2 sm:px-4 py-3 hover:bg-gray-200 transition">
-            <div
-              className="flex justify-between items-center cursor-pointer"
-              onClick={() => toggleAccordion(4)}
-            >
-              <span className="text-xl sm:text-2xl uppercase">Вартість</span>
-              <span className="font-semibold text-xl sm:text-2xl">
-                {openAccordion === 4 ? "−" : "+"}
-              </span>
-            </div>
-
-            {openAccordion === 4 && (
-              <div className="pl-4 mt-4 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Мінімальна ціна
-                  </label>
                   <input
-                    type="number"
-                    value={minPrice ?? ""}
-                    onChange={(e) =>
-                      setMinPrice(
-                        e.target.value ? parseInt(e.target.value) : null
-                      )
-                    }
-                    className="w-full border rounded px-2 py-1 text-sm"
-                    placeholder="від"
+                    type="checkbox"
+                    checked={selectedCategories.includes(category.id)}
+                    onChange={() => toggleCategory(category.id)}
+                    className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 focus:ring-2"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Максимальна ціна
-                  </label>
-                  <input
-                    type="number"
-                    value={maxPrice ?? ""}
-                    onChange={(e) =>
-                      setMaxPrice(
-                        e.target.value ? parseInt(e.target.value) : null
-                      )
-                    }
-                    className="w-full border rounded px-2 py-1 text-sm"
-                    placeholder="до"
-                  />
-                </div>
-              </div>
-            )}
+                  <span className="text-base font-['Montserrat'] text-gray-700 group-hover:text-gray-900">{category.name}</span>
+                </label>
+              ))}
+            </div>
           </div>
+
+          {/* Price Section */}
+          <div>
+            <h3 className="text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4">
+              ВАРТІСТЬ
+            </h3>
+            <div className="space-y-6">
+              {/* Price Range Display */}
+              <div className="flex items-center justify-between text-sm font-medium text-gray-700">
+                <span>{localMinPrice}₴</span>
+                <span className="text-gray-400">—</span>
+                <span>{localMaxPrice}₴</span>
+              </div>
+
+              {/* Min Price Slider */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">
+                  Від
+                </label>
+                <input
+                  type="range"
+                  min={priceRange.min}
+                  max={priceRange.max}
+                  value={localMinPrice}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    if (value <= localMaxPrice) {
+                      handleMinPriceChange(value);
+                    }
+                  }}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Max Price Slider */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">
+                  До
+                </label>
+                <input
+                  type="range"
+                  min={priceRange.min}
+                  max={priceRange.max}
+                  value={localMaxPrice}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    if (value >= localMinPrice) {
+                      handleMaxPriceChange(value);
+                    }
+                  }}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer - Black button */}
+        <div className="bg-white border-t border-gray-200 p-6">
+          <button
+            onClick={handleApplyFilters}
+            className="w-full bg-black text-white py-4 text-lg font-bold font-['Montserrat'] uppercase tracking-wider hover:bg-gray-900 transition-colors"
+          >
+            ФІЛЬТРУВАТИ ({filteredCount})
+          </button>
         </div>
       </div>
     </div>

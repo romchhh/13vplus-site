@@ -152,25 +152,25 @@ export default function OrdersTable() {
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+    <div className="overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm">
       <div className="overflow-x-auto">
         <div className="min-w-[1200px]">
           {/* Header with title and add button */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/[0.05]">
-            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50">
+            <h2 className="text-lg font-semibold text-gray-900">
               Замовлення
             </h2>
             <div className="flex gap-2">
               <button
                 onClick={clearCache}
-                className="inline-block rounded-md bg-gray-400 px-4 py-2 text-white text-sm hover:bg-gray-600 transition"
+                className="inline-block rounded-md bg-gray-500 px-4 py-2 text-white text-sm font-medium hover:bg-gray-600 transition shadow-sm"
                 title="Очистити кеш та перезавантажити дані"
               >
                 🔄 Оновити
               </button>
               <Link
                 href="/admin/orders/add"
-                className="inline-block rounded-md bg-green-400 px-4 py-2 text-white text-sm hover:bg-green-600 transition"
+                className="inline-block rounded-md bg-green-500 px-4 py-2 text-white text-sm font-medium hover:bg-green-600 transition shadow-sm"
               >
                 + Додати замовлення
               </Link>
@@ -179,76 +179,76 @@ export default function OrdersTable() {
 
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-gray-50">
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Ім&#39;я клієнта
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Номер телефону
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Е-пошта
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Спосіб доставки
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Місто
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Відділення
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Оплата
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Статус
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Створено
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Дії
                 </TableCell>
               </TableRow>
             </TableHeader>
 
-            <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+            <TableBody className="divide-y divide-gray-200 bg-white">
               {loading ? (
                 <TableRow>
                   <TableCell
                     colSpan={10}
-                    className="text-center py-6 text-gray-500 dark:text-gray-400"
+                    className="text-center py-6 text-gray-600"
                   >
                     Завантаження...
                   </TableCell>
@@ -257,7 +257,7 @@ export default function OrdersTable() {
                 <TableRow>
                   <TableCell
                     colSpan={10}
-                    className="text-center py-6 text-gray-500 dark:text-gray-400"
+                    className="text-center py-6 text-gray-600"
                   >
                     Замовлень не знайдено.
                   </TableCell>
@@ -266,38 +266,38 @@ export default function OrdersTable() {
                 paginatedOrders.map((order) => (
                   <TableRow
                     key={order.id}
-                    className="hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                    className="hover:bg-gray-50 transition-colors"
                   >
-                    <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    <TableCell className="px-5 py-4 text-sm text-gray-900 font-medium">
                       {order.customer_name}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {order.phone_number}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {order.email}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {order.delivery_method}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {order.city}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {order.post_office}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {order.payment_type === "full"
                         ? "Повна"
                         : order.payment_type === "prepay"
                         ? "Передоплата"
                         : "-"}
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       <select
                         value={order.status}
                         onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                        className="border px-2 py-1 rounded text-sm bg-white"
+                        className="border border-gray-300 px-2 py-1 rounded text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         {options.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -306,19 +306,19 @@ export default function OrdersTable() {
                         ))}
                       </select>
                     </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {new Date(order.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="px-5 py-4 space-x-2">
                       <Link
                         href={`/admin/orders/${order.id}/edit`}
-                        className="inline-block rounded-md bg-blue-400 px-3 py-1 text-white text-sm hover:bg-blue-600 transition"
+                        className="inline-block rounded-md bg-blue-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-blue-600 transition shadow-sm"
                       >
                         Детальний огляд
                       </Link>
                       <button
                         onClick={() => handleDelete(order.id)}
-                        className="inline-block rounded-md bg-red-400 px-3 py-1 text-white text-sm hover:bg-red-600 transition"
+                        className="inline-block rounded-md bg-red-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-red-600 transition shadow-sm"
                       >
                         Видалити
                       </button>
@@ -331,7 +331,7 @@ export default function OrdersTable() {
 
           {/* Pagination */}
           {!loading && orders.length > ordersPerPage && (
-            <div className="flex justify-end px-5 py-4 border-t border-gray-100 dark:border-white/[0.05]">
+            <div className="flex justify-end px-5 py-4 border-t border-gray-200 bg-gray-50">
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}

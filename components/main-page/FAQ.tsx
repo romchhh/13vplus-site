@@ -1,103 +1,113 @@
 "use client";
 
-import { useAppContext } from "@/lib/GeneralProvider";
 import { useState } from "react";
 
 export default function FAQ() {
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);
-  const { isDark } = useAppContext();
 
   const toggleAccordion = (index: number) => {
     setOpenAccordion(openAccordion === index ? null : index);
   };
 
+  const faqItems = [
+    {
+      number: "01",
+      title: "Оплата | 13VPLUS",
+      content: `Штани з корегуванням параметрів. Ми надаємо можливість легкого корегування штанів за талією та довжиною. Такі вироби виготовляються виключно за попередньою домовленістю та потребують 100% оплати перед початком роботи.
+
+Готові колекції. Для товарів з наших колекцій доступні два варіанти оплати:
+— Передплата 300 грн (після підтвердження наявності товару)
+— Повна оплата
+
+Усі деталі щодо оплати уточнюються після оформлення замовлення нашим менеджером.`,
+    },
+    {
+      number: "02",
+      title: "Доставка | 13VPLUS",
+      content: `Доставка здійснюється по всій Україні через службу доставки "Нова Пошта". Вартість доставки залежить від ваги та габаритів товару та розраховується індивідуально.
+
+Терміни доставки:
+— По Києву: 1-2 робочі дні
+— По Україні: 2-5 робочих днів
+
+Після відправки замовлення ви отримаєте трек-номер для відстеження посилки. Усі деталі щодо доставки уточнюються після оформлення замовлення нашим менеджером.`,
+    },
+    {
+      number: "03",
+      title: "Повернення | 13VPLUS",
+      content: `Ви можете повернути або обміняти товар протягом 14 календарних днів з моменту отримання замовлення, за умови що товар не був у використанні, зберігає товарний вигляд та всі етикетки.
+
+Умови повернення:
+— Товар повинен бути в оригінальній упаковці
+— Збережені всі етикетки та бирки
+— Товар не був у використанні
+— Відсутні сліди носіння
+
+Вартість доставки при поверненні оплачує клієнт. Після отримання товару назад ми повернемо кошти протягом 3-5 робочих днів.`,
+    },
+    {
+      number: "04",
+      title: "Відправка замовлення | 13VPLUS",
+      content: `Відправка замовлень здійснюється в робочі дні (понеділок - п'ятниця) після підтвердження замовлення та оплати.
+
+Терміни відправки:
+— Готові товари з колекції: 1-3 робочі дні після оплати
+— Індивідуальний пошив: 7-14 робочих днів після оплати (залежить від складності)
+
+Після відправки замовлення ви отримаєте SMS та email з трек-номером для відстеження посилки. Усі деталі щодо відправки уточнюються після оформлення замовлення нашим менеджером.`,
+    },
+  ];
+
   return (
     <section
       id="payment-and-delivery"
-      className={`scroll-mt-20 max-w-[1920px] w-full mx-auto ${
-        isDark ? "bg-stone-900" : "bg-[#e3dfd7]"
-      } py-10 lg:py-20`}
+      className="scroll-mt-20 max-w-[1920px] w-full mx-auto bg-white py-16 lg:py-24 px-6"
     >
-      <div className="flex flex-col lg:flex-row justify-between m-5 lg:m-10 gap-10">
-        <div className="w-full lg:w-96 lg:h-72 relative">
-          <div className="text-4xl lg:text-7xl font-medium font-['Montserrat'] leading-snug lg:leading-[74.69px]">
+      <div className="flex flex-col lg:flex-row justify-between gap-12 lg:gap-16">
+        {/* Left side - Title */}
+        <div className="lg:w-96">
+          <h2 className="text-4xl lg:text-6xl font-bold font-['Montserrat'] uppercase tracking-wider text-black leading-tight mb-6">
             Ви часто
             <br />
             запитуєте
-          </div>
-          <div className="mt-4 text-lg lg:text-2xl font-normal font-['Arial'] leading-relaxed">
-            Зібрали найпоширеніші
-            <br />
-            запитання наших відвідувачів
-          </div>
+          </h2>
+          <p className="text-lg lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed">
+            Зібрали найпоширеніші запитання наших відвідувачів
+          </p>
         </div>
 
-        <div className="max-w-4xl w-full">
-          {[
-            {
-              number: "01",
-              title: "Оплата | CHARS KYIV",
-              content: "Штани з корегуванням параметрів",
-            },
-            {
-              number: "02",
-              title: "Доставка | CHARS KYIV",
-              content: "Штани з корегуванням параметрів",
-            },
-            {
-              number: "03",
-              title: "Повернення | CHARS KYIV",
-              content: "Штани з корегуванням параметрів",
-            },
-            {
-              number: "04",
-              title: "Відправка замовлення | CHARS KYIV",
-              content: "Штани з корегуванням параметрів",
-            },
-          ].map((item, index) => (
+        {/* Right side - Accordion */}
+        <div className="flex-1 max-w-4xl">
+          {faqItems.map((item, index) => (
             <div
               key={index}
-              className="cursor-pointer"
-              onClick={() => toggleAccordion(index + 1)}
+              className="border-b border-black/10 last:border-b-0"
             >
-              <div className="max-w-4xl flex flex-row justify-between items-start sm:items-center border-b-2 p-3 sm:p-5 gap-3 sm:gap-0">
-                <div className="flex justify-center gap-10">
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-normal font-['Arial'] leading-8">
+              <button
+                onClick={() => toggleAccordion(index + 1)}
+                className="w-full flex items-center justify-between py-6 lg:py-8 gap-4 text-left group"
+              >
+                <div className="flex items-center gap-6 lg:gap-10">
+                  <span className="text-2xl lg:text-3xl font-bold font-['Montserrat'] text-black/40">
                     {item.number}
-                  </div>
-                  <div className="text-lg sm:text-xl lg:text-3xl font-normal font-['Arial'] leading-relaxed max-w-full sm:max-w-[765px]">
+                  </span>
+                  <h3 className="text-lg lg:text-2xl font-medium font-['Montserrat'] text-black">
                     {item.title}
-                  </div>
+                  </h3>
                 </div>
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-normal font-['Arial'] leading-8">
-                  {openAccordion === index + 1 ? "-" : "+"}
-                </div>
-              </div>
+                <span className="text-2xl lg:text-3xl font-light font-['Montserrat'] text-black/60 group-hover:text-black transition-colors">
+                  {openAccordion === index + 1 ? "−" : "+"}
+                </span>
+              </button>
 
-              {/* Accordion content with smooth transition */}
+              {/* Accordion content */}
               <div
                 className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                  openAccordion === index + 1 ? "max-h-[500px]" : "max-h-0"
+                  openAccordion === index + 1 ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
                 }`}
               >
-                <div className="p-3 sm:p-5 text-base sm:text-lg lg:text-xl font-normal font-['Arial'] leading-relaxed max-w-full sm:max-w-[608px]">
+                <div className="pb-6 lg:pb-8 pl-0 lg:pl-20 text-base lg:text-lg font-normal font-['Montserrat'] text-black/70 leading-relaxed whitespace-pre-line">
                   {item.content}
-                  <br />
-                  Ми надаємо можливість легкого корегування штанів за талією та
-                  довжиною. Такі вироби виготовляються виключно за попередньою
-                  домовленістю та потребують 100% оплати перед початком роботи.
-                  <br />
-                  <br />
-                  Готові колекції
-                  <br />
-                  Для товарів з наших колекцій доступні два варіанти оплати:
-                  <br />— Передплата 300 грн (після підтвердження наявності
-                  товару)
-                  <br />— Повна оплата
-                  <br />
-                  <br />
-                  Усі деталі щодо оплати уточнюються після оформлення замовлення
-                  нашим менеджером.
                 </div>
               </div>
             </div>

@@ -7,7 +7,7 @@ export default function MainContent({ children }: { children: React.ReactNode })
   const isHomePage = pathname === '/';
   
   return (
-    <main className={isHomePage ? '' : 'mt-16 lg:mt-20'}>
+    <main className={`bg-white ${isHomePage ? '' : 'mt-16 lg:mt-20'}`}>
       {children}
     </main>
   );

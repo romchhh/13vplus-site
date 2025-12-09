@@ -115,16 +115,16 @@ export default function CategoriesTable() {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+    <div className="overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm">
       <div className="overflow-x-auto">
         <div className="min-w-full">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/[0.05]">
-            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50">
+            <h2 className="text-lg font-semibold text-gray-900">
               Категорії
             </h2>
             <button
               onClick={() => setIsAddingNew(true)}
-              className="inline-block rounded-md bg-green-400 px-4 py-2 text-white text-sm hover:bg-green-600 transition"
+              className="inline-block rounded-md bg-green-500 px-4 py-2 text-white text-sm font-medium hover:bg-green-600 transition shadow-sm"
             >
               + Додати категорію
             </button>
@@ -132,33 +132,33 @@ export default function CategoriesTable() {
 
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-gray-50">
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   ID
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Назва
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
                   Дії
                 </TableCell>
               </TableRow>
             </TableHeader>
 
-            <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+            <TableBody className="divide-y divide-gray-200 bg-white">
               {/* Add new category row */}
               {isAddingNew && (
-                <TableRow className="bg-green-50 dark:bg-green-900/10">
-                  <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-300">
+                <TableRow className="bg-green-50">
+                  <TableCell className="px-5 py-4 text-sm text-gray-900 font-medium">
                     —
                   </TableCell>
                   <TableCell className="px-5 py-4">
@@ -174,14 +174,14 @@ export default function CategoriesTable() {
                         }
                       }}
                       placeholder="Введіть назву категорії"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-400 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       autoFocus
                     />
                   </TableCell>
                   <TableCell className="px-5 py-4 space-x-2">
                     <button
                       onClick={handleAddCategory}
-                      className="inline-block rounded-md bg-green-500 px-3 py-1 text-white text-sm hover:bg-green-600 transition"
+                      className="inline-block rounded-md bg-green-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-green-600 transition shadow-sm"
                     >
                       Зберегти
                     </button>
@@ -190,7 +190,7 @@ export default function CategoriesTable() {
                         setIsAddingNew(false);
                         setNewCategoryName("");
                       }}
-                      className="inline-block rounded-md bg-gray-400 px-3 py-1 text-white text-sm hover:bg-gray-600 transition"
+                      className="inline-block rounded-md bg-gray-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-gray-600 transition shadow-sm"
                     >
                       Скасувати
                     </button>
@@ -203,7 +203,7 @@ export default function CategoriesTable() {
                 <TableRow>
                   <TableCell
                     colSpan={3}
-                    className="text-center py-6 text-gray-500 dark:text-gray-400"
+                    className="text-center py-6 text-gray-600"
                   >
                     Завантаження...
                   </TableCell>
@@ -212,7 +212,7 @@ export default function CategoriesTable() {
                 <TableRow>
                   <TableCell
                     colSpan={3}
-                    className="text-center py-6 text-gray-500 dark:text-gray-400"
+                    className="text-center py-6 text-gray-600"
                   >
                     Категорій не знайдено.
                   </TableCell>
@@ -221,9 +221,9 @@ export default function CategoriesTable() {
                 categories.map((category) => (
                   <TableRow
                     key={category.id}
-                    className="hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                    className="hover:bg-gray-50 transition-colors"
                   >
-                    <TableCell className="px-5 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    <TableCell className="px-5 py-4 text-sm text-gray-900 font-medium">
                       {category.id}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-sm">
@@ -237,11 +237,11 @@ export default function CategoriesTable() {
                               handleUpdateCategory(category.id, editingName);
                             if (e.key === "Escape") cancelEditing();
                           }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-400 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           autoFocus
                         />
                       ) : (
-                        <span className="text-gray-700 dark:text-gray-300">
+                        <span className="text-gray-900 font-medium">
                           {category.name}
                         </span>
                       )}
@@ -253,13 +253,13 @@ export default function CategoriesTable() {
                             onClick={() =>
                               handleUpdateCategory(category.id, editingName)
                             }
-                            className="inline-block rounded-md bg-blue-500 px-3 py-1 text-white text-sm hover:bg-blue-600 transition"
+                            className="inline-block rounded-md bg-blue-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-blue-600 transition shadow-sm"
                           >
                             Зберегти
                           </button>
                           <button
                             onClick={cancelEditing}
-                            className="inline-block rounded-md bg-gray-400 px-3 py-1 text-white text-sm hover:bg-gray-600 transition"
+                            className="inline-block rounded-md bg-gray-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-gray-600 transition shadow-sm"
                           >
                             Скасувати
                           </button>
@@ -267,15 +267,14 @@ export default function CategoriesTable() {
                       ) : (
                         <>
                           <Link
-                            // onClick={() => startEditing(category)}
                             href={`/admin/categories/${category.id}`}
-                            className="inline-block rounded-md bg-blue-400 px-3 py-1 text-white text-sm hover:bg-blue-600 transition"
+                            className="inline-block rounded-md bg-blue-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-blue-600 transition shadow-sm"
                           >
                             Редагувати
                           </Link>
                           <button
                             onClick={() => handleDeleteCategory(category.id)}
-                            className="inline-block rounded-md bg-red-400 px-3 py-1 text-white text-sm hover:bg-red-600 transition"
+                            className="inline-block rounded-md bg-red-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-red-600 transition shadow-sm"
                           >
                             Видалити
                           </button>

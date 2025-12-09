@@ -1,5 +1,5 @@
 {
-  "name": "chars",
+  "name": "13vplus",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -14,15 +14,19 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "migrate": "ts-node scripts/migrate.ts",
+    "add-test-products": "ts-node --project tsconfig.scripts.json scripts/add-test-products.ts",
     "check-vitals": "echo 'Run lighthouse audit after deployment'"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.1.0",
+    "@prisma/client": "^7.1.0",
     "@react-jvectormap/core": "^1.0.4",
     "@react-jvectormap/world": "^1.1.2",
     "apexcharts": "^5.3.5",
     "flatpickr": "^4.6.13",
     "next": "15.5.3",
     "pg": "^8.16.3",
+    "prisma": "^7.1.0",
     "react": "^18.3.1",
     "react-apexcharts": "^1.7.0",
     "react-dom": "^18.3.1",

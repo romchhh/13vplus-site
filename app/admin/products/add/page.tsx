@@ -306,7 +306,7 @@ export default function FormElements() {
                   <select
                     value={categoryId ?? ""}
                     onChange={(e) => setCategoryId(Number(e.target.value))}
-                    className="w-full border rounded px-3 py-2 text-sm dark:bg-gray-800 dark:text-white"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   >
                     <option value="">Виберіть категорію</option>
                     {categories.map((cat) => (
@@ -322,7 +322,7 @@ export default function FormElements() {
                     <select
                       value={subcategoryId ?? ""}
                       onChange={(e) => setSubcategoryId(Number(e.target.value))}
-                      className="w-full border rounded px-3 py-2 text-sm dark:bg-gray-800 dark:text-white"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     >
                       <option value="">Виберіть підкатегорію</option>
                       {subcategories.map((sub) => (
@@ -425,7 +425,7 @@ export default function FormElements() {
                 </div>
 
                 {/* Блок: Склад тканини і Підкладка */}
-                <div className="border rounded-lg p-4 space-y-4 bg-gray-50 dark:bg-gray-800/50">
+                <div className="border border-gray-300 rounded-lg p-4 space-y-4 bg-white">
                   <div>
                     <Label>Склад тканини</Label>
                     <TextArea

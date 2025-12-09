@@ -1,21 +1,18 @@
-import { Pool } from "pg";
+import { prisma } from "./prisma";
 import { unlink } from "fs/promises";
 import path from "path";
+import { Prisma } from "@prisma/client";
 
-// Create a PostgreSQL connection pool with optimized settings
+// Keep sql template literal for backward compatibility (used in migrate route)
+// This will be deprecated but kept for now
+import { Pool } from "pg";
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL?.includes("sslmode=require")
     ? { rejectUnauthorized: false }
     : false,
-  // Connection pool optimization
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
-  maxUses: 7500, // Close (and replace) a connection after it has been used 7500 times
 });
 
-// Create a template literal function that mimics Neon's API
 export const sql = Object.assign(
   async (strings: TemplateStringsArray, ...values: unknown[]) => {
     let query = strings[0];
@@ -43,258 +40,339 @@ export const sql = Object.assign(
 
 // Get all products - optimized for catalog list (only first photo)
 export async function sqlGetAllProducts() {
-  return await sql`
-    SELECT
-      p.id,
-      p.name,
-      p.price,
-      p.description,
-      p.old_price,
-      p.discount_percentage,
-      p.top_sale,
-      p.limited_edition,
-      p.season,
-      p.category_id,
-      p.subcategory_id,
-      p.created_at,
-      c.name AS category_name,
-      sc.name AS subcategory_name,
-      (
-        SELECT JSONB_BUILD_OBJECT('type', m.type, 'url', m.url)
-        FROM product_media m
-        WHERE m.product_id = p.id
-        ORDER BY m.id
-        LIMIT 1
-      ) AS first_media
-    FROM products p
-    LEFT JOIN categories c ON p.category_id = c.id
-    LEFT JOIN subcategories sc ON p.subcategory_id = sc.id
-    ORDER BY p.id DESC;
-  `;
+  const products = await prisma.product.findMany({
+    orderBy: { id: "desc" },
+    include: {
+      category: {
+        select: { name: true },
+      },
+      subcategory: {
+        select: { name: true },
+      },
+      media: {
+        take: 1,
+        orderBy: { id: "asc" },
+        select: {
+          type: true,
+          url: true,
+        },
+      },
+    },
+  });
+
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: Number(p.price),
+    description: p.description,
+    old_price: p.oldPrice ? Number(p.oldPrice) : null,
+    discount_percentage: p.discountPercentage,
+    top_sale: p.topSale,
+    limited_edition: p.limitedEdition,
+    season: p.season,
+    category_id: p.categoryId,
+    subcategory_id: p.subcategoryId,
+    created_at: p.createdAt,
+    category_name: p.category?.name || null,
+    subcategory_name: p.subcategory?.name || null,
+    first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
+  }));
 }
 
 // Get one product by ID with sizes & media
 export async function sqlGetProduct(id: number) {
-  return await sql`
-    SELECT
-      p.id,
-      p.name,
-      p.description,
-      p.price,
-      p.old_price,
-      p.discount_percentage,
-      p.top_sale,
-      p.limited_edition,
-      p.season,
-      p.color,
-      p.category_id,
-      p.subcategory_id,
-      p.fabric_composition,
-      p.has_lining,
-      p.lining_description,
-      c.name AS category_name,
-      sc.name AS subcategory_name,
-      COALESCE(s.sizes, '[]') AS sizes,
-      COALESCE(m.media, '[]') AS media,
-      COALESCE(pc.colors, '[]') AS colors
-    FROM products p
-    LEFT JOIN categories c ON p.category_id = c.id
-    LEFT JOIN subcategories sc ON p.subcategory_id = sc.id
-    LEFT JOIN LATERAL (
-      SELECT JSON_AGG(
-        JSONB_BUILD_OBJECT('size', s.size, 'stock', s.stock)
-      ) AS sizes
-      FROM product_sizes s
-      WHERE s.product_id = p.id
-    ) s ON true
-    LEFT JOIN LATERAL (
-      SELECT JSON_AGG(
-        JSONB_BUILD_OBJECT('type', m.type, 'url', m.url) ORDER BY m.id
-      ) AS media
-      FROM product_media m
-      WHERE m.product_id = p.id
-    ) m ON true
-    LEFT JOIN LATERAL (
-      SELECT JSON_AGG(
-        JSONB_BUILD_OBJECT('label', pc.label, 'hex', pc.hex)
-      ) AS colors
-      FROM product_colors pc
-      WHERE pc.product_id = p.id
-    ) pc ON true
-    WHERE p.id = ${id};
-  `;
+  const product = await prisma.product.findUnique({
+    where: { id },
+    include: {
+      category: {
+        select: { name: true },
+      },
+      subcategory: {
+        select: { name: true },
+      },
+      sizes: {
+        select: {
+          size: true,
+          stock: true,
+        },
+      },
+      media: {
+        orderBy: { id: "asc" },
+        select: {
+          type: true,
+          url: true,
+        },
+      },
+      colors: {
+        select: {
+          label: true,
+          hex: true,
+        },
+      },
+    },
+  });
+
+  if (!product) return null;
+
+  return {
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    price: Number(product.price),
+    old_price: product.oldPrice ? Number(product.oldPrice) : null,
+    discount_percentage: product.discountPercentage,
+    priority: product.priority,
+    top_sale: product.topSale,
+    limited_edition: product.limitedEdition,
+    season: product.season,
+    color: product.color,
+    category_id: product.categoryId,
+    subcategory_id: product.subcategoryId,
+    fabric_composition: product.fabricComposition,
+    has_lining: product.hasLining,
+    lining_description: product.liningDescription,
+    category_name: product.category?.name || null,
+    subcategory_name: product.subcategory?.name || null,
+    sizes: product.sizes.map((s) => ({ size: s.size, stock: s.stock })),
+    media: product.media.map((m) => ({ type: m.type, url: m.url })),
+    colors: product.colors.map((c) => ({ label: c.label, hex: c.hex })),
+  };
 }
 
-// =========================
 // Get related color variants by product name
-// Returns: id, name, first_color (main color from product_colors)
-// =========================
 export async function sqlGetRelatedColorsByName(name: string) {
-  return await sql`
-    SELECT
-      p.id,
-      p.name,
-      COALESCE(
-        (
-          SELECT JSONB_BUILD_OBJECT('label', pc.label, 'hex', pc.hex)
-          FROM product_colors pc
-          WHERE pc.product_id = p.id
-          ORDER BY pc.id
-          LIMIT 1
-        ),
-        CASE 
-          WHEN p.color IS NOT NULL THEN JSONB_BUILD_OBJECT('label', p.color, 'hex', NULL)
-          ELSE NULL
-        END
-      ) AS first_color
-    FROM products p
-    WHERE p.name = ${name}
-    ORDER BY p.id;
-  `;
+  const products = await prisma.product.findMany({
+    where: { name },
+    orderBy: { id: "asc" },
+    include: {
+      colors: {
+        take: 1,
+        orderBy: { id: "asc" },
+        select: {
+          label: true,
+          hex: true,
+        },
+      },
+    },
+  });
+
+  return products.map((p) => {
+    const firstColor = p.colors[0]
+      ? { label: p.colors[0].label, hex: p.colors[0].hex }
+      : p.color
+        ? { label: p.color, hex: null }
+        : null;
+
+    return {
+      id: p.id,
+      name: p.name,
+      first_color: firstColor,
+    };
+  });
 }
 
 export async function sqlGetProductsByCategory(categoryName: string) {
-  return await sql`
-    SELECT
-      p.id,
-      p.name,
-      p.price,
-      p.old_price,
-      p.discount_percentage,
-      p.top_sale,
-      p.limited_edition,
-      p.season,
-      p.category_id,
-      c.name AS category_name,
-      (
-        SELECT JSONB_BUILD_OBJECT('type', m.type, 'url', m.url)
-        FROM product_media m
-        WHERE m.product_id = p.id
-        ORDER BY m.id
-        LIMIT 1
-      ) AS first_media
-    FROM products p
-    LEFT JOIN categories c ON p.category_id = c.id
-    WHERE c.name = ${categoryName}
-    ORDER BY p.id DESC;
-  `;
+  const products = await prisma.product.findMany({
+    where: {
+      category: {
+        name: categoryName,
+      },
+    },
+    orderBy: { id: "desc" },
+    include: {
+      category: {
+        select: { name: true },
+      },
+      media: {
+        take: 1,
+        orderBy: { id: "asc" },
+        select: {
+          type: true,
+          url: true,
+        },
+      },
+    },
+  });
+
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: Number(p.price),
+    old_price: p.oldPrice ? Number(p.oldPrice) : null,
+    discount_percentage: p.discountPercentage,
+    top_sale: p.topSale,
+    limited_edition: p.limitedEdition,
+    season: p.season,
+    category_id: p.categoryId,
+    category_name: p.category?.name || null,
+    first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
+  }));
 }
 
 export async function sqlGetProductsBySubcategoryName(name: string) {
-  return await sql`
-    SELECT
-      p.id,
-      p.name,
-      p.price,
-      p.old_price,
-      p.discount_percentage,
-      p.top_sale,
-      p.limited_edition,
-      p.season,
-      p.category_id,
-      p.subcategory_id,
-      c.name AS category_name,
-      sc.name AS subcategory_name,
-      (
-        SELECT JSONB_BUILD_OBJECT('type', m.type, 'url', m.url)
-        FROM product_media m
-        WHERE m.product_id = p.id
-        ORDER BY m.id
-        LIMIT 1
-      ) AS first_media
-    FROM products p
-    LEFT JOIN categories c ON p.category_id = c.id
-    LEFT JOIN subcategories sc ON p.subcategory_id = sc.id
-    WHERE LOWER(sc.name) = LOWER(${name})
-    ORDER BY p.id DESC;
-  `;
+  const products = await prisma.product.findMany({
+    where: {
+      subcategory: {
+        name: {
+          equals: name,
+          mode: "insensitive",
+        },
+      },
+    },
+    orderBy: { id: "desc" },
+    include: {
+      category: {
+        select: { name: true },
+      },
+      subcategory: {
+        select: { name: true },
+      },
+      media: {
+        take: 1,
+        orderBy: { id: "asc" },
+        select: {
+          type: true,
+          url: true,
+        },
+      },
+    },
+  });
+
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: Number(p.price),
+    old_price: p.oldPrice ? Number(p.oldPrice) : null,
+    discount_percentage: p.discountPercentage,
+    top_sale: p.topSale,
+    limited_edition: p.limitedEdition,
+    season: p.season,
+    category_id: p.categoryId,
+    subcategory_id: p.subcategoryId,
+    category_name: p.category?.name || null,
+    subcategory_name: p.subcategory?.name || null,
+    first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
+  }));
 }
 
 export async function sqlGetProductsBySeason(season: string) {
-  return await sql`
-    SELECT
-      p.id,
-      p.name,
-      p.price,
-      p.old_price,
-      p.discount_percentage,
-      p.top_sale,
-      p.limited_edition,
-      p.season,
-      p.category_id,
-      c.name AS category_name,
-      (
-        SELECT JSONB_BUILD_OBJECT('type', m.type, 'url', m.url)
-        FROM product_media m
-        WHERE m.product_id = p.id
-        ORDER BY m.id
-        LIMIT 1
-      ) AS first_media
-    FROM products p
-    LEFT JOIN categories c ON p.category_id = c.id
-    WHERE ${season} = ANY(p.season)
-    ORDER BY p.id DESC;
-  `;
+  const products = await prisma.product.findMany({
+    where: {
+      season: {
+        has: season,
+      },
+    },
+    orderBy: { id: "desc" },
+    include: {
+      category: {
+        select: { name: true },
+      },
+      media: {
+        take: 1,
+        orderBy: { id: "asc" },
+        select: {
+          type: true,
+          url: true,
+        },
+      },
+    },
+  });
+
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: Number(p.price),
+    old_price: p.oldPrice ? Number(p.oldPrice) : null,
+    discount_percentage: p.discountPercentage,
+    top_sale: p.topSale,
+    limited_edition: p.limitedEdition,
+    season: p.season,
+    category_id: p.categoryId,
+    category_name: p.category?.name || null,
+    first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
+  }));
 }
 
-// Get only top sale products (optimized - only first photo for list view)
+// Get only top sale products
 export async function sqlGetTopSaleProducts() {
-  return await sql`
-    SELECT
-      p.id,
-      p.name,
-      p.price,
-      p.old_price,
-      p.discount_percentage,
-      p.top_sale,
-      p.limited_edition,
-      (
-        SELECT JSONB_BUILD_OBJECT('type', m.type, 'url', m.url)
-        FROM product_media m
-        WHERE m.product_id = p.id
-        ORDER BY m.id
-        LIMIT 1
-      ) AS first_media
-    FROM products p
-    WHERE p.top_sale = true
-    ORDER BY p.id DESC;
-  `;
+  const products = await prisma.product.findMany({
+    where: { topSale: true },
+    orderBy: { id: "desc" },
+    include: {
+      media: {
+        take: 1,
+        orderBy: { id: "asc" },
+        select: {
+          type: true,
+          url: true,
+        },
+      },
+    },
+  });
+
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: Number(p.price),
+    old_price: p.oldPrice ? Number(p.oldPrice) : null,
+    discount_percentage: p.discountPercentage,
+    top_sale: p.topSale,
+    limited_edition: p.limitedEdition,
+    first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
+  }));
 }
 
-// Get only limited edition products (optimized - only first photo for list view)
+// Get only limited edition products
 export async function sqlGetLimitedEditionProducts() {
-  return await sql`
-    SELECT
-      p.id,
-      p.name,
-      p.price,
-      p.old_price,
-      p.discount_percentage,
-      p.top_sale,
-      p.limited_edition,
-      (
-        SELECT JSONB_BUILD_OBJECT('type', m.type, 'url', m.url)
-        FROM product_media m
-        WHERE m.product_id = p.id
-        ORDER BY m.id
-        LIMIT 1
-      ) AS first_media
-    FROM products p
-    WHERE p.limited_edition = true
-    ORDER BY p.id DESC;
-  `;
+  const products = await prisma.product.findMany({
+    where: { limitedEdition: true },
+    orderBy: { id: "desc" },
+    include: {
+      media: {
+        take: 1,
+        orderBy: { id: "asc" },
+        select: {
+          type: true,
+          url: true,
+        },
+      },
+    },
+  });
+
+  console.log(`[sqlGetLimitedEditionProducts] Found ${products.length} limited edition products`);
+  products.forEach((p) => {
+    console.log(`  - Product ID: ${p.id}, Name: ${p.name}, limitedEdition: ${p.limitedEdition}, hasMedia: ${p.media.length > 0}`);
+  });
+
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: Number(p.price),
+    old_price: p.oldPrice ? Number(p.oldPrice) : null,
+    discount_percentage: p.discountPercentage,
+    top_sale: p.topSale,
+    limited_edition: p.limitedEdition,
+    first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
+  }));
 }
 
 // Fetch all distinct colors from the database
 export async function sqlGetAllColors() {
-  const dbColors = await sql`
-    SELECT DISTINCT color
-    FROM products
-    WHERE color IS NOT NULL
-    ORDER BY color;
-  `;
+  const dbColors = await prisma.product.findMany({
+    where: {
+      color: {
+        not: null,
+      },
+    },
+    select: {
+      color: true,
+    },
+    distinct: ["color"],
+    orderBy: {
+      color: "asc",
+    },
+  });
 
-  // Standard palette with hex suggestions
   const standardPalette: Record<string, string> = {
     Чорний: "#000000",
     Білий: "#FFFFFF",
@@ -320,7 +398,7 @@ export async function sqlGetAllColors() {
 
   const names = new Set<string>([...Object.keys(standardPalette)]);
   for (const row of dbColors) {
-    if (row.color) names.add(row.color as string);
+    if (row.color) names.add(row.color);
   }
 
   return Array.from(names)
@@ -341,7 +419,7 @@ export async function sqlPostProduct(product: {
   season?: string[];
   color?: string;
   category_id?: number | null;
-  subcategory_id?: number | null; // ✅ NEW
+  subcategory_id?: number | null;
   fabric_composition?: string;
   has_lining?: boolean;
   lining_description?: string;
@@ -349,62 +427,51 @@ export async function sqlPostProduct(product: {
   media?: { type: string; url: string }[];
   colors?: { label: string; hex?: string | null }[];
 }) {
-  const inserted = await sql`
-    INSERT INTO products (
-      name, description, price, old_price, discount_percentage, priority,
-      top_sale, limited_edition, season, color,
-      category_id, subcategory_id, fabric_composition, has_lining, lining_description
-    )
-    VALUES (
-      ${product.name},
-      ${product.description || null},
-      ${product.price},
-      ${product.old_price || null},
-      ${product.discount_percentage || null},
-      ${product.priority || 0},
-      ${product.top_sale || false},
-      ${product.limited_edition || false},
-      ${product.season || null},
-      ${product.color || null},
-      ${product.category_id || null},
-      ${product.subcategory_id || null},
-      ${product.fabric_composition || null},
-      ${product.has_lining || false},
-      ${product.lining_description || null}
-    )
-    RETURNING id;
-  `;
+  const created = await prisma.product.create({
+    data: {
+      name: product.name,
+      description: product.description || null,
+      price: product.price,
+      oldPrice: product.old_price ?? null,
+      discountPercentage: product.discount_percentage || null,
+      priority: product.priority || 0,
+      topSale: product.top_sale || false,
+      limitedEdition: product.limited_edition || false,
+      season: product.season || [],
+      color: product.color || null,
+      categoryId: product.category_id || null,
+      subcategoryId: product.subcategory_id || null,
+      fabricComposition: product.fabric_composition || null,
+      hasLining: product.has_lining || false,
+      liningDescription: product.lining_description || null,
+      sizes: product.sizes
+        ? {
+            create: product.sizes.map((s) => ({
+              size: s.size,
+              stock: s.stock,
+            })),
+          }
+        : undefined,
+      media: product.media
+        ? {
+            create: product.media.map((m) => ({
+              type: m.type,
+              url: m.url,
+            })),
+          }
+        : undefined,
+      colors: product.colors
+        ? {
+            create: product.colors.map((c) => ({
+              label: c.label,
+              hex: c.hex || null,
+            })),
+          }
+        : undefined,
+    },
+  });
 
-  const productId = inserted[0].id;
-
-  if (product.sizes?.length) {
-    for (const size of product.sizes) {
-      await sql`
-        INSERT INTO product_sizes (product_id, size, stock)
-        VALUES (${productId}, ${size.size}, ${size.stock});
-      `;
-    }
-  }
-
-  if (product.media?.length) {
-    for (const media of product.media) {
-      await sql`
-        INSERT INTO product_media (product_id, type, url)
-        VALUES (${productId}, ${media.type}, ${media.url});
-      `;
-    }
-  }
-
-  if (product.colors?.length) {
-    for (const color of product.colors) {
-      await sql`
-        INSERT INTO product_colors (product_id, label, hex)
-        VALUES (${productId}, ${color.label}, ${color.hex || null});
-      `;
-    }
-  }
-
-  return { id: productId };
+  return { id: created.id };
 }
 
 // Update existing product
@@ -431,46 +498,87 @@ export async function sqlPutProduct(
     colors?: { label: string; hex?: string | null }[];
   }
 ) {
-  // Step 1: Update main product fields
-  await sql`
-    UPDATE products
-    SET 
-      name = ${update.name},
-      description = ${update.description || null},
-      price = ${update.price},
-      old_price = ${update.old_price || null},
-      discount_percentage = ${update.discount_percentage || null},
-      priority = ${update.priority || 0},
-      top_sale = ${update.top_sale || false},
-      limited_edition = ${update.limited_edition || false},
-      season = ${update.season || null},
-      color = ${update.color || null},
-      category_id = ${update.category_id || null},
-      subcategory_id = ${update.subcategory_id || null}, -- ✅ NEW
-      fabric_composition = ${update.fabric_composition || null},
-      has_lining = ${update.has_lining || false},
-      lining_description = ${update.lining_description || null}
-    WHERE id = ${id};
-  `;
-
-  // Step 2: Fetch old media URLs before deleting from DB
-  const oldMediaRows = await sql`
-    SELECT url FROM product_media WHERE product_id = ${id};
-  `;
-  const oldMediaUrls = oldMediaRows.map((row: { url: string }) => row.url);
+  // Step 1: Fetch old media URLs before deleting
+  const oldMedia = await prisma.productMedia.findMany({
+    where: { productId: id },
+    select: { url: true },
+  });
+  const oldMediaUrls = oldMedia.map((m) => m.url);
   const newMediaUrls = (update.media || []).map((m) => m.url);
 
-  // Step 3: Determine which files to DELETE from disk (old files NOT in new list)
+  // Step 2: Determine which files to DELETE from disk
   const filesToDelete = oldMediaUrls.filter(
-    (oldUrl: string) => !newMediaUrls.includes(oldUrl)
+    (oldUrl) => !newMediaUrls.includes(oldUrl)
   );
 
-  // Step 4: Clear old sizes, media, colors from DB
-  await sql`DELETE FROM product_sizes WHERE product_id = ${id};`;
-  await sql`DELETE FROM product_media WHERE product_id = ${id};`;
-  await sql`DELETE FROM product_colors WHERE product_id = ${id};`;
+  // Step 3: Update product and related data in transaction
+  await prisma.$transaction(async (tx) => {
+    console.log(`[sqlPutProduct] Updating product ${id} with limited_edition: ${update.limited_edition}`);
+    
+    // Update main product fields
+    const updated = await tx.product.update({
+      where: { id },
+      data: {
+        name: update.name,
+        description: update.description || null,
+        price: update.price,
+        oldPrice: update.old_price || null,
+        discountPercentage: update.discount_percentage || null,
+        priority: update.priority || 0,
+        topSale: update.top_sale || false,
+        limitedEdition: update.limited_edition === true,
+        season: update.season ? (Array.isArray(update.season) ? update.season : JSON.parse(update.season)) : [],
+        color: update.color || null,
+        categoryId: update.category_id || null,
+        subcategoryId: update.subcategory_id || null,
+        fabricComposition: update.fabric_composition || null,
+        hasLining: update.has_lining || false,
+        liningDescription: update.lining_description || null,
+      },
+    });
+    
+    console.log(`[sqlPutProduct] Product ${id} updated. limitedEdition in DB: ${updated.limitedEdition}`);
 
-  // Step 5: Delete ONLY unused image files from disk
+    // Delete old sizes, media, colors
+    await tx.productSize.deleteMany({ where: { productId: id } });
+    await tx.productMedia.deleteMany({ where: { productId: id } });
+    await tx.productColor.deleteMany({ where: { productId: id } });
+
+    // Re-insert new sizes
+    if (update.sizes?.length) {
+      await tx.productSize.createMany({
+        data: update.sizes.map((s) => ({
+          productId: id,
+          size: s.size,
+          stock: s.stock,
+        })),
+      });
+    }
+
+    // Re-insert new media
+    if (update.media?.length) {
+      await tx.productMedia.createMany({
+        data: update.media.map((m) => ({
+          productId: id,
+          type: m.type,
+          url: m.url,
+        })),
+      });
+    }
+
+    // Re-insert new colors
+    if (update.colors?.length) {
+      await tx.productColor.createMany({
+        data: update.colors.map((c) => ({
+          productId: id,
+          label: c.label,
+          hex: c.hex || null,
+        })),
+      });
+    }
+  });
+
+  // Step 4: Delete unused image files from disk
   for (const url of filesToDelete) {
     const filePath = path.join(process.cwd(), "product-images", url);
     try {
@@ -481,47 +589,20 @@ export async function sqlPutProduct(
     }
   }
 
-  // Step 6: Re-insert new sizes
-  if (update.sizes?.length) {
-    for (const size of update.sizes) {
-      await sql`
-        INSERT INTO product_sizes (product_id, size, stock)
-        VALUES (${id}, ${size.size}, ${size.stock});
-      `;
-    }
-  }
-
-  // Step 7: Re-insert new media (including old ones that weren't deleted)
-  if (update.media?.length) {
-    for (const media of update.media) {
-      await sql`
-        INSERT INTO product_media (product_id, type, url)
-        VALUES (${id}, ${media.type}, ${media.url});
-      `;
-    }
-  }
-
-  // Step 8: Re-insert new colors
-  if (update.colors?.length) {
-    for (const color of update.colors) {
-      await sql`
-        INSERT INTO product_colors (product_id, label, hex)
-        VALUES (${id}, ${color.label}, ${color.hex || null});
-      `;
-    }
-  }
-
   return { updated: true };
 }
 
 export async function sqlDeleteProduct(id: number) {
   // Step 1: Get media URLs
-  const media = await sql`
-    SELECT url FROM product_media WHERE product_id = ${id};
-  `;
+  const media = await prisma.productMedia.findMany({
+    where: { productId: id },
+    select: { url: true },
+  });
 
-  // Step 2: Delete the product (cascade removes sizes/media)
-  await sql`DELETE FROM products WHERE id = ${id};`;
+  // Step 2: Delete the product (cascade removes sizes/media/colors)
+  await prisma.product.delete({
+    where: { id },
+  });
 
   // Step 3: Delete files from disk
   for (const { url } of media) {
@@ -542,29 +623,69 @@ export async function sqlDeleteProduct(id: number) {
 
 // Get all orders (without items for performance)
 export async function sqlGetAllOrders() {
-  return await sql`
-    SELECT *
-    FROM orders
-    ORDER BY created_at DESC;
-  `;
+  const orders = await prisma.order.findMany({
+    where: { paymentStatus: "paid" },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return orders.map((o) => ({
+    id: o.id,
+    customer_name: o.customerName,
+    phone_number: o.phoneNumber,
+    email: o.email,
+    delivery_method: o.deliveryMethod,
+    city: o.city,
+    post_office: o.postOffice,
+    comment: o.comment,
+    payment_type: o.paymentType,
+    invoice_id: o.invoiceId,
+    payment_status: o.paymentStatus,
+    status: o.status,
+    created_at: o.createdAt,
+  }));
 }
 
 // Get order with items
 export async function sqlGetOrder(id: number) {
-  const order = await sql`
-    SELECT * FROM orders WHERE id = ${id};
-  `;
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: {
+      items: {
+        include: {
+          product: {
+            select: { name: true },
+          },
+        },
+      },
+    },
+  });
 
-  const items = await sql`
-    SELECT oi.*, p.name AS product_name
-    FROM order_items oi
-    JOIN products p ON oi.product_id = p.id
-    WHERE oi.order_id = ${id};
-  `;
+  if (!order) return null;
 
   return {
-    ...order[0],
-    items,
+    id: order.id,
+    customer_name: order.customerName,
+    phone_number: order.phoneNumber,
+    email: order.email,
+    delivery_method: order.deliveryMethod,
+    city: order.city,
+    post_office: order.postOffice,
+    comment: order.comment,
+    payment_type: order.paymentType,
+    invoice_id: order.invoiceId,
+    payment_status: order.paymentStatus,
+    status: order.status,
+    created_at: order.createdAt,
+    items: order.items.map((item) => ({
+      id: item.id,
+      order_id: item.orderId,
+      product_id: item.productId,
+      product_name: item.product.name,
+      size: item.size,
+      quantity: item.quantity,
+      price: Number(item.price),
+      color: item.color,
+    })),
   };
 }
 
@@ -590,93 +711,103 @@ type OrderInput = {
 
 export async function sqlPostOrder(order: OrderInput) {
   // Transaction: create order, insert items, decrement stock atomically
-  try {
-    await sql`BEGIN`;
+  return await prisma.$transaction(async (tx) => {
+    // Create order
+    const created = await tx.order.create({
+      data: {
+        customerName: order.customer_name,
+        phoneNumber: order.phone_number,
+        email: order.email || null,
+        deliveryMethod: order.delivery_method,
+        city: order.city,
+        postOffice: order.post_office,
+        comment: order.comment || null,
+        paymentType: order.payment_type,
+        invoiceId: order.invoice_id,
+        paymentStatus: order.payment_status,
+        items: {
+          create: order.items.map((item) => ({
+            productId: item.product_id,
+            size: item.size,
+            quantity: item.quantity,
+            price: item.price,
+            color: item.color || null,
+          })),
+        },
+      },
+    });
 
-  const inserted = await sql`
-    INSERT INTO orders (
-      customer_name, phone_number, email,
-      delivery_method, city, post_office,
-      comment, payment_type, invoice_id, payment_status
-    )
-    VALUES (
-      ${order.customer_name}, ${order.phone_number}, ${order.email || null},
-      ${order.delivery_method}, ${order.city}, ${order.post_office},
-      ${order.comment || null}, ${order.payment_type}, ${order.invoice_id}, ${
-    order.payment_status
-  }
-    )
-    RETURNING id;
-  `;
+    // Decrement stock for each item
+    for (const item of order.items) {
+      const productSize = await tx.productSize.findFirst({
+        where: {
+          productId: item.product_id,
+          size: item.size,
+        },
+      });
 
-  const orderId = inserted[0].id;
-
-  for (const item of order.items) {
-      // 1) Insert order item
-    await sql`
-      INSERT INTO order_items (
-        order_id, product_id, size, quantity, price, color
-      ) VALUES (
-        ${orderId}, ${item.product_id}, ${item.size}, ${item.quantity}, ${
-      item.price
-    }, ${item.color || null}
-      );
-    `;
-
-      // 2) Decrement stock for the specific size (guard non-negative)
-      const updated = await sql`
-        UPDATE product_sizes
-        SET stock = stock - ${item.quantity}
-        WHERE product_id = ${item.product_id}
-          AND size = ${item.size}
-          AND stock >= ${item.quantity}
-        RETURNING id;
-      `;
-
-      if (!updated || updated.length === 0) {
-        // Not enough stock or size doesn't exist
+      if (!productSize || productSize.stock < item.quantity) {
         throw new Error(
           `Insufficient stock for product ${item.product_id} size ${item.size}`
         );
       }
-  }
 
-    await sql`COMMIT`;
-  return { orderId };
-  } catch (err) {
-    await sql`ROLLBACK`;
-    throw err;
-  }
+      await tx.productSize.update({
+        where: { id: productSize.id },
+        data: {
+          stock: {
+            decrement: item.quantity,
+          },
+        },
+      });
+    }
+
+    return { orderId: created.id };
+  });
 }
 
 // Update an order (e.g., status change)
 export async function sqlPutOrder(id: number, update: { status: string }) {
-  await sql`
-    UPDATE orders
-    SET status = ${update.status}
-    WHERE id = ${id};
-  `;
+  await prisma.order.update({
+    where: { id },
+    data: { status: update.status },
+  });
   return { updated: true };
 }
 
-// ❌ Delete an order (auto-deletes items via ON DELETE CASCADE)
+// Delete an order (auto-deletes items via ON DELETE CASCADE)
 export async function sqlDeleteOrder(id: number) {
-  await sql`DELETE FROM orders WHERE id = ${id};`;
+  await prisma.order.delete({
+    where: { id },
+  });
   return { deleted: true };
 }
 
-// 🔍 Get all order items for a specific order
+// Get all order items for a specific order
 export async function sqlGetOrderItems(orderId: number) {
-  return await sql`
-    SELECT oi.*, p.name AS product_name
-    FROM order_items oi
-    JOIN products p ON oi.product_id = p.id
-    WHERE oi.order_id = ${orderId}
-    ORDER BY oi.id ASC;
-  `;
+  const items = await prisma.orderItem.findMany({
+    where: { orderId },
+    include: {
+      product: {
+        select: { name: true },
+      },
+    },
+    orderBy: { id: "asc" },
+  });
+
+  return items.map((item) => ({
+    id: item.id,
+    order_id: item.orderId,
+    product_id: item.productId,
+    product_name: item.product.name,
+    size: item.size,
+    quantity: item.quantity,
+    price: Number(item.price),
+    color: item.color,
+  }));
 }
 
-// ➕ Create a single order item
+// Create a single order item
 export async function sqlPostOrderItem(item: {
   order_id: number;
   product_id: number;
@@ -684,15 +815,34 @@ export async function sqlPostOrderItem(item: {
   quantity: number;
   price: number;
 }) {
-  const result = await sql`
-    INSERT INTO order_items (order_id, product_id, size, quantity, price)
-    VALUES (${item.order_id}, ${item.product_id}, ${item.size}, ${item.quantity}, ${item.price})
-    RETURNING *;
-  `;
-  return result[0];
+  const created = await prisma.orderItem.create({
+    data: {
+      orderId: item.order_id,
+      productId: item.product_id,
+      size: item.size,
+      quantity: item.quantity,
+            price: item.price,
+    },
+    include: {
+      product: {
+        select: { name: true },
+      },
+    },
+  });
+
+  return {
+    id: created.id,
+    order_id: created.orderId,
+    product_id: created.productId,
+    product_name: created.product.name,
+    size: created.size,
+    quantity: created.quantity,
+    price: Number(created.price),
+    color: created.color,
+  };
 }
 
-// ✏️ Update (edit) an order item
+// Update (edit) an order item
 export async function sqlPutOrderItem(
   id: number,
   update: {
@@ -702,22 +852,38 @@ export async function sqlPutOrderItem(
     price?: number;
   }
 ) {
-  // Optional updates using COALESCE
-  return await sql`
-    UPDATE order_items
-    SET
-      product_id = COALESCE(${update.product_id}, product_id),
-      size = COALESCE(${update.size}, size),
-      quantity = COALESCE(${update.quantity}, quantity),
-      price = COALESCE(${update.price}, price)
-    WHERE id = ${id}
-    RETURNING *;
-  `;
+  const updated = await prisma.orderItem.update({
+    where: { id },
+    data: {
+      productId: update.product_id,
+      size: update.size,
+      quantity: update.quantity,
+      price: update.price,
+    },
+    include: {
+      product: {
+        select: { name: true },
+      },
+    },
+  });
+
+  return {
+    id: updated.id,
+    order_id: updated.orderId,
+    product_id: updated.productId,
+    product_name: updated.product.name,
+    size: updated.size,
+    quantity: updated.quantity,
+    price: Number(updated.price),
+    color: updated.color,
+  };
 }
 
-// ❌ Delete order item
+// Delete order item
 export async function sqlDeleteOrderItem(id: number) {
-  await sql`DELETE FROM order_items WHERE id = ${id};`;
+  await prisma.orderItem.delete({
+    where: { id },
+  });
   return { deleted: true };
 }
 
@@ -725,46 +891,49 @@ export async function sqlUpdatePaymentStatus(
   invoiceId: string,
   status: string
 ) {
-  await sql`
-    UPDATE orders
-    SET payment_status = ${status}
-    WHERE invoice_id = ${invoiceId};
-  `;
+  await prisma.order.update({
+    where: { invoiceId },
+    data: { paymentStatus: status },
+  });
 }
 
 // Get order by invoice ID for webhook processing
 export async function sqlGetOrderByInvoiceId(invoiceId: string) {
-  const result = await sql`
-    SELECT 
-      o.id,
-      o.customer_name,
-      o.phone_number,
-      o.email,
-      o.delivery_method,
-      o.city,
-      o.post_office,
-      o.comment,
-      o.payment_type,
-      o.payment_status,
-      o.created_at,
-      COALESCE(
-        JSON_AGG(
-          JSONB_BUILD_OBJECT(
-            'product_name', p.name,
-            'size', oi.size,
-            'quantity', oi.quantity,
-            'price', oi.price
-          )
-        ) FILTER (WHERE oi.id IS NOT NULL),
-        '[]'
-      ) AS items
-    FROM orders o
-    LEFT JOIN order_items oi ON o.id = oi.order_id
-    LEFT JOIN products p ON oi.product_id = p.id
-    WHERE o.invoice_id = ${invoiceId}
-    GROUP BY o.id;
-  `;
-  return result[0];
+  const order = await prisma.order.findUnique({
+    where: { invoiceId },
+    include: {
+      items: {
+        include: {
+          product: {
+            select: { name: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!order) return null;
+
+  return {
+    id: order.id,
+    customer_name: order.customerName,
+    phone_number: order.phoneNumber,
+    email: order.email,
+    delivery_method: order.deliveryMethod,
+    city: order.city,
+    post_office: order.postOffice,
+    comment: order.comment,
+    payment_type: order.paymentType,
+    payment_status: order.paymentStatus,
+    created_at: order.createdAt,
+    items: order.items.map((item) => ({
+      product_name: item.product.name,
+      size: item.size,
+      quantity: item.quantity,
+      price: Number(item.price),
+      color: item.color,
+    })),
+  };
 }
 
 // =====================
@@ -773,51 +942,91 @@ export async function sqlGetOrderByInvoiceId(invoiceId: string) {
 
 // Get all categories
 export async function sqlGetAllCategories() {
-  return await sql`
-    SELECT * FROM categories
-    ORDER BY priority DESC;
-  `;
+  const categories = await prisma.category.findMany({
+    orderBy: { priority: "desc" },
+  });
+
+  return categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    priority: c.priority,
+    mediaType: c.mediaType || null,
+    mediaUrl: c.mediaUrl || null,
+  }));
 }
 
 // Get a single category by ID
 export async function sqlGetCategory(id: number) {
-  return await sql`
-    SELECT * FROM categories
-    WHERE id = ${id};
-  `;
+  const category = await prisma.category.findUnique({
+    where: { id },
+  });
+
+  if (!category) return null;
+
+  return {
+    id: category.id,
+    name: category.name,
+    priority: category.priority,
+    mediaType: category.mediaType || null,
+    mediaUrl: category.mediaUrl || null,
+  };
 }
 
 // Create a new category
 export async function sqlPostCategory(name: string, priority: number = 0) {
-  const result = await sql`
-    INSERT INTO categories (name, priority)
-    VALUES (${name}, ${priority})
-    RETURNING *;
-  `;
-  return result[0];
+  const created = await prisma.category.create({
+    data: { name, priority },
+  });
+
+  return {
+    id: created.id,
+    name: created.name,
+    priority: created.priority,
+  };
 }
 
 // Update a category by ID
 export async function sqlPutCategory(
   id: number,
   name: string,
-  priority: number = 0
+  priority: number = 0,
+  mediaType?: string | null,
+  mediaUrl?: string | null
 ) {
-  const result = await sql`
-    UPDATE categories
-    SET name = ${name}, priority = ${priority}
-    WHERE id = ${id}
-    RETURNING *;
-  `;
-  return result[0];
+  const updateData: {
+    name: string;
+    priority: number;
+    mediaType?: string | null;
+    mediaUrl?: string | null;
+  } = { 
+    name, 
+    priority,
+  };
+  
+  if (mediaType !== undefined) {
+    updateData.mediaType = mediaType;
+  }
+  if (mediaUrl !== undefined) {
+    updateData.mediaUrl = mediaUrl;
+  }
+
+  const updated = await prisma.category.update({
+    where: { id },
+    data: updateData,
+  });
+
+  return {
+    id: updated.id,
+    name: updated.name,
+    priority: updated.priority,
+  };
 }
 
 // Delete a category by ID
 export async function sqlDeleteCategory(id: number) {
-  await sql`
-    DELETE FROM categories
-    WHERE id = ${id};
-  `;
+  await prisma.category.delete({
+    where: { id },
+  });
   return { deleted: true };
 }
 
@@ -827,37 +1036,57 @@ export async function sqlDeleteCategory(id: number) {
 
 // Get all subcategories
 export async function sqlGetAllSubcategories() {
-  return await sql`
-    SELECT * FROM subcategories
-    ORDER BY id;
-  `;
+  const subcategories = await prisma.subcategory.findMany({
+    orderBy: { id: "asc" },
+  });
+
+  return subcategories.map((sc) => ({
+    id: sc.id,
+    name: sc.name,
+    category_id: sc.categoryId,
+  }));
 }
 
 // Get all subcategories for a specific category
 export async function sqlGetSubcategoriesByCategory(categoryId: number) {
-  return await sql`
-    SELECT * FROM subcategories
-    WHERE category_id = ${categoryId}
-    ORDER BY id;
-  `;
+  const subcategories = await prisma.subcategory.findMany({
+    where: { categoryId },
+    orderBy: { id: "asc" },
+  });
+
+  return subcategories.map((sc) => ({
+    id: sc.id,
+    name: sc.name,
+    category_id: sc.categoryId,
+  }));
 }
 
 // Get a single subcategory by ID
 export async function sqlGetSubcategory(id: number) {
-  return await sql`
-    SELECT * FROM subcategories
-    WHERE id = ${id};
-  `;
+  const subcategory = await prisma.subcategory.findUnique({
+    where: { id },
+  });
+
+  if (!subcategory) return null;
+
+  return {
+    id: subcategory.id,
+    name: subcategory.name,
+    category_id: subcategory.categoryId,
+  };
 }
 
 // Create a new subcategory
 export async function sqlPostSubcategory(name: string, categoryId: number) {
-  const result = await sql`
-    INSERT INTO subcategories (name, category_id)
-    VALUES (${name}, ${categoryId})
-    RETURNING *;
-  `;
-  return result[0];
+  const created = await prisma.subcategory.create({
+    data: { name, categoryId },
+  });
+
+  return {
+    id: created.id,
+    name: created.name,
+    category_id: created.categoryId,
+  };
 }
 
 // Update a subcategory by ID
@@ -866,20 +1095,22 @@ export async function sqlPutSubcategory(
   name: string,
   categoryId: number
 ) {
-  const result = await sql`
-    UPDATE subcategories
-    SET name = ${name}, category_id = ${categoryId}
-    WHERE id = ${id}
-    RETURNING *;
-  `;
-  return result[0];
+  const updated = await prisma.subcategory.update({
+    where: { id },
+    data: { name, categoryId },
+  });
+
+  return {
+    id: updated.id,
+    name: updated.name,
+    category_id: updated.categoryId,
+  };
 }
 
 // Delete a subcategory by ID
 export async function sqlDeleteSubcategory(id: number) {
-  await sql`
-    DELETE FROM subcategories
-    WHERE id = ${id};
-  `;
+  await prisma.subcategory.delete({
+    where: { id },
+  });
   return { deleted: true };
 }

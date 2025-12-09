@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 interface SidebarMenuProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  isDark: boolean;
 }
 
 interface Category {
@@ -23,14 +23,10 @@ interface Subcategory {
 export default function SidebarMenu({
   isOpen,
   setIsOpen,
-  isDark,
 }: SidebarMenuProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
-  // "menu" = main menu with categories, "season" = season sidebar
-  const [view, setView] = useState<"menu" | "season">("menu");
   const [openCategoryId, setOpenCategoryId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -67,154 +63,117 @@ export default function SidebarMenu({
     fetchCategories();
   }, []);
 
-  const season_data = [
-    {
-      name: "Осінь",
-      image: "/images/autumn2.jpg",
-    },
-    {
-      name: "Зима",
-      image: "/images/winter2.jpg",
-    },
-    {
-      name: "Весна",
-      image: "/images/spring2.jpg",
-    },
-    {
-      name: "Літо",
-      image: "/images/summer2.jpg",
-    },
-  ];
-
-  if (!isOpen) {
-    // If sidebar closed, reset view to main menu for next open
-    if (view !== "menu") setView("menu");
-  }
-
   return (
     <div className="relative z-50">
-      {/* Overlay */}
+      {/* Overlay - only below header */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-30"
+          className="fixed top-16 left-0 right-0 bottom-0 bg-black/40 z-30"
           onClick={() => {
             setIsOpen(false);
-            setView("menu"); // reset on close
           }}
         />
       )}
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full w-full sm:w-4/5 sm:max-w-md ${
-          isDark ? "bg-stone-900" : "bg-stone-100"
-        } shadow-md z-40 transform transition-transform duration-300 ${
+        className={`fixed top-16 left-0 h-[calc(100vh-4rem)] w-full sm:w-4/5 sm:max-w-md bg-white shadow-md z-40 transform transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } overflow-y-auto`}
+        } overflow-y-auto flex flex-col`}
       >
-        {view === "menu" && (
-          <nav className="flex flex-col px-4 py-6 space-y-2 text-xl sm:text-2xl md:text-3xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2>Меню</h2>
-              <button
-                className="text-2xl sm:text-3xl cursor-pointer hover:text-[#8C7461]"
-                onClick={() => setIsOpen(false)}
-              >
-                ×
-              </button>
-            </div>
+        <nav className="flex flex-col px-6 pt-8 pb-6 space-y-4 flex-grow">
+          {loading && <p className="text-lg">Завантаження...</p>}
+          {error && <p className="text-red-500 text-lg">Помилка: {error}</p>}
 
-            {loading && <p>Loading categories...</p>}
-            {error && <p className="text-red-500">Error: {error}</p>}
+          {!loading &&
+            !error &&
+            categories.map((cat) => (
+              <div key={cat.id} className="flex flex-col">
+                <div className="flex justify-between items-center">
+                  <Link
+                    href={`/catalog?category=${encodeURIComponent(cat.name)}`}
+                    className="text-2xl sm:text-3xl font-medium text-black hover:text-black/70 transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {cat.name}
+                  </Link>
 
-            {!loading &&
-              !error &&
-              categories.map((cat) => (
-                <div key={cat.id} className="flex flex-col">
-                  <div className="flex justify-between items-center">
-                    <Link
-                      href={`/catalog?category=${encodeURIComponent(cat.name)}`}
-                      className="hover:text-[#8C7461]"
-                      onClick={() => setIsOpen(false)}
+                  {cat.subcategories && cat.subcategories.length > 0 && (
+                    <button
+                      className="ml-4 text-2xl sm:text-3xl font-bold text-black/60 hover:text-black transition-all duration-300"
+                      onClick={() =>
+                        setOpenCategoryId(
+                          openCategoryId === cat.id ? null : cat.id
+                        )
+                      }
                     >
-                      {cat.name}
-                    </Link>
-
-                    {cat.subcategories && cat.subcategories.length > 0 && (
-                      <button
-                        className="ml-2 text-xl sm:text-2xl font-bold"
-                        onClick={() =>
-                          setOpenCategoryId(
-                            openCategoryId === cat.id ? null : cat.id
-                          )
-                        }
+                      <svg
+                        className={`w-6 h-6 sm:w-7 sm:h-7 transition-transform duration-300 ${
+                          openCategoryId === cat.id ? "rotate-180" : ""
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        {openCategoryId === cat.id ? "−" : "+"}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Subcategories dropdown */}
-                  {openCategoryId === cat.id && cat.subcategories && (
-                    <div className="flex flex-col pl-6 mt-1 space-y-1">
-                      {cat.subcategories.map((sub) => (
-                        <Link
-                          key={sub.id}
-                          href={`/catalog?subcategory=${encodeURIComponent(
-                            sub.name
-                          )}`}
-                          className="hover:text-[#8C7461]"
-                          onClick={() => setIsOpen(false)}
-                        >
-                          {sub.name}
-                        </Link>
-                      ))}
-                    </div>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
                   )}
                 </div>
-              ))}
-            <button
-              className="text-start cursor-pointer hover:text-[#8C7461]"
-              onClick={() => setView("season")}
+
+                {/* Subcategories dropdown */}
+                {openCategoryId === cat.id && cat.subcategories && (
+                  <div className="flex flex-col pl-4 mt-2 space-y-2">
+                    {cat.subcategories.map((sub) => (
+                      <Link
+                        key={sub.id}
+                        href={`/catalog?subcategory=${encodeURIComponent(
+                          sub.name
+                        )}`}
+                        className="text-xl sm:text-2xl text-black/70 hover:text-black transition-colors"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        {sub.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+        </nav>
+
+        {/* Bottom section with Instagram and contacts */}
+        <div className="mt-auto px-6 py-6 border-t border-black/10">
+          <div className="flex flex-col gap-4">
+            <Link
+              href="https://www.instagram.com/13vplus"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 text-lg font-medium text-black hover:text-black/70 transition-colors"
             >
-              Сезон -{">"}
-            </button>
-          </nav>
-        )}
-
-        {view === "season" && (
-          <div>
-            <div className="flex justify-between items-center p-4 text-xl sm:text-2xl md:text-3xl">
-              <h2 className="font-bold">Сезони</h2>
-              <button
-                className="text-2xl sm:text-3xl cursor-pointer hover:text-[#8C7461]"
-                onClick={() => setView("menu")}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 px-4 pb-6 gap-3">
-              {season_data.map((item, i) => (
-                <Link
-                  key={i}
-                  href={`/catalog?season=${item.name}`}
-                  onClick={() => setIsOpen(false)}
-                  className="h-[120px] rounded overflow-hidden relative text-white text-xl sm:text-2xl font-bold text-center flex items-center justify-center"
-                  style={{
-                    backgroundImage: `url(${item.image})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }}
-                >
-                  {/* Dark overlay on image */}
-                  <div className="absolute inset-0 bg-black/30" />
-                  <span className="relative z-10">{item.name}</span>{" "}
-                </Link>
-              ))}
-            </div>
+              <Image
+                src="/images/instagram-icon.svg"
+                alt="Instagram"
+                width={24}
+                height={24}
+                className="w-6 h-6"
+              />
+              <span>Instagram</span>
+            </Link>
+            <Link
+              href="/#contacts"
+              className="text-lg font-medium text-black hover:text-black/70 transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              Контакти
+            </Link>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
