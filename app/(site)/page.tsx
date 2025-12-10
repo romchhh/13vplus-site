@@ -3,6 +3,9 @@ import Hero from "@/components/main-page/Hero";
 import CategoriesShowcase from "@/components/main-page/CategoriesShowcase";
 
 // Lazy load components that are below the fold
+const MediaGallery = dynamic(() => import("@/components/main-page/MediaGallery"), {
+  loading: () => <div className="h-96 animate-pulse bg-white" />
+});
 const AboutUs = dynamic(() => import("@/components/main-page/AboutUs"), {
   loading: () => <div className="h-96 animate-pulse bg-white" />
 });
@@ -24,6 +27,7 @@ export default function Home() {
       <Hero />
       <CategoriesShowcase />
       <AboutUs />
+      <MediaGallery />
       <LimitedEdition />
       <FAQ />
       <Reviews />

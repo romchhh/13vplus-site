@@ -288,27 +288,27 @@ export default function TermsOfServicePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <p className="text-sm font-semibold mb-2 opacity-60">Отримувач</p>
-                  <p className="text-sm opacity-90">ФОП Романець Микола Миколайович</p>
+                  <p className="text-sm opacity-90">[Назва отримувача]</p>
                 </div>
                 <div>
                   <p className="text-sm font-semibold mb-2 opacity-60">ІПН/ЄДРПОУ</p>
-                  <p className="text-sm opacity-90">3357714797</p>
+                  <p className="text-sm opacity-90">[ІПН/ЄДРПОУ]</p>
                 </div>
                 <div className="md:col-span-2">
                   <p className="text-sm font-semibold mb-2 opacity-60">IBAN</p>
-                  <p className="text-sm opacity-90">UA353220010000026007320071773</p>
+                  <p className="text-sm opacity-90">[IBAN]</p>
                 </div>
                 <div>
                   <p className="text-sm font-semibold mb-2 opacity-60">Акціонерне товариство</p>
-                  <p className="text-sm opacity-90">УНІВЕРСАЛ БАНК</p>
+                  <p className="text-sm opacity-90">[Назва банку]</p>
                 </div>
                 <div>
                   <p className="text-sm font-semibold mb-2 opacity-60">МФО</p>
-                  <p className="text-sm opacity-90">322001</p>
+                  <p className="text-sm opacity-90">[МФО]</p>
                 </div>
                 <div>
                   <p className="text-sm font-semibold mb-2 opacity-60">ЄДРПОУ Банку</p>
-                  <p className="text-sm opacity-90">21133352</p>
+                  <p className="text-sm opacity-90">[ЄДРПОУ Банку]</p>
                 </div>
               </div>
             </div>

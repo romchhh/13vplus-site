@@ -32,21 +32,26 @@ export default function AboutUs() {
           Про нас
         </div>
 
-        {/* Main Content - Minimized */}
-        <div className="max-w-3xl mx-auto text-center space-y-6 lg:space-y-8">
-          <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-white/80 leading-relaxed">
-            13VPLUS — український бренд жіночого одягу, заснований у серпні 2023 року в Києві.
+        {/* Main Content */}
+        <div className="max-w-4xl mx-auto text-center space-y-6 lg:space-y-10">
+          <p className="text-lg lg:text-2xl font-normal font-['Montserrat'] text-white/80 leading-relaxed">
+            13VPLUS — український бренд жіночого одягу, заснований у серпні 2023 року в Києві. Ми створюємо одяг, який поєднує сучасні тренди з класичною елегантністю, дбаючи про якість кожної деталі.
           </p>
 
-          <div className="py-6 lg:py-8 border-t border-b border-white/20">
-            <p className="text-lg lg:text-2xl font-medium font-['Montserrat'] text-white leading-relaxed">
+          <div className="py-8 lg:py-12 border-t border-b border-white/20">
+            <p className="text-xl lg:text-3xl font-medium font-['Montserrat'] text-white leading-relaxed">
               Шиємо те, що самі хочемо носити — без компромісів.
             </p>
           </div>
 
-          <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-white/70 leading-relaxed">
-            Створюємо одяг для жінок від 22 до 50 років. Індивідуальний пошив під ваші параметри — акуратно, якісно і точно по фігурі.
-          </p>
+          <div className="space-y-4 lg:space-y-6">
+            <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-white/70 leading-relaxed">
+              Індивідуальний пошив під ваші параметри — акуратно, якісно і точно по фігурі. Кожна модель створюється з урахуванням особливостей вашої фігури, щоб підкреслити переваги та створити ідеальний силует.
+            </p>
+            <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-white/70 leading-relaxed">
+              Ми працюємо з якісними тканинами та дотримуємося високих стандартів виробництва. Наша мета — не просто одяг, а справжні інвестиції в ваш стиль та впевненість у собі.
+            </p>
+          </div>
         </div>
 
         {/* Instagram Reels Section - Single, Minimalist */}

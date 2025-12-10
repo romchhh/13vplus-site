@@ -49,15 +49,34 @@ const migrations: Migration[] = [
 
       -- 3) Ensure unique constraint (product_id, size) exists
       DO $$
+      DECLARE
+        constraint_exists BOOLEAN;
       BEGIN
-        IF NOT EXISTS (
+        -- Check if any unique constraint exists on (product_id, size)
+        SELECT EXISTS (
           SELECT 1
-          FROM pg_constraint
-          WHERE conname = 'product_sizes_product_id_size_key'
-        ) THEN
+          FROM pg_constraint c
+          JOIN pg_class t ON c.conrelid = t.oid
+          WHERE t.relname = 'product_sizes'
+          AND c.contype = 'u'
+          AND array_length(c.conkey, 1) = 2
+          AND (
+            SELECT attname FROM pg_attribute 
+            WHERE attrelid = c.conrelid AND attnum = c.conkey[1]
+          ) = 'product_id'
+          AND (
+            SELECT attname FROM pg_attribute 
+            WHERE attrelid = c.conrelid AND attnum = c.conkey[2]
+          ) = 'size'
+        ) INTO constraint_exists;
+        
+        IF NOT constraint_exists THEN
           ALTER TABLE product_sizes
           ADD CONSTRAINT product_sizes_product_id_size_key UNIQUE (product_id, size);
         END IF;
+      EXCEPTION WHEN OTHERS THEN
+        -- Constraint might already exist with different name, ignore
+        NULL;
       END
       $$;
 
