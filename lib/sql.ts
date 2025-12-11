@@ -973,15 +973,39 @@ export async function sqlGetCategory(id: number) {
 }
 
 // Create a new category
-export async function sqlPostCategory(name: string, priority: number = 0) {
+export async function sqlPostCategory(
+  name: string, 
+  priority: number = 0,
+  mediaType?: string | null,
+  mediaUrl?: string | null
+) {
+  const createData: {
+    name: string;
+    priority: number;
+    mediaType?: string | null;
+    mediaUrl?: string | null;
+  } = { 
+    name, 
+    priority,
+  };
+
+  if (mediaType !== undefined) {
+    createData.mediaType = mediaType;
+  }
+  if (mediaUrl !== undefined) {
+    createData.mediaUrl = mediaUrl;
+  }
+
   const created = await prisma.category.create({
-    data: { name, priority },
+    data: createData,
   });
 
   return {
     id: created.id,
     name: created.name,
     priority: created.priority,
+    mediaType: created.mediaType,
+    mediaUrl: created.mediaUrl,
   };
 }
 

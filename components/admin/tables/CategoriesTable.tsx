@@ -9,11 +9,18 @@ import {
   TableRow,
 } from "../ui/table";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Category {
   id: number;
   name: string;
 }
+
+type MediaFile = {
+  file: File;
+  type: "photo" | "video";
+  preview?: string;
+};
 
 export default function CategoriesTable() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -22,6 +29,7 @@ export default function CategoriesTable() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
 
   useEffect(() => {
     fetchCategories();
@@ -40,6 +48,35 @@ export default function CategoriesTable() {
     }
   }
 
+  const handleMediaDrop = (files: File[]) => {
+    const newMedia = files.map((file) => {
+      const isVideo = file.type.startsWith("video/") || 
+        file.name.toLowerCase().endsWith('.webm') ||
+        file.name.toLowerCase().endsWith('.mp4') ||
+        file.name.toLowerCase().endsWith('.mov') ||
+        file.name.toLowerCase().endsWith('.avi') ||
+        file.name.toLowerCase().endsWith('.mkv') ||
+        file.name.toLowerCase().endsWith('.flv') ||
+        file.name.toLowerCase().endsWith('.wmv');
+      
+      return {
+        file,
+        type: (isVideo ? "video" : "photo") as MediaFile["type"],
+        preview: URL.createObjectURL(file),
+      };
+    });
+
+    setMediaFiles((prev) => [...prev, ...newMedia]);
+  };
+
+  const handleRemoveMedia = (index: number) => {
+    const mediaToRemove = mediaFiles[index];
+    if (mediaToRemove?.preview) {
+      URL.revokeObjectURL(mediaToRemove.preview);
+    }
+    setMediaFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   async function handleAddCategory() {
     if (!newCategoryName.trim()) {
       alert("Введіть назву категорії");
@@ -47,10 +84,37 @@ export default function CategoriesTable() {
     }
 
     try {
+      let finalMediaUrl: string | null = null;
+      let finalMediaType: string | null = null;
+
+      // Upload media if provided
+      if (mediaFiles.length > 0) {
+        const uploadForm = new FormData();
+        mediaFiles.forEach((m) => uploadForm.append("images", m.file));
+
+        const uploadRes = await fetch("/api/images", {
+          method: "POST",
+          body: uploadForm,
+        });
+
+        if (!uploadRes.ok) throw new Error("File upload failed");
+
+        const uploadData = await uploadRes.json();
+        if (uploadData.media && uploadData.media.length > 0) {
+          // Use the first uploaded media
+          finalMediaUrl = uploadData.media[0].url;
+          finalMediaType = uploadData.media[0].type;
+        }
+      }
+
       const res = await fetch("/api/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCategoryName.trim() }),
+        body: JSON.stringify({ 
+          name: newCategoryName.trim(),
+          mediaType: finalMediaType,
+          mediaUrl: finalMediaUrl,
+        }),
       });
 
       if (!res.ok) throw new Error("Failed to create category");
@@ -58,6 +122,7 @@ export default function CategoriesTable() {
       const newCategory = await res.json();
       setCategories([...categories, newCategory]);
       setNewCategoryName("");
+      setMediaFiles([]);
       setIsAddingNew(false);
     } catch (error) {
       console.error("Error creating category:", error);
@@ -157,45 +222,107 @@ export default function CategoriesTable() {
             <TableBody className="divide-y divide-gray-200 bg-white">
               {/* Add new category row */}
               {isAddingNew && (
-                <TableRow className="bg-green-50">
-                  <TableCell className="px-5 py-4 text-sm text-gray-900 font-medium">
-                    —
-                  </TableCell>
-                  <TableCell className="px-5 py-4">
-                    <input
-                      type="text"
-                      value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") handleAddCategory();
-                        if (e.key === "Escape") {
+                <>
+                  <TableRow className="bg-green-50">
+                    <TableCell className="px-5 py-4 text-sm text-gray-900 font-medium">
+                      —
+                    </TableCell>
+                    <TableCell className="px-5 py-4">
+                      <input
+                        type="text"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") handleAddCategory();
+                          if (e.key === "Escape") {
+                            setIsAddingNew(false);
+                            setNewCategoryName("");
+                            setMediaFiles([]);
+                          }
+                        }}
+                        placeholder="Введіть назву категорії"
+                        className="w-full px-3 py-2 border border-gray-400 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        autoFocus
+                      />
+                    </TableCell>
+                    <TableCell className="px-5 py-4 space-x-2">
+                      <button
+                        onClick={handleAddCategory}
+                        className="inline-block rounded-md bg-green-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-green-600 transition shadow-sm"
+                      >
+                        Зберегти
+                      </button>
+                      <button
+                        onClick={() => {
                           setIsAddingNew(false);
                           setNewCategoryName("");
-                        }
-                      }}
-                      placeholder="Введіть назву категорії"
-                      className="w-full px-3 py-2 border border-gray-400 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      autoFocus
-                    />
-                  </TableCell>
-                  <TableCell className="px-5 py-4 space-x-2">
-                    <button
-                      onClick={handleAddCategory}
-                      className="inline-block rounded-md bg-green-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-green-600 transition shadow-sm"
-                    >
-                      Зберегти
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsAddingNew(false);
-                        setNewCategoryName("");
-                      }}
-                      className="inline-block rounded-md bg-gray-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-gray-600 transition shadow-sm"
-                    >
-                      Скасувати
-                    </button>
-                  </TableCell>
-                </TableRow>
+                          setMediaFiles([]);
+                        }}
+                        className="inline-block rounded-md bg-gray-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-gray-600 transition shadow-sm"
+                      >
+                        Скасувати
+                      </button>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow className="bg-green-50">
+                    <TableCell colSpan={3} className="px-5 py-4">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Фото/Відео категорії
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/*,video/*"
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files || []);
+                              if (files.length > 0) {
+                                handleMediaDrop(files);
+                              }
+                            }}
+                            className="block w-full text-sm text-gray-900 border border-gray-300 rounded-md cursor-pointer bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                          />
+                        </div>
+                        {mediaFiles.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {mediaFiles.map((media, i) => {
+                              const previewUrl = media.preview || URL.createObjectURL(media.file);
+                              const isVideo = media.type === "video";
+                              return (
+                                <div key={`new-${i}`} className="relative inline-block">
+                                  {isVideo ? (
+                                    <video
+                                      src={previewUrl}
+                                      controls
+                                      className="w-32 h-32 object-cover rounded"
+                                    />
+                                  ) : (
+                                    <div className="relative w-32 h-32">
+                                      <Image
+                                        src={previewUrl}
+                                        alt={`new-media-${i}`}
+                                        fill
+                                        className="object-cover rounded"
+                                      />
+                                    </div>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveMedia(i)}
+                                    className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                                    title="Видалити"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                </>
               )}
 
               {/* Loading state */}
