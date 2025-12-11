@@ -159,10 +159,10 @@ export default function Hero() {
         <div className="relative z-10 flex flex-col justify-end md:justify-center p-10 md:p-20 gap-8 md:gap-12 h-full" style={{ zIndex: 2 }}>
           {/* Luxury text overlay */}
           <div className="flex flex-col items-center justify-center gap-5 md:gap-7 mb-24 md:mb-20">
-            <h1 className="text-white text-5xl sm:text-6xl md:text-7xl lg:text-6xl xl:text-7xl font-bold font-['Montserrat'] uppercase text-center leading-tight" style={{ letterSpacing: '0.15em' }}>
+            <h1 className="text-white text-4xl sm:text-6xl md:text-7xl lg:text-6xl xl:text-7xl font-bold font-['Montserrat'] uppercase text-center leading-tight" style={{ letterSpacing: '0.15em' }}>
               Urban Stillness
             </h1>
-            <p className="text-white text-xl sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-bold font-['Montserrat'] uppercase text-center opacity-90" style={{ letterSpacing: '0.2em' }}>
+            <p className="text-white text-lg sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-bold font-['Montserrat'] uppercase text-center opacity-90" style={{ letterSpacing: '0.2em' }}>
               Winter Collection
             </p>
           </div>

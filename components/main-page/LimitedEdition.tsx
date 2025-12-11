@@ -56,14 +56,14 @@ export default function LimitedEdition() {
         <div className="sm:hidden">
           {/* First Slider */}
           <Swiper
-            spaceBetween={0}
+            spaceBetween={16}
             slidesPerView={1.5}
             centeredSlides={true}
             grabCursor={true}
             initialSlide={0}
             breakpoints={{
-              320: { slidesPerView: 1.2, spaceBetween: 0 },
-              480: { slidesPerView: 1.5, spaceBetween: 0 },
+              320: { slidesPerView: 1.2, spaceBetween: 16 },
+              480: { slidesPerView: 1.5, spaceBetween: 20 },
             }}
           >
             {products.map((product, i) => (
@@ -105,14 +105,14 @@ export default function LimitedEdition() {
 
           {/* Second Slider */}
           <Swiper
-            spaceBetween={0}
+            spaceBetween={16}
             slidesPerView={1.5}
             centeredSlides={true}
             grabCursor={true}
             initialSlide={0}
             breakpoints={{
-              320: { slidesPerView: 1.2, spaceBetween: 0 },
-              480: { slidesPerView: 1.5, spaceBetween: 0 },
+              320: { slidesPerView: 1.2, spaceBetween: 16 },
+              480: { slidesPerView: 1.5, spaceBetween: 20 },
             }}
           >
             {products.map((product, i) => (
@@ -154,15 +154,15 @@ export default function LimitedEdition() {
         </div>
 
         {/* Desktop layout: Horizontal scrollable grid */}
-        <div className="hidden sm:block overflow-x-auto overflow-y-hidden scrollbar-hide">
-          <div className="flex gap-0 min-w-max pb-4">
+        <div className="hidden sm:block overflow-x-auto overflow-y-hidden scrollbar-hide relative">
+          <div className="flex gap-4 md:gap-6 min-w-max pb-4 px-4 md:px-6 scroll-smooth">
             {products.map((product, i) => (
-              <Link
-                href={`/product/${product.id}`}
-                key={product.id !== -1 ? product.id : `template-${i}`}
-                className="group relative flex-shrink-0 flex flex-col"
-                style={{ width: "42.5vw", minWidth: "340px", maxWidth: "510px" }}
-              >
+              <div key={product.id !== -1 ? product.id : `template-${i}`} className="flex items-center">
+                <Link
+                  href={`/product/${product.id}`}
+                  className="group relative flex-shrink-0 flex flex-col"
+                  style={{ width: "42.5vw", minWidth: "340px", maxWidth: "510px" }}
+                >
                 <div className="aspect-[2/3] w-full overflow-hidden relative bg-black/5">
                   {product.first_media?.type === "video" ? (
                     <video
@@ -200,7 +200,8 @@ export default function LimitedEdition() {
                     {product.price.toLocaleString()} ₴
                   </div>
                 </div>
-              </Link>
+                </Link>
+              </div>
             ))}
           </div>
         </div>
