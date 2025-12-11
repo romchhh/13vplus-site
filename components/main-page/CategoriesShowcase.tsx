@@ -51,7 +51,7 @@ export default function CategoriesShowcase() {
   }
 
   return (
-    <section className="max-w-[1920px] w-full mx-auto relative bg-white">
+    <section className="max-w-[1920px] w-full mx-auto relative bg-white pb-16 lg:pb-24">
       {/* Stylish Divider and Title Section */}
       <div className="relative py-16 lg:py-24 px-6 overflow-hidden">
         {/* Diagonal divider line */}
@@ -70,11 +70,6 @@ export default function CategoriesShowcase() {
           <h2 className="text-4xl md:text-5xl lg:text-7xl font-bold font-['Montserrat'] uppercase tracking-tight text-black mb-6 leading-tight">
             Колекції
           </h2>
-          <div className="flex items-center justify-center gap-4 mb-8">
-            <div className="h-px w-12 bg-black/30"></div>
-            <div className="w-1.5 h-1.5 bg-black/40 rounded-full"></div>
-            <div className="h-px w-12 bg-black/30"></div>
-          </div>
           <p className="text-sm lg:text-base font-['Montserrat'] text-black/60 max-w-xl mx-auto tracking-wide">
             Кожна категорія — це унікальний світ стилю та елегантності
           </p>

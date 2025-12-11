@@ -52,58 +52,8 @@ export default function LimitedEdition() {
           </p>
         </div>
 
-        {/* Mobile layout: Two stacked sliders */}
+        {/* Mobile layout: Single slider */}
         <div className="sm:hidden">
-          {/* First Slider */}
-          <Swiper
-            spaceBetween={16}
-            slidesPerView={1.5}
-            centeredSlides={true}
-            grabCursor={true}
-            initialSlide={0}
-            breakpoints={{
-              320: { slidesPerView: 1.2, spaceBetween: 16 },
-              480: { slidesPerView: 1.5, spaceBetween: 20 },
-            }}
-          >
-            {products.map((product, i) => (
-              <SwiperSlide
-                key={product.id !== -1 ? product.id : `template-${i}`}
-              >
-                <Link
-                  href={`/product/${product.id}`}
-                  className="w-full group space-y-4 relative"
-                >
-                  <div className="relative w-full h-[500px] bg-black/5">
-                    <Image
-                      className="object-cover group-hover:opacity-90 transition duration-300"
-                      src={getProductImageSrc(product.first_media, "https://placehold.co/432x682")}
-                      alt={product.name}
-                      fill
-                      sizes="90vw"
-                    />
-                    {product.first_media?.type === "photo" && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="bg-white/90 text-black px-6 py-3 text-base font-medium font-['Montserrat'] uppercase tracking-wider">
-                          Переглянути
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-center space-y-2 mt-4">
-                    <div className="text-base font-light font-['Montserrat'] text-black/80 uppercase tracking-wider">
-                      {product.name}
-                    </div>
-                    <div className="text-base font-medium font-['Montserrat'] text-black">
-                      {product.price.toLocaleString()} ₴
-                    </div>
-                  </div>
-                </Link>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-
-          {/* Second Slider */}
           <Swiper
             spaceBetween={16}
             slidesPerView={1.5}
