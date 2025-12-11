@@ -444,13 +444,6 @@ export default function ProductClient({ product: initialProduct }: ProductClient
             Написати менеджеру
           </a>
 
-          {/* Product Description */}
-          {product.description && (
-            <div className="text-sm md:text-base font-['Montserrat'] text-gray-700 leading-relaxed mt-4">
-              {product.description}
-            </div>
-          )}
-
           {/* Size Guide Modal */}
           {showSizeGuide && (
             <div
