@@ -1,7 +1,6 @@
 import { prisma } from "./prisma";
 import { unlink } from "fs/promises";
 import path from "path";
-import { Prisma } from "@prisma/client";
 
 // Keep sql template literal for backward compatibility (used in migrate route)
 // This will be deprecated but kept for now

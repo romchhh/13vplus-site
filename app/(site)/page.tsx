@@ -18,9 +18,6 @@ const ContactsSection = dynamic(() => import("@/components/main-page/ContactsSec
 const FAQ = dynamic(() => import("@/components/main-page/FAQ"), {
   loading: () => <div className="h-96 animate-pulse bg-white" />
 });
-const Reviews = dynamic(() => import("@/components/main-page/Reviews"), {
-  loading: () => <div className="h-96 animate-pulse bg-white" />
-});
 
 export const revalidate = 300; // ISR every 5 minutes
 
@@ -34,7 +31,6 @@ export default function Home() {
       <LimitedEdition />
       <ContactsSection />
       <FAQ />
-      <Reviews />
     </>
   );
 }

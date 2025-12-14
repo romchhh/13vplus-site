@@ -13,7 +13,7 @@ const AppHeader: React.FC = () => {
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
 
   const [query, setQuery] = useState("");
-  const { products: allProducts, loading } = useProducts();
+  const { products: allProducts } = useProducts();
 
   const filteredProducts = useMemo(
     () =>

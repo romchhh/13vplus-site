@@ -21,6 +21,8 @@ const montserrat = Montserrat({
   fallback: ["system-ui", "arial"],
   variable: "--font-montserrat",
   adjustFontFallback: true,
+  // Optimize: only load weights that are actually used
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -133,12 +135,15 @@ export default function RootLayout({
         {/* End Meta Pixel Code */}
       </head>
       <body>
+        <a href="#main-content" className="skip-link">
+          Перейти до основного контенту
+        </a>
         <ErrorBoundary>
           <AppProvider>
             <BasketProvider>
               <WishlistProvider>
               <Header />
-              <MainContent>{children}</MainContent>
+              <MainContent id="main-content">{children}</MainContent>
               <Footer />
               </WishlistProvider>
             </BasketProvider>

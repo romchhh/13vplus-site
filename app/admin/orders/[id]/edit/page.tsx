@@ -92,10 +92,14 @@ export default function EditOrderPage() {
 
   const calculateRemainingPayment = () => {
     const total = parseFloat(calculateTotal());
-    if (formData.payment_type === "full") {
+    if (formData.payment_type === "full" || formData.payment_type === "crypto") {
       return "0.00";
     } else if (formData.payment_type === "prepay") {
       return Math.max(0, total - 300).toFixed(2);
+    } else if (formData.payment_type === "installment") {
+      // For installment, calculate remaining after first payment (30% or minimum 300)
+      const firstPayment = Math.max(300, Math.round(total * 0.3));
+      return Math.max(0, total - firstPayment).toFixed(2);
     }
     return total.toFixed(2);
   };
@@ -173,6 +177,10 @@ export default function EditOrderPage() {
                     ? "Повна оплата"
                     : formData.payment_type === "prepay"
                     ? "Передоплата 300 ₴"
+                    : formData.payment_type === "installment"
+                    ? "В розсрочку"
+                    : formData.payment_type === "crypto"
+                    ? "Крипта (USDT, BTC та інші)"
                     : "Не вказано"
                 }
                 disabled

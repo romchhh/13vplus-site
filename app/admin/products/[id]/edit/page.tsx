@@ -715,12 +715,13 @@ export default function EditProductPage() {
                             className="w-32 h-32 object-cover rounded"
                           />
                         ) : (
-                          <img
+                          <Image
                             src={previewUrl}
                             alt={`new-media-${i}`}
                             width={128}
                             height={128}
                             className="rounded object-cover"
+                            unoptimized
                           />
                         )}
                       <div className="absolute top-1 left-1 flex gap-1">

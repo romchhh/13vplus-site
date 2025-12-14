@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next'
-import { sqlGetAllProducts } from '@/lib/sql'
+import { sqlGetAllProducts, sqlGetAllCategories } from '@/lib/sql'
 
 async function getProducts() {
   try {
@@ -11,9 +11,22 @@ async function getProducts() {
   }
 }
 
+async function getCategories() {
+  try {
+    const categories = await sqlGetAllCategories();
+    return categories;
+  } catch (error) {
+    console.error("Error fetching categories for sitemap:", error);
+    return [];
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  const products = await getProducts();
+  const [products, categories] = await Promise.all([
+    getProducts(),
+    getCategories(),
+  ]);
 
   // Static pages
   const staticPages = [
@@ -36,6 +49,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     },
     {
+      url: `${baseUrl}/contacts`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    },
+    {
       url: `${baseUrl}/terms-of-service`,
       lastModified: new Date(),
       changeFrequency: 'monthly' as const,
@@ -49,6 +68,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // Category pages
+  const categoryPages = categories.map((category) => ({
+    url: `${baseUrl}/catalog?category=${encodeURIComponent(category.name)}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.85,
+  }));
+
   // Product pages
   const productPages = products.map((product) => ({
     url: `${baseUrl}/product/${product.id}`,
@@ -57,5 +84,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  return [...staticPages, ...productPages];
+  return [...staticPages, ...categoryPages, ...productPages];
 }

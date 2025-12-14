@@ -7,6 +7,8 @@ import {
   sqlGetAllColors,
   sqlGetAllCategories
 } from "@/lib/sql";
+import { CollectionPageStructuredData, BreadcrumbStructuredData } from "@/components/shared/StructuredData";
+import Breadcrumbs from "@/components/shared/Breadcrumbs";
 
 interface Product {
   id: number;
@@ -69,6 +71,36 @@ export default async function CatalogServer(props: CatalogServerProps) {
     getCategories(),
   ]);
 
-  return <CatalogClient initialProducts={products} colors={colors} categories={categories} />;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const categoryName = props.category || props.subcategory || null;
+  const catalogUrl = `${baseUrl}/catalog${categoryName ? `?category=${encodeURIComponent(categoryName)}` : ""}`;
+  const pageName = categoryName || "Каталог товарів";
+  const pageDescription = categoryName
+    ? `Каталог товарів категорії "${categoryName}" від 13VPLUS. Якісний жіночий одяг з індивідуальним пошивом.`
+    : "Перегляньте весь каталог жіночого одягу від 13VPLUS. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.";
+
+  const breadcrumbs = [
+    { name: "Головна", url: baseUrl },
+    { name: "Каталог", url: `${baseUrl}/catalog` },
+    ...(categoryName ? [{ name: categoryName, url: catalogUrl }] : []),
+  ];
+
+  return (
+    <>
+      <CollectionPageStructuredData
+        name={pageName}
+        description={pageDescription}
+        url={catalogUrl}
+        baseUrl={baseUrl}
+        itemCount={products.length}
+        category={categoryName || undefined}
+      />
+      <BreadcrumbStructuredData items={breadcrumbs} />
+      <div className="max-w-[1824px] mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <Breadcrumbs items={breadcrumbs} />
+      </div>
+      <CatalogClient initialProducts={products} colors={colors} categories={categories} />
+    </>
+  );
 }
 

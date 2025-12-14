@@ -2,12 +2,17 @@
 
 import { usePathname } from "next/navigation";
 
-export default function MainContent({ children }: { children: React.ReactNode }) {
+interface MainContentProps {
+  children: React.ReactNode;
+  id?: string;
+}
+
+export default function MainContent({ children, id }: MainContentProps) {
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   
   return (
-    <main className={`bg-white ${isHomePage ? '' : 'mt-16 lg:mt-20'}`}>
+    <main id={id} className={`bg-white ${isHomePage ? '' : 'mt-16 lg:mt-20'}`}>
       {children}
     </main>
   );

@@ -1,6 +1,36 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// Base64 decode function for edge runtime
+function base64Decode(str: string): string {
+  try {
+    // Use Web API atob if available (edge runtime supports it)
+    if (typeof atob !== 'undefined') {
+      return atob(str);
+    }
+    // Fallback: manual base64 decoding
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    let output = '';
+    let i = 0;
+    str = str.replace(/[^A-Za-z0-9\+\/\=]/g, '');
+    while (i < str.length) {
+      const enc1 = chars.indexOf(str.charAt(i++));
+      const enc2 = chars.indexOf(str.charAt(i++));
+      const enc3 = chars.indexOf(str.charAt(i++));
+      const enc4 = chars.indexOf(str.charAt(i++));
+      const chr1 = (enc1 << 2) | (enc2 >> 4);
+      const chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+      const chr3 = ((enc3 & 3) << 6) | enc4;
+      output += String.fromCharCode(chr1);
+      if (enc3 !== 64) output += String.fromCharCode(chr2);
+      if (enc4 !== 64) output += String.fromCharCode(chr3);
+    }
+    return output;
+  } catch (e) {
+    throw new Error('Invalid base64 string');
+  }
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const response = NextResponse.next();
@@ -50,7 +80,8 @@ export function middleware(request: NextRequest) {
   if (authCookie) {
     try {
       const token = authCookie.value;
-      const decoded = Buffer.from(token, "base64").toString();
+      // Decode base64 token
+      const decoded = base64Decode(token);
       const [user, password] = decoded.split(":");
 
       const validUser = process.env.ADMIN_USER;

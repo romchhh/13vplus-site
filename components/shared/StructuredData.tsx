@@ -108,3 +108,73 @@ export function BreadcrumbStructuredData({ items }: { items: { name: string; url
   );
 }
 
+interface CollectionPageStructuredDataProps {
+  name: string;
+  description: string;
+  url: string;
+  baseUrl: string;
+  itemCount?: number;
+  category?: string;
+}
+
+export function CollectionPageStructuredData({
+  name,
+  description,
+  url,
+  baseUrl,
+  itemCount = 0,
+  category,
+}: CollectionPageStructuredDataProps) {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name,
+    description,
+    url,
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: itemCount,
+      ...(category && {
+        itemListElement: {
+          "@type": "ListItem",
+          name: category,
+        },
+      }),
+    },
+    breadcrumb: {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Головна",
+          item: baseUrl,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Каталог",
+          item: `${baseUrl}/catalog`,
+        },
+        ...(category
+          ? [
+              {
+                "@type": "ListItem",
+                position: 3,
+                name: category,
+                item: url,
+              },
+            ]
+          : []),
+      ],
+    },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+    />
+  );
+}
+

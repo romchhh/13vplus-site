@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useBasket } from "@/lib/BasketProvider";
 import Link from "next/link";
 import Image from "next/image";
@@ -14,6 +15,7 @@ export default function SidebarBasket({
   setIsOpen,
 }: SidebarBasketProps) {
   const { items, removeItem, updateQuantity } = useBasket();
+  const [quantityError, setQuantityError] = useState<Record<string, string>>({});
 
   return (
     <div className="relative z-50">
@@ -82,31 +84,71 @@ export default function SidebarBasket({
                       )}
                     </div>
                     <p className="text-stone-900 mt-1">Розмір: {item.size}</p>
+                    {quantityError[`${item.id}-${item.size}`] && (
+                      <p className="text-red-600 text-sm mt-1">
+                        {quantityError[`${item.id}-${item.size}`]}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-center border border-neutral-400/60 w-24 h-9 justify-between px-2">
                       <button
-                        className="text-zinc-500 text-lg"
-                        onClick={() =>
-                          updateQuantity(item.id, item.size, item.quantity - 1)
-                        }
+                        className="text-zinc-500 text-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        onClick={async () => {
+                          try {
+                            await updateQuantity(item.id, item.size, item.quantity - 1);
+                            // Clear error if successful
+                            setQuantityError((prev) => {
+                              const newErrors = { ...prev };
+                              delete newErrors[`${item.id}-${item.size}`];
+                              return newErrors;
+                            });
+                          } catch (error) {
+                            // Error handling for decrease is less critical, but still handle it
+                            console.error("Error updating quantity:", error);
+                          }
+                        }}
+                        aria-label={`Зменшити кількість ${item.name}`}
+                        disabled={item.quantity <= 1}
                       >
                         −
                       </button>
-                      <span>{item.quantity}</span>
+                      <span aria-live="polite" aria-atomic="true">{item.quantity}</span>
                       <button
-                        className="text-zinc-500 text-lg"
-                        onClick={() =>
-                          updateQuantity(item.id, item.size, item.quantity + 1)
-                        }
+                        className="text-zinc-500 text-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        onClick={async () => {
+                          try {
+                            await updateQuantity(item.id, item.size, item.quantity + 1);
+                            // Clear error if successful
+                            setQuantityError((prev) => {
+                              const newErrors = { ...prev };
+                              delete newErrors[`${item.id}-${item.size}`];
+                              return newErrors;
+                            });
+                          } catch (error) {
+                            setQuantityError((prev) => ({
+                              ...prev,
+                              [`${item.id}-${item.size}`]: error instanceof Error ? error.message : "Недостатньо товару",
+                            }));
+                            setTimeout(() => {
+                              setQuantityError((prev) => {
+                                const newErrors = { ...prev };
+                                delete newErrors[`${item.id}-${item.size}`];
+                                return newErrors;
+                              });
+                            }, 5000);
+                          }
+                        }}
+                        aria-label={`Збільшити кількість ${item.name}`}
                       >
                         +
                       </button>
                     </div>
                     <button
-                      className="text-red-600 text-xl font-bold"
+                      className="text-red-600 text-xl font-bold min-w-[44px] min-h-[44px] flex items-center justify-center"
                       onClick={() => removeItem(item.id, item.size)}
+                      aria-label={`Видалити ${item.name} з кошика`}
                     >
                       ×
                     </button>

@@ -4,8 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     // Check for cache-busting query parameter
-    const { searchParams } = new URL(request.url);
-    const noCache = searchParams.get("nocache") === "true";
+    const noCache = request.nextUrl.searchParams.get("nocache") === "true";
     
     const products = await sqlGetLimitedEditionProducts();
     

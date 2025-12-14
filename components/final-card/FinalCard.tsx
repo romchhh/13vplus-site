@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAppContext } from "@/lib/GeneralProvider";
 import { useBasket } from "@/lib/BasketProvider";
 import Image from "next/image";
 import Link from "next/link";
@@ -82,6 +81,7 @@ export default function FinalCard() {
       comment?: string;
       paymentType: string;
     };
+    orderId?: string;
   } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,6 +112,37 @@ export default function FinalCard() {
 
     if (items.length === 0) {
       setError("Ваш кошик порожній.");
+      setLoading(false);
+      return;
+    }
+
+    // Check stock availability before submitting order
+    try {
+      const stockCheckResponse = await fetch("/api/products/check-stock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((item) => ({
+            product_id: item.id,
+            size: item.size,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+
+      if (!stockCheckResponse.ok) {
+        const stockData = await stockCheckResponse.json();
+        const errorMessages = stockData.insufficientItems?.map(
+          (item: { product_id: number; size: string; requested: number; available: number }) =>
+            `Товар ID ${item.product_id} (розмір ${item.size}): доступно ${item.available} шт., запитано ${item.requested} шт.`
+        ) || ["Недостатньо товару в наявності"];
+        setError(`Недостатньо товару в наявності:\n${errorMessages.join("\n")}`);
+        setLoading(false);
+        return;
+      }
+    } catch (stockError) {
+      console.error("[FinalCard] Stock check error:", stockError);
+      setError("Помилка перевірки наявності товару. Спробуйте ще раз.");
       setLoading(false);
       return;
     }
@@ -183,22 +214,34 @@ export default function FinalCard() {
       if (!response.ok) {
         const data = await response.json();
         console.error("[FinalCard] Error response:", data);
-        setError(data.error || "Помилка при оформленні замовлення.");
+        let errorMessage = data.error || "Помилка при оформленні замовлення.";
+        
+        if (data.details) {
+          if (Array.isArray(data.details)) {
+            errorMessage = `${errorMessage}\n${data.details.join("\n")}`;
+          } else {
+            errorMessage = `${errorMessage}\n${data.details}`;
+          }
+        }
+        
+        setError(errorMessage);
+        setLoading(false);
+        return;
       } else {
         const data = await response.json();
         console.log("[FinalCard] Success response:", data);
         
-        const { invoiceUrl, invoiceId } = data;
+        const { orderId, paymentUrl, paymentData } = data;
         
-        console.log("[FinalCard] Invoice URL:", invoiceUrl);
-        console.log("[FinalCard] Invoice ID:", invoiceId);
+        console.log("[FinalCard] Order ID:", orderId);
+        console.log("[FinalCard] Payment URL:", paymentUrl);
+        console.log("[FinalCard] Payment Data:", paymentData);
 
-        if (!invoiceUrl) {
-          console.error("[FinalCard] No invoice URL received!");
-          setError("Не вдалося отримати посилання на оплату.");
+        if (!orderId) {
+          console.error("[FinalCard] No order ID received!");
+          setError("Не вдалося створити замовлення.");
           return;
         }
-
 
         // Track Purchase event for Meta Pixel
         if (typeof window !== 'undefined' && window.fbq) {
@@ -220,11 +263,25 @@ export default function FinalCard() {
           });
         }
 
-        localStorage.setItem(
-          "submittedOrder",
-          JSON.stringify({
-            items,
-            customer: {
+        // Check if payment is required
+        const requiresPayment = paymentType !== "crypto";
+        const isCryptoPayment = paymentType === "crypto";
+        
+        // If payment URL is provided, redirect to payment gateway
+        if (paymentUrl) {
+          // Store order info temporarily (don't clear basket yet)
+          localStorage.setItem(
+            "pendingPayment",
+            JSON.stringify({
+              orderId,
+              paymentType,
+            })
+          );
+          // Store items and customer info for after payment
+          localStorage.setItem("pendingOrderItems", JSON.stringify(items));
+          localStorage.setItem(
+            "pendingOrderCustomer",
+            JSON.stringify({
               name: customerName,
               email,
               phone: phoneNumber,
@@ -232,20 +289,60 @@ export default function FinalCard() {
               postOffice,
               comment,
               paymentType,
-            },
-            invoiceId,
-          })
-        );
-
-        setSuccess("Замовлення успішно створено! Переходимо до оплати...");
-        clearBasket();
-
-        console.log("[FinalCard] Redirecting to invoice URL in 2 seconds...");
-        // Перехід на сторінку оплати через 2 сек
-        setTimeout(() => {
-          console.log("[FinalCard] Redirecting to:", invoiceUrl);
-          window.location.href = invoiceUrl;
-        }, 2000);
+            })
+          );
+          
+          setSuccess("Переходимо до оплати...");
+          
+          if (isCryptoPayment) {
+            // For Plisio - simple redirect to invoice URL
+            setTimeout(() => {
+              window.location.href = paymentUrl;
+            }, 1500);
+          } else if (paymentData) {
+            // For WayForPay - create and submit form
+            setTimeout(() => {
+              const form = document.createElement("form");
+              form.method = "POST";
+              form.action = paymentUrl;
+              form.acceptCharset = "utf-8";
+              
+              Object.entries(paymentData).forEach(([key, value]) => {
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = key;
+                input.value = String(value);
+                form.appendChild(input);
+              });
+              
+              document.body.appendChild(form);
+              form.submit();
+            }, 1500);
+          } else {
+            // Fallback - simple redirect
+            setTimeout(() => {
+              window.location.href = paymentUrl;
+            }, 1500);
+          }
+        } else if (requiresPayment && !paymentUrl) {
+          // Payment required but not created - show error
+          setError(
+            data.message || 
+            "Не вдалося створити платіж. Будь ласка, спробуйте ще раз або зв'яжіться з нами."
+          );
+          setLoading(false);
+        } else if (isCryptoPayment && !paymentUrl) {
+          // Crypto payment failed to create
+          setError(
+            data.message || 
+            "Не вдалося створити платіж криптовалютою. Будь ласка, спробуйте ще раз або зв'яжіться з нами."
+          );
+          setLoading(false);
+        } else {
+          // Should not happen, but just in case
+          setSuccess("Замовлення успішно оформлено! Ми зв'яжемося з вами найближчим часом.");
+          clearBasket();
+        }
       }
     } catch (error) {
       console.error("[FinalCard] Network error:", error);
@@ -256,12 +353,83 @@ export default function FinalCard() {
   };
 
   useEffect(() => {
-    const storedOrder = localStorage.getItem("submittedOrder");
-    if (storedOrder) {
-      setSubmittedOrder(JSON.parse(storedOrder));
-      // localStorage.removeItem("submittedOrder");
+    // Check if returning from payment gateway
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderReference = urlParams.get("orderReference");
+    const status = urlParams.get("status");
+    
+    // Check for pending payment
+    const pendingPayment = localStorage.getItem("pendingPayment");
+    
+    if (pendingPayment && orderReference) {
+      // User returned from payment gateway - check payment status
+      const pendingData = JSON.parse(pendingPayment);
+      
+      // If status=failed from Plisio, show error
+      if (status === "failed") {
+        setError("Оплата не була завершена. Будь ласка, спробуйте ще раз або зв'яжіться з нами.");
+        localStorage.removeItem("pendingPayment");
+        localStorage.removeItem("pendingOrderItems");
+        localStorage.removeItem("pendingOrderCustomer");
+        return;
+      }
+      
+      // Fetch order status from API
+      fetch(`/api/orders/by-invoice/${pendingData.orderId}`)
+        .then((res) => res.json())
+        .then((orderData) => {
+          if (orderData.payment_status === "paid") {
+            // Payment successful - save order info and clear basket
+            const storedItems = localStorage.getItem("pendingOrderItems");
+            if (storedItems) {
+              const items = JSON.parse(storedItems);
+              const storedCustomer = localStorage.getItem("pendingOrderCustomer");
+              const customer = storedCustomer ? JSON.parse(storedCustomer) : {};
+              
+              localStorage.setItem(
+                "submittedOrder",
+                JSON.stringify({
+                  items,
+                  customer,
+                  orderId: pendingData.orderId,
+                })
+              );
+              localStorage.removeItem("pendingPayment");
+              localStorage.removeItem("pendingOrderItems");
+              localStorage.removeItem("pendingOrderCustomer");
+              setSubmittedOrder({
+                items,
+                customer,
+                orderId: pendingData.orderId,
+              });
+              clearBasket();
+            } else {
+              setSuccess("Оплата успішно завершена! Замовлення обробляється.");
+            }
+          } else {
+            // Payment not completed yet
+            setError("Оплата ще не завершена. Будь ласка, завершіть оплату або зв'яжіться з нами.");
+            localStorage.removeItem("pendingPayment");
+            localStorage.removeItem("pendingOrderItems");
+            localStorage.removeItem("pendingOrderCustomer");
+          }
+        })
+        .catch((err) => {
+          console.error("[FinalCard] Error checking payment status:", err);
+          setError("Не вдалося перевірити статус оплати. Будь ласка, зв'яжіться з нами.");
+        });
+    } else {
+      // Normal order display (from localStorage) - only show if payment was completed
+      const storedOrder = localStorage.getItem("submittedOrder");
+      if (storedOrder) {
+        const order = JSON.parse(storedOrder);
+        // Only show if it's not a pending payment
+        if (!pendingPayment) {
+          setSubmittedOrder(order);
+        }
+      }
     }
-  }, []);
+  }, [clearBasket]);
 
   // POST OFFICE
   const [cities, setCities] = useState<string[]>([]); // Available cities
@@ -272,10 +440,9 @@ export default function FinalCard() {
   const [filteredPostOffices, setFilteredPostOffices] = useState<string[]>([]); // Filtered post offices list for autocomplete
   const [cityListVisible, setCityListVisible] = useState(false);
   const [postOfficeListVisible, setPostOfficeListVisible] = useState(false);
-  const [region, setRegion] = useState(""); // For Ukrposhta - область
-  const [district, setDistrict] = useState(""); // For Ukrposhta - район
-  const [regionListVisible] = useState(false); // Controls region list visibility
-  const [districtListVisible] = useState(false); // Controls district list visibility
+  // Region and district for Ukrposhta (currently unused but kept for future implementation)
+  const [region] = useState(""); // For Ukrposhta - область
+  const [district] = useState(""); // For Ukrposhta - район
 
   // Example useEffect for region and district fetching for Ukrposhta
   useEffect(() => {
@@ -367,6 +534,7 @@ export default function FinalCard() {
           setLoadingCities(false);
         });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deliveryMethod]);
 
   useEffect(() => {
@@ -438,6 +606,7 @@ export default function FinalCard() {
           setLoadingPostOffices(false);
         });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [city]);
 
   useEffect(() => {
@@ -672,121 +841,130 @@ export default function FinalCard() {
           <div className="flex flex-col sm:flex-row justify-center gap-10 sm:gap-50">
             <form
               onSubmit={handleSubmit}
-              className="flex flex-col gap-5 w-full sm:w-1/3"
+              className="flex flex-col gap-4 w-full sm:w-1/3"
               noValidate
             >
-              <label
-                htmlFor="name"
-                className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
-              >
-                Ім’я та прізвище *
-              </label>
-              <input
-                type="text"
-                id="name"
-                placeholder="Ваше імʼя та прізвище"
-                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                required
-                autoComplete="name"
-              />
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="name"
+                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
+                >
+                  Ім&apos;я та прізвище <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  placeholder="Напр.: Іван Петренко"
+                  className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  required
+                  autoComplete="name"
+                />
+              </div>
 
-              <label
-                htmlFor="email"
-                className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
-              >
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                placeholder="Ваш Email"
-                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-              />
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="email"
+                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
+                >
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  placeholder="example@email.com"
+                  className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                />
+              </div>
 
-              <label
-                htmlFor="phone"
-                className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
-              >
-                Телефон *
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                placeholder="Ваш телефон"
-                pattern="^\+?\d{10,15}$"
-                title="Введіть номер телефону у форматі +380xxxxxxxxx"
-                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                required
-                autoComplete="tel"
-              />
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="phone"
+                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
+                >
+                  Телефон <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  placeholder="+380 50 123 4567"
+                  pattern="^\+?\d{10,15}$"
+                  title="Введіть номер телефону у форматі +380xxxxxxxxx"
+                  className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  required
+                  autoComplete="tel"
+                />
+              </div>
 
               {/* Add delivery method, city, and post office fields */}
-              <label
-                htmlFor="deliveryMethod"
-                className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
-              >
-                Спосіб доставки *
-              </label>
-              <select
-                id="deliveryMethod"
-                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
-                value={deliveryMethod}
-                onChange={(e) => setDeliveryMethod(e.target.value)}
-                required
-              >
-                <option value="">Оберіть спосіб доставки</option>
-                <option value="nova_poshta_branch">
-                  Нова пошта — у відділення
-                </option>
-                <option value="nova_poshta_locker">
-                  Нова пошта — у поштомат
-                </option>
-                <option value="nova_poshta_courier">
-                  Нова пошта — кур’єром
-                </option>
-                {/* <option value="ukrposhta">Укрпошта</option> */}
-                <option value="showroom_pickup">
-                  Самовивіз з шоуруму (13:00–19:00)
-                </option>
-              </select>
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="deliveryMethod"
+                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
+                >
+                  Спосіб доставки <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="deliveryMethod"
+                  className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all bg-white"
+                  value={deliveryMethod}
+                  onChange={(e) => setDeliveryMethod(e.target.value)}
+                  required
+                >
+                  <option value="">Оберіть спосіб доставки</option>
+                  <option value="nova_poshta_branch">
+                    Нова пошта — у відділення
+                  </option>
+                  <option value="nova_poshta_locker">
+                    Нова пошта — у поштомат
+                  </option>
+                  <option value="nova_poshta_courier">
+                    Нова пошта — кур&apos;єром
+                  </option>
+                  {/* <option value="ukrposhta">Укрпошта</option> */}
+                  <option value="showroom_pickup">
+                    Самовивіз з шоуруму (13:00–19:00)
+                  </option>
+                </select>
+              </div>
 
               {deliveryMethod.startsWith("nova_poshta") && (
                 <>
-                  <div className="flex flex-col">
+                  <div className="flex flex-col gap-1.5">
                     <label
                       htmlFor="city"
-                      className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
+                      className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
                     >
                       {deliveryMethod === "nova_poshta_courier"
-                        ? "Місто для доставки кур’єром *"
-                        : "Місто *"}
+                        ? "Місто для доставки кур'єром"
+                        : "Місто"}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       id="city"
                       value={city}
                       onChange={handleCityChange} // Update city on input change
-                      placeholder="Введіть назву міста"
-                      className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
+                      placeholder="Напр.: Київ"
+                      className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
                       required
                     />
                     {loadingCities ? (
-                      <p>Завантаження міст...</p>
+                      <p className="text-sm text-gray-500 mt-1">Завантаження міст...</p>
                     ) : (
                       cityListVisible && (
-                        <div className="max-h-40 overflow-y-auto shadow-lg rounded border mt-2">
+                        <div className="max-h-40 overflow-y-auto shadow-lg rounded-md border border-gray-200 mt-1 bg-white z-10">
                           <ul className="list-none p-0">
                             {filteredCities.map((cityOption, idx) => (
                               <li
                                 key={idx}
-                                className="p-3 cursor-pointer hover:bg-gray-200"
+                                className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm sm:text-base transition-colors"
                                 onClick={() => handleCitySelect(cityOption)} // Set city on click
                               >
                                 {cityOption}
@@ -800,32 +978,36 @@ export default function FinalCard() {
 
                   {/* Post Office Input with Autocomplete */}
                   {deliveryMethod === "nova_poshta_courier" ? (
-                    <div className="flex flex-col">
+                    <div className="flex flex-col gap-1.5">
                       <label
                         htmlFor="postOffice"
-                        className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
+                        className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
                       >
-                        Адреса доставки (вулиця, будинок, квартира) *
+                        Адреса доставки <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         id="postOffice"
                         value={postOffice}
                         onChange={(e) => setPostOffice(e.target.value)}
-                        placeholder="Напр.: вул. Січових Стрільців, 10, кв. 25"
-                        className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
+                        placeholder="Вул. Січових Стрільців, 10, кв. 25"
+                        className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
                         required
                       />
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Вкажіть вулицю, будинок та квартиру
+                      </p>
                     </div>
                   ) : (
-                    <div className="flex flex-col">
+                    <div className="flex flex-col gap-1.5">
                       <label
                         htmlFor="postOffice"
-                        className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
+                        className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
                       >
                         {deliveryMethod === "nova_poshta_locker"
-                          ? "Поштомат *"
-                          : "Відділення *"}
+                          ? "Поштомат"
+                          : "Відділення"}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -834,23 +1016,23 @@ export default function FinalCard() {
                         onChange={handlePostOfficeChange}
                         placeholder={
                           deliveryMethod === "nova_poshta_locker"
-                            ? "Введіть назву поштомата"
-                            : "Введіть назву відділення"
+                            ? "Начніть вводити назву поштомата"
+                            : "Начніть вводити назву відділення"
                         }
-                        className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
+                        className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
                         required
                       />
                       {loadingPostOffices ? (
-                        <p>Завантаження відділень...</p>
+                        <p className="text-sm text-gray-500 mt-1">Завантаження відділень...</p>
                       ) : (
                         postOfficeListVisible && (
-                          <div className="max-h-40 overflow-y-auto shadow-lg rounded border mt-2">
+                          <div className="max-h-40 overflow-y-auto shadow-lg rounded-md border border-gray-200 mt-1 bg-white z-10">
                             <ul className="list-none p-0">
                               {filteredPostOffices.map(
                                 (postOfficeOption, idx) => (
                                   <li
                                     key={idx}
-                                    className="p-3 cursor-pointer hover:bg-gray-200"
+                                    className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm sm:text-base transition-colors"
                                     onClick={() =>
                                       handlePostOfficeSelect(postOfficeOption)
                                     }
@@ -869,55 +1051,70 @@ export default function FinalCard() {
               )}
 
               {deliveryMethod === "showroom_pickup" && (
-                <div className="text-base sm:text-lg text-gray-700">
-                  Самовивіз з шоуруму з 13:00 до 19:00, Київ, вул.
-                  Костянтинівська, 21
+                <div className="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
+                  <p className="font-medium mb-1">Самовивіз з шоуруму</p>
+                  <p className="text-xs">13:00–19:00, Київ, вул. Костянтинівська, 21</p>
                 </div>
               )}
 
-              <label
-                htmlFor="comment"
-                className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
-              >
-                Коментар
-              </label>
-              <input
-                type="text"
-                id="comment"
-                placeholder="Ваш коментар"
-                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-              />
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="comment"
+                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
+                >
+                  Коментар
+                </label>
+                <textarea
+                  id="comment"
+                  placeholder="Додаткові побажання до замовлення (необов'язково)"
+                  className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all resize-none min-h-[80px]"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  rows={3}
+                />
+              </div>
 
-              <label
-                htmlFor="paymentType"
-                className="text-xl sm:text-2xl font-normal font-['Helvetica Neue']"
-              >
-                Спосіб оплати *
-              </label>
-              <select
-                id="paymentType"
-                className="border p-3 sm:p-5 text-lg sm:text-xl font-normal font-['Helvetica Neue'] rounded"
-                value={paymentType}
-                onChange={(e) => setPaymentType(e.target.value)}
-                required
-              >
-                <option value="">Оберіть спосіб оплати</option>
-                <option value="full">Повна оплата</option>
-                <option value="prepay">Передоплата 300 ₴</option>
-              </select>
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="paymentType"
+                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
+                >
+                  Спосіб оплати <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="paymentType"
+                  className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all bg-white"
+                  value={paymentType}
+                  onChange={(e) => setPaymentType(e.target.value)}
+                  required
+                >
+                  <option value="">Оберіть спосіб оплати</option>
+                  <option value="full">Повна оплата</option>
+                  <option value="prepay">Передоплата 300 ₴</option>
+                  <option value="installment">В розсрочку</option>
+                  <option value="crypto">Крипта (USDT, BTC та інші)</option>
+                </select>
+              </div>
 
               <button
-                className="bg-black text-white p-4 sm:p-5 rounded mt-3 font-semibold"
+                className="bg-black text-white px-4 py-3 rounded-md mt-2 font-medium text-sm sm:text-base hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 type="submit"
                 disabled={loading}
               >
-                {loading ? "Відправка..." : "Відправити"}
+                {loading ? "Обробка..." : "Оформити"}
               </button>
 
-              {error && <p className="text-red-500 mt-2">{error}</p>}
-              {success && <p className="text-green-600 mt-2">{success}</p>}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-md text-sm mt-2">
+                  <p className="font-medium mb-1">Помилка</p>
+                  <p className="whitespace-pre-line">{error}</p>
+                </div>
+              )}
+              {success && (
+                <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2.5 rounded-md text-sm mt-2">
+                  <p className="font-medium">{success}</p>
+                </div>
+              )}
             </form>
 
             <div className="w-full sm:w-1/4 px-4 sm:px-0 flex flex-col gap-4">
@@ -983,13 +1180,22 @@ export default function FinalCard() {
                         <div className="w-20 h-9 border border-neutral-400/60 flex justify-around items-center rounded">
                           <button
                             className="text-zinc-500 text-base font-normal font-['Helvetica Neue'] leading-normal"
-                            onClick={() =>
-                              updateQuantity(
-                                item.id,
-                                item.size,
-                                item.quantity + 1
-                              )
-                            }
+                            onClick={async () => {
+                              try {
+                                await updateQuantity(
+                                  item.id,
+                                  item.size,
+                                  item.quantity + 1
+                                );
+                              } catch (error) {
+                                setError(
+                                  error instanceof Error
+                                    ? error.message
+                                    : "Недостатньо товару в наявності"
+                                );
+                                setTimeout(() => setError(null), 5000);
+                              }
+                            }}
                           >
                             +
                           </button>
@@ -998,13 +1204,18 @@ export default function FinalCard() {
                           </div>
                           <button
                             className="text-zinc-500 text-base font-normal font-['Helvetica Neue'] leading-normal"
-                            onClick={() =>
-                              updateQuantity(
-                                item.id,
-                                item.size,
-                                item.quantity - 1
-                              )
-                            }
+                            onClick={async () => {
+                              try {
+                                await updateQuantity(
+                                  item.id,
+                                  item.size,
+                                  item.quantity - 1
+                                );
+                              } catch (error) {
+                                // Error handling for decrease is less critical
+                                console.error("Error updating quantity:", error);
+                              }
+                            }}
                             disabled={item.quantity <= 1}
                           >
                             -

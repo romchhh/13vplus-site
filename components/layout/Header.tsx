@@ -60,14 +60,12 @@ export default function Header() {
   const [hoveredCategoryId, setHoveredCategoryId] = useState<number | null>(
     null
   );
-  const [catalogOpen, setCatalogOpen] = useState(false);
   const [infoMenuOpen, setInfoMenuOpen] = useState(false);
   const infoTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const [pinnedCatalog, setPinnedCatalog] = useState(false);
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const [justUnpinned] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -77,7 +75,6 @@ export default function Header() {
         !menuRef.current.contains(e.target as Node)
       ) {
         setPinnedCatalog(false);
-        setCatalogOpen(false);
         setHoveredCategoryId(null);
       }
     };
@@ -138,7 +135,6 @@ export default function Header() {
         onMouseLeave={() => {
           if (!pinnedCatalog) {
             hoverTimeout.current = setTimeout(() => {
-              setCatalogOpen(false);
               setHoveredCategoryId(null);
             }, 200); // Small delay
           }
@@ -170,7 +166,6 @@ export default function Header() {
                     if (hoverTimeout.current)
                       clearTimeout(hoverTimeout.current);
                     setHoveredCategoryId(category.id);
-                    setCatalogOpen(true);
                   }}
                   onMouseLeave={() => {
                     if (!pinnedCatalog) {

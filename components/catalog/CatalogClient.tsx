@@ -7,7 +7,7 @@ import { useAppContext } from "@/lib/GeneralProvider";
 import SidebarMenu from "../layout/SidebarMenu";
 import Link from "next/link";
 import Image from "next/image";
-import { getProductImageSrc, getFirstMedia } from "@/lib/getFirstProductImage";
+import { getProductImageSrc } from "@/lib/getFirstProductImage";
 
 interface Product {
   id: number;
@@ -113,7 +113,8 @@ export default function CatalogClient({
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="cursor-pointer text-2xl sm:text-3xl text-gray-700 hover:text-gray-900 transition-colors"
+              className="cursor-pointer text-2xl sm:text-3xl text-gray-700 hover:text-gray-900 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Відкрити меню"
             >
               {"<"}
             </button>
@@ -129,8 +130,9 @@ export default function CatalogClient({
           </div>
 
           <button
-            className="cursor-pointer text-base sm:text-lg font-medium font-['Montserrat'] uppercase tracking-wider text-gray-700 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-900 transition-all px-2 py-1"
+            className="cursor-pointer text-base sm:text-lg font-medium font-['Montserrat'] uppercase tracking-wider text-gray-700 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-900 transition-all px-2 py-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
             onClick={() => setIsFilterOpen(true)}
+            aria-label="Відкрити фільтри"
           >
             Фільтри
           </button>
@@ -216,7 +218,8 @@ export default function CatalogClient({
           <div className="mt-12 flex justify-center">
             <button
               onClick={() => setVisibleCount((prev) => prev + 12)}
-              className="cursor-pointer px-8 py-3 bg-gray-900 text-white font-medium font-['Montserrat'] uppercase tracking-wider hover:bg-gray-800 transition-colors duration-300"
+              className="cursor-pointer px-8 py-3 bg-gray-900 text-white font-medium font-['Montserrat'] uppercase tracking-wider hover:bg-gray-800 transition-colors duration-300 min-w-[44px] min-h-[44px]"
+              aria-label="Показати більше товарів"
             >
               Показати ще
             </button>

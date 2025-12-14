@@ -28,7 +28,7 @@ export default function YouMightLike() {
         </div>
 
         {/* Products list - Mobile Optimized */}
-        <div className="grid grid-cols-2 sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 pl-4 md:pl-10">
           {products.map((product) => {
             const isVideo = product.first_media?.type === "video";
             
@@ -80,15 +80,28 @@ export default function YouMightLike() {
         </div>
 
         {/* More products button container */}
-<div className="w-full max-w-full sm:max-w-[1824px] h-[300px] sm:h-[679px] bg-[url('/images/bg-def.png')] bg-cover bg-center relative overflow-hidden mx-auto">
-          <Link
-            href="/catalog"
-            className="absolute bg-white inline-flex justify-center items-center gap-2 px-4 py-2 left-1/2 transform -translate-x-1/2 bottom-30 w-max sm:w-80 h-auto sm:h-16"
-          >
-            <div className="text-center justify-center text-black text-base sm:text-2xl font-normal font-['Helvetica Neue'] uppercase leading-none tracking-tight">
-              більше товарів
-            </div>
-          </Link>
+        <div className="w-full max-w-full sm:max-w-[1824px] h-[300px] sm:h-[679px] relative overflow-hidden mx-auto">
+          <Image
+            src="/images/more-products-bg.jpg"
+            alt="Більше товарів"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 1824px"
+            priority
+          />
+          <div className="absolute inset-0 flex flex-col justify-center items-center gap-6 md:gap-8 p-6 md:p-10">
+            <h2 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold font-['Montserrat'] uppercase text-center tracking-wider">
+              Досліджуйте Колекцію
+            </h2>
+            <Link
+              href="/catalog"
+              className="cursor-pointer w-48 sm:w-56 md:w-64 lg:w-72 h-14 sm:h-16 md:h-18 lg:h-20 p-2 bg-transparent border-2 border-white text-white inline-flex justify-center items-center gap-2 hover:bg-white hover:text-black transition-all duration-300 font-['Montserrat'] group"
+            >
+              <div className="text-center justify-center text-base sm:text-lg md:text-xl lg:text-2xl font-normal uppercase tracking-wider leading-none">
+                Більше товарів
+              </div>
+            </Link>
+          </div>
         </div>
       </div>
     </section>

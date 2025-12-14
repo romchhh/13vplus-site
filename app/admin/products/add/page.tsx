@@ -35,6 +35,7 @@ export default function FormElements() {
   const [discountPercentage, setDiscountPercentage] = useState("");
   const [priority, setPriority] = useState("0");
   const [sizes, setSizes] = useState<string[]>([]);
+  const [sizeStocks, setSizeStocks] = useState<Record<string, number>>({});
   // const [images, setImages] = useState<File[]>([]);
 
   const [topSale, setTopSale] = useState(false);
@@ -184,7 +185,7 @@ export default function FormElements() {
           priority: Number(priority || 0),
           color,
           colors,
-          sizes,
+          sizes: sizes.map((s) => ({ size: s, stock: sizeStocks[s] ?? 0 })),
           top_sale: topSale,
           limited_edition: limitedEdition,
           season: season.length === 0 ? null : season,
@@ -212,6 +213,7 @@ export default function FormElements() {
       setColor("");
       setColors([]);
       setSizes([]);
+      setSizeStocks({});
       setMediaFiles([]);
       setTopSale(false);
       setLimitedEdition(false);
@@ -293,14 +295,54 @@ export default function FormElements() {
                   />
                 </div>
                 <div>
+                  <Label>Розміри</Label>
                   <MultiSelect
                     label="Розміри"
                     options={multiOptions}
                     defaultSelected={sizes}
-                    onChange={setSizes}
+                    onChange={(values: string[]) => {
+                      // Update selected sizes
+                      setSizes(values);
+                      // Ensure stocks exist for any newly added size
+                      setSizeStocks((prev) => {
+                        const next = { ...prev };
+                        values.forEach((sz: string) => {
+                          if (next[sz] === undefined) next[sz] = 0;
+                        });
+                        // Remove stocks for sizes no longer selected
+                        Object.keys(next).forEach((sz) => {
+                          if (!values.includes(sz)) delete (next as Record<string, number>)[sz];
+                        });
+                        return next;
+                      });
+                    }}
                     zIndex={51}
                   />
                 </div>
+
+                {/* Per-size stock editor */}
+                {sizes.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <Label>Кількість по розмірах</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {sizes.map((sz) => (
+                        <div key={sz} className="flex items-center gap-2 border rounded px-2 py-1">
+                          <span className="min-w-10 text-sm font-medium">{sz}</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={sizeStocks[sz] ?? 0}
+                            onChange={(e) => {
+                              const val = Math.max(0, Number(e.target.value) || 0);
+                              setSizeStocks((prev) => ({ ...prev, [sz]: val }));
+                            }}
+                            className="w-20 border border-gray-300 rounded-lg px-2 py-1 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div>
                   <Label>Категорія</Label>
                   <select
@@ -549,13 +591,14 @@ export default function FormElements() {
                         }}
                       />
                     ) : (
-                      <img
+                      <Image
                         src={previewUrl}
                         alt={media.file.name}
                         width={200}
                         height={200}
                         className="rounded max-w-[200px] max-h-[200px] object-cover"
-                        onLoad={() => {
+                        unoptimized
+                        onLoadingComplete={() => {
                           console.log('[Preview] Image loaded');
                           URL.revokeObjectURL(previewUrl);
                         }}

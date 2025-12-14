@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { getProductImageSrc } from "@/lib/getFirstProductImage";
 import { useProducts } from "@/lib/useProducts";
 
@@ -11,12 +11,43 @@ interface SearchSidebarProps {
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  first_media?: { type: string; url: string } | null;
+}
+
 export default function SearchSidebar({
   isOpen,
   setIsOpen,
 }: SearchSidebarProps) {
   const [query, setQuery] = useState("");
   const { products: allProducts, loading } = useProducts();
+  const [popularProducts, setPopularProducts] = useState<Product[]>([]);
+  const [loadingPopular, setLoadingPopular] = useState(false);
+
+  // Fetch popular products when sidebar opens
+  useEffect(() => {
+    if (isOpen && !query) {
+      async function fetchPopularProducts() {
+        try {
+          setLoadingPopular(true);
+          const response = await fetch("/api/products/top-sale");
+          if (response.ok) {
+            const data = await response.json();
+            // Limit to 6-8 products
+            setPopularProducts(data.slice(0, 8));
+          }
+        } catch (error) {
+          console.error("Error fetching popular products:", error);
+        } finally {
+          setLoadingPopular(false);
+        }
+      }
+      fetchPopularProducts();
+    }
+  }, [isOpen, query]);
 
   const filteredProducts = useMemo(
     () =>
@@ -100,9 +131,46 @@ export default function SearchSidebar({
             )}
 
             {!query && !loading && (
-              <p className="text-neutral-500">
-                Введіть запит для пошуку товарів.
-              </p>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-base sm:text-lg font-semibold mb-3 text-black">
+                    Люди часто цікавляться
+                  </h3>
+                  {loadingPopular ? (
+                    <p className="text-neutral-500">Завантаження...</p>
+                  ) : popularProducts.length > 0 ? (
+                    <ul className="flex flex-col gap-4">
+                      {popularProducts.map((product) => (
+                        <li key={product.id}>
+                          <Link
+                            href={`/product/${product.id}`}
+                            onClick={() => setIsOpen(false)}
+                            className="flex items-center gap-4 p-2 rounded hover:bg-opacity-80 transition hover:bg-stone-200"
+                          >
+                            <Image
+                              src={getProductImageSrc(product.first_media, "https://placehold.co/64x64")}
+                              alt={product.name}
+                              width={64}
+                              height={64}
+                              className="w-16 h-16 object-cover rounded border"
+                            />
+                            <div className="flex flex-col">
+                              <span className="font-medium">{product.name}</span>
+                              <span className="text-sm text-gray-500">
+                                {product.price} ₴
+                              </span>
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-neutral-500">
+                      Введіть запит для пошуку товарів.
+                    </p>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>

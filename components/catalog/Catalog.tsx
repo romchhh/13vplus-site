@@ -7,7 +7,7 @@ import { useAppContext } from "@/lib/GeneralProvider";
 import SidebarMenu from "../layout/SidebarMenu";
 import Link from "next/link";
 import Image from "next/image";
-import { getProductImageSrc, getFirstMedia } from "@/lib/getFirstProductImage";
+import { getProductImageSrc } from "@/lib/getFirstProductImage";
 import { cachedFetch, CACHE_KEYS } from "@/lib/cache";
 
 // Video component with proper mobile autoplay
@@ -26,7 +26,7 @@ function VideoWithAutoplay({ src, className }: { src: string; className?: string
       const playVideo = async () => {
         try {
           await video.play();
-        } catch (error) {
+        } catch {
           // Retry after delay for mobile
           setTimeout(async () => {
             try {
@@ -251,10 +251,14 @@ export default function Catalog() {
                 ) : (
                   <Image
                     src={getProductImageSrc(product.first_media)}
-                    alt={product.name}
+                    alt={`${product.name} від 13VPLUS`}
                     className="object-cover transition-all duration-300 group-hover:brightness-90"
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                    loading="lazy"
+                    quality={75}
+                    placeholder="blur"
+                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                   />
                 )}
               </div>

@@ -138,103 +138,72 @@ export async function POST(req: NextRequest) {
       }
     );
 
+    // Check stock availability before creating order
+    const { prisma } = await import("@/lib/prisma");
+    const stockChecks = await Promise.all(
+      normalizedItems.map(async (item) => {
+        const productSize = await prisma.productSize.findFirst({
+          where: {
+            productId: item.product_id,
+            size: item.size,
+          },
+        });
+
+        const availableStock = productSize?.stock ?? 0;
+        return {
+          product_id: item.product_id,
+          product_name: item.product_name,
+          size: item.size,
+          requested: item.quantity,
+          available: availableStock,
+          sufficient: availableStock >= item.quantity,
+        };
+      })
+    );
+
+    const insufficientItems = stockChecks.filter((check) => !check.sufficient);
+    if (insufficientItems.length > 0) {
+      const errorMessages = insufficientItems.map(
+        (item) =>
+          `${item.product_name} (розмір ${item.size}): доступно ${item.available} шт., запитано ${item.requested} шт.`
+      );
+      return NextResponse.json(
+        {
+          error: "Недостатньо товару в наявності",
+          details: errorMessages,
+          insufficientItems,
+        },
+        { status: 400 }
+      );
+    }
+
     const fullAmount = normalizedItems.reduce(
       (total: number, item) => total + item.price * item.quantity,
       0
     );
 
-    const amountToPay = payment_type === "prepay" ? 300 : fullAmount;
-    const amountInKopecks = Math.round(amountToPay * 100);
+    // Calculate amount to pay based on payment type
+    let amountToPay = fullAmount;
+    if (payment_type === "prepay") {
+      amountToPay = 300;
+    } else if (payment_type === "installment") {
+      // For installment, calculate first payment (e.g., 30% or minimum amount)
+      amountToPay = Math.max(300, Math.round(fullAmount * 0.3));
+    } else if (payment_type === "crypto") {
+      // For crypto, full amount
+      amountToPay = fullAmount;
+    }
     
     console.log("[POST /api/orders] Amount calculation:", {
       fullAmount,
       amountToPay,
-      amountInKopecks,
       payment_type,
     });
 
-    const basketOrder = normalizedItems.map((item) => ({
-      name: item.color ? `${item.product_name} (${item.color})` : item.product_name,
-      qty: item.quantity,
-      sum: Math.round(item.price * item.quantity * 100),
-      total: Math.round(item.price * item.quantity * 100),
-      unit: "шт.",
-      code: item.color
-        ? `${item.product_id}-${item.size}-${item.color}`
-        : `${item.product_id}-${item.size}`,
-    }));
-
-    const reference = crypto.randomUUID();
-    console.log("[POST /api/orders] Generated reference:", reference);
-
-    // ✅ Створення інвойсу Monobank
-
-    // NOTE: Monobank webhooks must be able to reach your server from the public internet.
-    // If you use "localhost" in webHookUrl, Monobank cannot call it unless you tunnel (e.g. with ngrok).
-    // Use your public domain or a tunnel URL for webHookUrl and redirectUrl.
-
-    // For local development, set up a tunnel (e.g. ngrok) and use its URL here:
-    // const PUBLIC_URL = process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
-    // Example: "https://abc123.ngrok.app"
-
-    const PUBLIC_URL =
-      process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
-    
-    console.log("[POST /api/orders] PUBLIC_URL:", PUBLIC_URL);
-    console.log("[POST /api/orders] MONO_TOKEN exists:", !!process.env.NEXT_PUBLIC_MONO_TOKEN);
-
-    const invoicePayload = {
-      amount: amountInKopecks,
-      ccy: 980,
-      merchantPaymInfo: {
-        reference,
-        destination: "Оплата замовлення",
-        comment: comment || "Оплата замовлення",
-        basketOrder,
-      },
-      redirectUrl: `${PUBLIC_URL}/final`,
-      webHookUrl: `${PUBLIC_URL}/api/mono-webhook`,
-      validity: 3600,
-      paymentType: "debit",
-    };
-    
-    console.log("[POST /api/orders] Creating invoice with payload:", JSON.stringify(invoicePayload, null, 2));
-
-    const monoRes = await fetch(
-      "https://api.monobank.ua/api/merchant/invoice/create",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Token": process.env.NEXT_PUBLIC_MONO_TOKEN!,
-        },
-        body: JSON.stringify(invoicePayload),
-      }
-    );
-    
-    console.log("[POST /api/orders] Monobank response status:", monoRes.status);
-    console.log("[POST /api/orders] Monobank response ok:", monoRes.ok);
-
-    const invoiceData = await monoRes.json();
-    console.log("[POST /api/orders] Invoice data response:", JSON.stringify(invoiceData, null, 2));
-    
-    if (!monoRes.ok) {
-      console.error("[POST /api/orders] Monobank error:", invoiceData);
-      return NextResponse.json(
-        { error: "Не вдалося створити рахунок", details: invoiceData },
-        { status: 500 }
-      );
-    }
-
-    const { invoiceId, pageUrl } = invoiceData;
-    
-    console.log("[POST /api/orders] Extracted from invoice data:", {
-      invoiceId,
-      pageUrl,
-    });
-
-    // ✅ Зберігання замовлення у БД (статус "pending" - ще не оплачено)
+    // ✅ Зберігання замовлення у БД
     console.log("[POST /api/orders] Saving order to database...");
+    const orderId = crypto.randomUUID();
+    
     await sqlPostOrder({
       customer_name,
       phone_number,
@@ -244,8 +213,8 @@ export async function POST(req: NextRequest) {
       post_office,
       comment,
       payment_type,
-      invoice_id: invoiceId,
-      payment_status: "pending", // замовлення створено, але ще не оплачено
+      invoice_id: orderId,
+      payment_status: "pending",
       items: normalizedItems.map(
         ({ product_id, size, quantity, price, color }) => ({
           product_id,
@@ -258,18 +227,196 @@ export async function POST(req: NextRequest) {
     });
     console.log("[POST /api/orders] Order saved to database successfully");
 
-    // ✅ НЕ відправляємо в Telegram поки не оплачено
-    // Telegram повідомлення буде відправлено в webhook після успішної оплати
-    
-    console.log("[POST /api/orders] Returning response with:", {
-      invoiceUrl: pageUrl,
-      invoiceId: invoiceId,
-    });
+    // ✅ Створення платежу через WayForPay (якщо не крипта)
+    if (payment_type !== "crypto") {
+      try {
+        const PUBLIC_URL = process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
+        
+        const productNames = normalizedItems.map(
+          (item) =>
+            item.color
+              ? `${item.product_name} (${item.color}, ${item.size})`
+              : `${item.product_name} (${item.size})`
+        );
+        const productCounts = normalizedItems.map((item) => item.quantity);
+        const productPrices = normalizedItems.map((item) => item.price);
 
+        // Import WayForPay utilities
+        const { generatePurchaseSignature } = await import("@/lib/wayforpay");
+        
+        const merchantAccount = process.env.MERCHANT_ACCOUNT || process.env.WAYFORPAY_MERCHANT_ACCOUNT;
+        const merchantSecret = process.env.MERCHANT_SECRET || process.env.WAYFORPAY_MERCHANT_SECRET;
+        const merchantDomainName = process.env.MERCHANT_DOMAIN || process.env.WAYFORPAY_MERCHANT_DOMAIN || "13vplus.com";
+
+        if (!merchantAccount || !merchantSecret) {
+          console.error("[POST /api/orders] Missing WayForPay credentials");
+          throw new Error("Payment gateway configuration error");
+        }
+
+        const orderDate = Math.floor(Date.now() / 1000);
+
+        // Generate signature
+        const merchantSignature = generatePurchaseSignature({
+          merchantAccount,
+          merchantDomainName,
+          orderReference: orderId,
+          orderDate,
+          amount: amountToPay,
+          currency: "UAH",
+          productNames,
+          productCounts,
+          productPrices,
+          secretKey: merchantSecret,
+        });
+
+        // Prepare payment data
+        const paymentData: Record<string, string | number> = {
+          merchantAccount,
+          merchantDomainName,
+          merchantTransactionType: "AUTO",
+          merchantTransactionSecureType: "AUTO",
+          merchantSignature,
+          apiVersion: 1,
+          language: "UA",
+          orderReference: orderId,
+          orderDate,
+          amount: amountToPay.toFixed(2),
+          currency: "UAH",
+        };
+
+        // Add product arrays
+        productNames.forEach((name: string, index: number) => {
+          paymentData[`productName[${index}]`] = name;
+          paymentData[`productCount[${index}]`] = productCounts[index];
+          paymentData[`productPrice[${index}]`] = productPrices[index].toFixed(2);
+        });
+
+        // Add customer info
+        if (customer_name) {
+          const nameParts = customer_name.trim().split(/\s+/);
+          if (nameParts.length >= 2) {
+            paymentData.clientFirstName = nameParts[0];
+            paymentData.clientLastName = nameParts.slice(1).join(" ");
+          } else {
+            paymentData.clientFirstName = customer_name;
+          }
+        }
+
+        if (email) {
+          paymentData.clientEmail = email;
+        }
+
+        if (phone_number) {
+          paymentData.clientPhone = phone_number;
+        }
+
+        paymentData.returnUrl = `${PUBLIC_URL}/final`;
+        paymentData.serviceUrl = `${PUBLIC_URL}/api/wayforpay/webhook`;
+
+        console.log(
+          "[POST /api/orders] WayForPay payment data created successfully"
+        );
+
+        console.log("[POST /api/orders] Returning response with payment data");
+        console.log("[POST /api/orders] Successfully completed order creation");
+        console.log("=".repeat(50));
+
+        return NextResponse.json({
+          success: true,
+          orderId: orderId,
+          paymentUrl: "https://secure.wayforpay.com/pay",
+          paymentData: paymentData,
+        });
+      } catch (paymentError) {
+        console.error(
+          "[POST /api/orders] Payment creation error:",
+          paymentError
+        );
+        // Return error if payment creation failed
+        return NextResponse.json(
+          {
+            error: "Не вдалося створити платіж. Перевірте налаштування WayForPay.",
+            orderId: orderId,
+            details: paymentError instanceof Error ? paymentError.message : "Unknown error",
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    // ✅ Створення платежу через Plisio для криптоплатежів
+    if (payment_type === "crypto") {
+      try {
+        const PUBLIC_URL = process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
+
+        // Create Plisio invoice
+        const plisioResponse = await fetch(
+          `${PUBLIC_URL}/api/plisio/create-invoice`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderNumber: orderId,
+              orderName: `Order ${orderId}`,
+              amount: fullAmount.toFixed(2),
+              email: email || undefined,
+              callbackUrl: `${PUBLIC_URL}/api/plisio/webhook`,
+              successCallbackUrl: `${PUBLIC_URL}/final?orderReference=${orderId}&json=true`,
+              failCallbackUrl: `${PUBLIC_URL}/final?orderReference=${orderId}&status=failed&json=true`,
+            }),
+          }
+        );
+
+        if (!plisioResponse.ok) {
+          console.error(
+            "[POST /api/orders] Failed to create Plisio invoice"
+          );
+          throw new Error("Failed to create crypto payment");
+        }
+
+        const plisioData = await plisioResponse.json();
+        console.log(
+          "[POST /api/orders] Plisio invoice created successfully"
+        );
+
+        console.log("[POST /api/orders] Returning response with Plisio invoice");
+        console.log("[POST /api/orders] Successfully completed order creation");
+        console.log("=".repeat(50));
+
+        return NextResponse.json({
+          success: true,
+          orderId: orderId,
+          paymentUrl: plisioData.invoiceUrl,
+          txnId: plisioData.txnId,
+          paymentType: "crypto",
+        });
+      } catch (paymentError) {
+        console.error(
+          "[POST /api/orders] Plisio payment creation error:",
+          paymentError
+        );
+        // Return error if payment creation failed
+        return NextResponse.json(
+          {
+            error: "Не вдалося створити платіж. Перевірте налаштування Plisio.",
+            orderId: orderId,
+            details: paymentError instanceof Error ? paymentError.message : "Unknown error",
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    // For non-crypto, non-payment orders (shouldn't happen, but just in case)
+    console.log("[POST /api/orders] Returning response with orderId:", orderId);
     console.log("[POST /api/orders] Successfully completed order creation");
     console.log("=".repeat(50));
-    
-    return NextResponse.json({ invoiceUrl: pageUrl, invoiceId: invoiceId });
+
+    return NextResponse.json({
+      success: true,
+      orderId: orderId,
+      message: "Замовлення успішно створено",
+    });
   } catch (error) {
     console.error("[POST /api/orders] ERROR occurred:", error);
     console.error("[POST /api/orders] Error details:", {

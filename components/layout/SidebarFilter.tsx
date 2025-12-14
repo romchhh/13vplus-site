@@ -44,8 +44,6 @@ interface SidebarFilterProps {
 export default function SidebarFilter({
   isOpen,
   setIsOpen,
-  openAccordion,
-  setOpenAccordion,
   sortOrder,
   setSortOrder,
   selectedSizes,

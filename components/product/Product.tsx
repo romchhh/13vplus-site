@@ -1,6 +1,5 @@
 "use client";
 
-import { useAppContext } from "@/lib/GeneralProvider";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useBasket } from "@/lib/BasketProvider";
@@ -43,7 +42,7 @@ export default function Product() {
     }
   }, [product, selectedColor]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!selectedSize) {
       setAlertMessage("Оберіть розмір");
       setAlertType("warning");
@@ -62,19 +61,27 @@ export default function Product() {
       setTimeout(() => setAlertMessage(null), 3000);
       return;
     }
-    const media = product.media || [];
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      size: selectedSize,
-      quantity,
-      imageUrl: getFirstProductImage(media),
-      color: selectedColor || undefined,
-      discount_percentage: product.discount_percentage
-    });
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    try {
+      const media = product.media || [];
+      await addItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        size: selectedSize,
+        quantity,
+        imageUrl: getFirstProductImage(media),
+        color: selectedColor || undefined,
+        discount_percentage: product.discount_percentage
+      });
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch (error) {
+      setAlertMessage(
+        error instanceof Error ? error.message : "Недостатньо товару в наявності"
+      );
+      setAlertType("error");
+      setTimeout(() => setAlertMessage(null), 5000);
+    }
   };
 
   if (loading) return <div className="p-10">Loading product...</div>;
@@ -416,9 +423,9 @@ export default function Product() {
                     <Image
                       src="/images/13VPLUS BLACK PNG 2.png"
                       alt="13VPLUS Logo"
-                      width={120}
+                      width={200}
                       height={40}
-                      className="mx-auto h-10 opacity-80"
+                      className="mx-auto w-48 h-auto opacity-80"
                     />
                   </div>
                 </div>

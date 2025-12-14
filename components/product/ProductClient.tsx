@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppContext } from "@/lib/GeneralProvider";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useBasket } from "@/lib/BasketProvider";
 import Image from "next/image";
 import Alert from "@/components/shared/Alert";
@@ -65,6 +65,8 @@ export default function ProductClient({ product: initialProduct }: ProductClient
   >("info");
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const isAddingToCartRef = useRef(false);
 
   // Auto-select first color if available
   useEffect(() => {
@@ -144,7 +146,12 @@ export default function ProductClient({ product: initialProduct }: ProductClient
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    // Prevent double-click using ref for immediate check
+    if (isAddingToCartRef.current) {
+      return;
+    }
+
     if (!selectedSize) {
       setAlertMessage("Оберіть розмір");
       setAlertType("warning");
@@ -169,19 +176,33 @@ export default function ProductClient({ product: initialProduct }: ProductClient
       setTimeout(() => setAlertMessage(null), 3000);
       return;
     }
-    const media = product.media || [];
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      size: selectedSize,
-      quantity,
-      imageUrl: getFirstProductImage(media),
-      color: selectedColor || undefined,
-      discount_percentage: product.discount_percentage ?? undefined,
-    });
-    setShowCartAlert(true);
-    setTimeout(() => setShowCartAlert(false), 5000);
+
+    isAddingToCartRef.current = true;
+    setIsAddingToCart(true);
+    try {
+      const media = product.media || [];
+      await addItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        size: selectedSize,
+        quantity,
+        imageUrl: getFirstProductImage(media),
+        color: selectedColor || undefined,
+        discount_percentage: product.discount_percentage ?? undefined,
+      });
+      setShowCartAlert(true);
+      setTimeout(() => setShowCartAlert(false), 5000);
+    } catch (error) {
+      setAlertMessage(
+        error instanceof Error ? error.message : "Недостатньо товару в наявності"
+      );
+      setAlertType("error");
+      setTimeout(() => setAlertMessage(null), 5000);
+    } finally {
+      isAddingToCartRef.current = false;
+      setIsAddingToCart(false);
+    }
   };
 
   const media = product.media || [];
@@ -224,7 +245,7 @@ export default function ProductClient({ product: initialProduct }: ProductClient
     <section className="max-w-[1920px] w-full mx-auto bg-white">
       <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 p-6 md:p-10 lg:p-16 lg:items-start">
         {/* Images Slider - Left Side */}
-        <div className="w-full lg:w-1/2 relative lg:h-[calc(100vh-8rem)]">
+        <div className="w-full lg:w-1/2 relative h-[70vh] min-h-[400px] lg:h-[calc(100vh-8rem)]">
           <Swiper
             modules={[Navigation, Autoplay]}
             onSwiper={setSwiper}
@@ -239,7 +260,7 @@ export default function ProductClient({ product: initialProduct }: ProductClient
           >
             {media.map((item, i) => (
               <SwiperSlide key={i}>
-                <div className="relative w-full h-full bg-white flex items-start justify-center lg:h-[calc(100vh-8rem)]">
+                <div className="relative w-full h-full bg-white flex items-start justify-center min-h-[400px] lg:h-[calc(100vh-8rem)]">
                   {item.type === "video" ? (
                     <video
                       className="object-contain w-full h-full"
@@ -255,8 +276,10 @@ export default function ProductClient({ product: initialProduct }: ProductClient
                       alt={`Product view ${i + 1}`}
                       fill
                       className="object-contain"
-                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 800px"
                       priority={i === 0}
+                      loading={i <= 1 ? undefined : "lazy"}
+                      quality={i === 0 ? 85 : 75}
                       placeholder="blur"
                       blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                     />
@@ -423,15 +446,15 @@ export default function ProductClient({ product: initialProduct }: ProductClient
 
           {/* Add to Cart Button */}
           <button
-            onClick={outOfStock ? undefined : handleAddToCart}
-            disabled={outOfStock}
+            onClick={outOfStock || isAddingToCart ? undefined : handleAddToCart}
+            disabled={outOfStock || isAddingToCart}
             className={`w-full text-center bg-black text-white hover:bg-gray-800 py-4 px-6 text-base md:text-lg font-medium font-['Montserrat'] uppercase tracking-wider transition-all duration-200 ${
-              outOfStock
+              outOfStock || isAddingToCart
                 ? "opacity-50 cursor-not-allowed"
                 : "cursor-pointer hover:opacity-90"
             }`}
           >
-            В КОШИК
+            {isAddingToCart ? "Додавання..." : "В КОШИК"}
           </button>
 
           {/* Telegram Manager Link */}
@@ -575,9 +598,9 @@ export default function ProductClient({ product: initialProduct }: ProductClient
                     <Image
                       src="/images/13VPLUS BLACK PNG 2.png"
                       alt="13VPLUS Logo"
-                      width={120}
+                      width={200}
                       height={40}
-                      className="mx-auto h-10 opacity-80"
+                      className="mx-auto w-48 h-auto opacity-80"
                     />
                   </div>
                 </div>
