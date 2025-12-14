@@ -96,7 +96,7 @@ export default async function CatalogServer(props: CatalogServerProps) {
         category={categoryName || undefined}
       />
       <BreadcrumbStructuredData items={breadcrumbs} />
-      <div className="max-w-[1824px] mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-[1824px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
         <Breadcrumbs items={breadcrumbs} />
       </div>
       <CatalogClient initialProducts={products} colors={colors} categories={categories} />

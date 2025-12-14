@@ -15,7 +15,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
   if (items.length <= 1) return null;
 
   return (
-    <nav aria-label="Breadcrumb" className="mb-6">
+    <nav aria-label="Breadcrumb" className="mb-2">
       <ol className="flex flex-wrap items-center gap-2 text-sm font-['Montserrat']">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;

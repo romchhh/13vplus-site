@@ -206,31 +206,31 @@ export default function EditOrderPage() {
           {formData.items.length === 0 ? (
             <p className="text-gray-500">Немає товарів у цьому замовленні.</p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
+            <div className="overflow-x-auto rounded-lg border border-gray-200">
+              <table className="min-w-full text-sm bg-white">
+                <thead className="bg-white text-black">
                   <tr>
-                    <th className="px-4 py-3 text-left font-semibold">
+                    <th className="px-4 py-3 text-left font-semibold text-black">
                       Назва продукту
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold">
+                    <th className="px-4 py-3 text-left font-semibold text-black">
                       Розмір
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold">
+                    <th className="px-4 py-3 text-left font-semibold text-black">
                       Колір
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold">
+                    <th className="px-4 py-3 text-left font-semibold text-black">
                       Кількість
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold">
+                    <th className="px-4 py-3 text-left font-semibold text-black">
                       Ціна (₴)
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold">
+                    <th className="px-4 py-3 text-left font-semibold text-black">
                       Сума (₴)
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-200 bg-white">
                   {formData.items.map(
                     (item: {
                       id: number;
@@ -242,24 +242,24 @@ export default function EditOrderPage() {
                     }) => (
                       <tr
                         key={item.id}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                        className="hover:bg-gray-50 bg-white"
                       >
-                        <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
+                        <td className="px-4 py-3 text-black">
                           {item.product_name}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        <td className="px-4 py-3 text-black">
                           {item.size}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        <td className="px-4 py-3 text-black">
                           {item.color || "—"}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        <td className="px-4 py-3 text-black">
                           {item.quantity}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-right">
+                        <td className="px-4 py-3 text-black text-right">
                           {Number(item.price).toFixed(2)}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-right font-semibold">
+                        <td className="px-4 py-3 text-black text-right font-semibold">
                           {(Number(item.price) * item.quantity).toFixed(2)}
                         </td>
                       </tr>
@@ -267,26 +267,26 @@ export default function EditOrderPage() {
                   )}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-gray-50 dark:bg-gray-900">
+                  <tr className="bg-white">
                     <td
                       colSpan={5}
-                      className="px-4 py-3 text-right font-semibold text-gray-800 dark:text-gray-200"
+                      className="px-4 py-3 text-right font-semibold text-black"
                     >
                       Загальна сума:
                     </td>
-                    <td className="px-4 py-3 font-bold text-green-600 dark:text-green-400">
+                    <td className="px-4 py-3 font-bold text-green-600">
                       {calculateTotal().toFixed(2)} ₴
                     </td>
                   </tr>
                   {formData.payment_type && (
-                    <tr className="bg-gray-100 dark:bg-gray-800">
+                    <tr className="bg-white">
                       <td
                         colSpan={5}
-                        className="px-4 py-3 text-right font-semibold text-gray-800 dark:text-gray-200"
+                        className="px-4 py-3 text-right font-semibold text-black"
                       >
                         Залишок до оплати:
                       </td>
-                      <td className="px-4 py-3 font-bold text-blue-600 dark:text-blue-400">
+                      <td className="px-4 py-3 font-bold text-blue-600">
                         {calculateRemainingPayment().toFixed(2)} ₴
                       </td>
                     </tr>

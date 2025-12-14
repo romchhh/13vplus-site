@@ -1,12 +1,64 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import Link from "next/link";
 import Image from "next/image";
 import { getProductImageSrc } from "@/lib/getFirstProductImage";
 import { useProducts } from "@/lib/useProducts";
+
+// Video component with proper mobile autoplay
+function VideoWithAutoplay({ src, className }: { src: string; className?: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.muted = true;
+      video.playsInline = true;
+      video.setAttribute('muted', '');
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', '');
+      
+      const playVideo = async () => {
+        try {
+          await video.play();
+        } catch {
+          // Retry after delay for mobile
+          setTimeout(async () => {
+            try {
+              await video.play();
+            } catch (e) {
+              console.log("Video autoplay failed:", e);
+            }
+          }, 200);
+        }
+      };
+      
+      if (video.readyState >= 2) {
+        playVideo();
+      } else {
+        video.addEventListener('loadeddata', playVideo, { once: true });
+        video.addEventListener('canplay', playVideo, { once: true });
+        video.load();
+      }
+    }
+  }, []);
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      className={className}
+      loop
+      muted
+      playsInline
+      autoPlay
+      preload="metadata"
+    />
+  );
+}
 
 // Define a fallback (template) product
 const templateProduct = {
@@ -73,20 +125,34 @@ export default function LimitedEdition() {
                   href={`/product/${product.id}`}
                   className="w-full group space-y-4 relative"
                 >
-                  <div className="relative w-full h-[500px] bg-black/5">
-                    <Image
-                      className="object-cover group-hover:opacity-90 transition duration-300"
-                      src={getProductImageSrc(product.first_media, "https://placehold.co/432x682")}
-                      alt={product.name}
-                      fill
-                      sizes="90vw"
-                    />
-                    {product.first_media?.type === "photo" && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="bg-white/90 text-black px-6 py-3 text-base font-medium font-['Montserrat'] uppercase tracking-wider">
-                          Переглянути
+                  <div className="relative w-full h-[500px] bg-black/5 overflow-hidden">
+                    {product.first_media?.type === "video" ? (
+                      <>
+                        <VideoWithAutoplay
+                          src={`/api/images/${product.first_media.url}`}
+                          className="object-cover group-hover:opacity-90 transition duration-300 w-full h-full"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="bg-white/90 text-black px-6 py-3 text-base font-medium font-['Montserrat'] uppercase tracking-wider">
+                            Переглянути
+                          </div>
                         </div>
-                      </div>
+                      </>
+                    ) : (
+                      <>
+                        <Image
+                          className="object-cover group-hover:opacity-90 transition duration-300"
+                          src={getProductImageSrc(product.first_media, "https://placehold.co/432x682")}
+                          alt={product.name}
+                          fill
+                          sizes="90vw"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="bg-white/90 text-black px-6 py-3 text-base font-medium font-['Montserrat'] uppercase tracking-wider">
+                            Переглянути
+                          </div>
+                        </div>
+                      </>
                     )}
                   </div>
                   <div className="text-center space-y-2 mt-4">
@@ -115,15 +181,17 @@ export default function LimitedEdition() {
                 >
                 <div className="aspect-[2/3] w-full overflow-hidden relative bg-black/5">
                   {product.first_media?.type === "video" ? (
-                    <video
-                      src={`/api/images/${product.first_media.url}`}
-                      className="object-cover group-hover:opacity-90 transition duration-300 w-full h-full"
-                      loop
-                      muted
-                      playsInline
-                      autoPlay
-                      preload="metadata"
-                    />
+                    <>
+                      <VideoWithAutoplay
+                        src={`/api/images/${product.first_media.url}`}
+                        className="object-cover group-hover:opacity-90 transition duration-300 w-full h-full"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="bg-white/90 text-black px-8 py-4 text-lg font-medium font-['Montserrat'] uppercase tracking-wider">
+                          Переглянути
+                        </div>
+                      </div>
+                    </>
                   ) : (
                     <>
                       <Image

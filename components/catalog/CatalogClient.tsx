@@ -107,7 +107,7 @@ export default function CatalogClient({
 
   return (
     <>
-      <section className="max-w-[1824px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 mt-10 mb-20">
+      <section className="max-w-[1824px] mx-auto px-4 sm:px-6 lg:px-8 pt-2 mt-2 mb-20">
         {/* Top Controls */}
         <div className="flex justify-between items-center mb-12">
           <div className="flex items-center gap-4">

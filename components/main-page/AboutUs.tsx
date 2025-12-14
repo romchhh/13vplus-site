@@ -44,7 +44,7 @@ export default function AboutUs() {
         <div className="w-full mt-16 lg:mt-20 max-w-6xl mx-auto">
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
             {/* Images */}
-            <div className="flex flex-col sm:flex-row gap-4 lg:gap-6 w-full lg:w-auto">
+            <div className="flex flex-row gap-4 lg:gap-6 w-full lg:w-auto">
               <Link
                 href="https://www.tiktok.com/@13vplus?_r=1"
                 target="_blank"
