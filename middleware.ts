@@ -63,6 +63,14 @@ export function middleware(request: NextRequest) {
     response.headers.set('Critical-CH', 'Viewport-Width, Device-Memory');
   }
 
+  // Skip Server Actions validation for webhook routes
+  if (pathname.startsWith("/api/wayforpay/webhook") || pathname.startsWith("/api/plisio/webhook")) {
+    // Remove headers that trigger Server Actions validation
+    response.headers.delete("x-forwarded-host");
+    response.headers.delete("origin");
+    return response;
+  }
+
   // ONLY apply authentication logic to admin routes
   if (!pathname.startsWith("/admin")) {
     return response;

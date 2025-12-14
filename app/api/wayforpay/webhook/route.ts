@@ -6,8 +6,14 @@ import { sendOrderNotification } from "@/lib/telegram";
 // Disable Server Actions for this route
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Disable Server Actions body parsing
+export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
+  // Set headers to prevent Server Actions validation
+  const headers = new Headers();
+  headers.set("Content-Type", "application/json");
+  
   let body: Record<string, unknown> = {};
   let orderReference: string = "unknown";
   
@@ -126,6 +132,10 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Log merchant account for debugging (without exposing secret)
+    console.log("[WayForPay Webhook] Using merchant account:", merchantAccount);
+    console.log("[WayForPay Webhook] Merchant secret length:", merchantSecret.length);
 
     // Prepare data for signature verification
     const amountNum = amount !== undefined && amount !== null 
@@ -283,7 +293,13 @@ export async function POST(req: NextRequest) {
 
     console.log("[WayForPay Webhook] Sending response:", response);
 
-    return NextResponse.json(response);
+    // Return response with proper headers to avoid Server Actions validation
+    return NextResponse.json(response, {
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+      },
+    });
   } catch (error) {
     console.error("[WayForPay Webhook] Error:", error);
     // Always return a valid WayForPay response format, even on error
