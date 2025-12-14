@@ -1,19 +1,143 @@
 import crypto from "crypto";
 
-/**
- * Generate HMAC-MD5 signature for WayForPay
- */
-export function generateWayForPaySignature(
-  params: string[],
-  secretKey: string
-): string {
-  const stringToSign = params.join(";");
-  return crypto.createHmac("md5", secretKey).update(stringToSign, "utf8").digest("hex");
+interface WebhookSignatureParams {
+  merchantAccount: string;
+  orderReference: string;
+  amount: number;
+  currency: string;
+  authCode: string;
+  cardPan: string;
+  transactionStatus: string;
+  reasonCode: number;
+  secretKey: string;
+  receivedSignature: string;
 }
 
-/**
- * Generate signature for purchase request
- */
+interface WebhookResponseParams {
+  orderReference: string;
+  status: string;
+  time: number;
+  secretKey: string;
+}
+
+export function verifyWebhookSignature(params: WebhookSignatureParams): boolean {
+  const {
+    merchantAccount,
+    orderReference,
+    amount,
+    currency,
+    authCode,
+    cardPan,
+    transactionStatus,
+    reasonCode,
+    secretKey,
+    receivedSignature,
+  } = params;
+
+  // WayForPay webhook signature format:
+  // merchantAccount;orderReference;amount;currency;authCode;cardPan;transactionStatus;reasonCode
+  // IMPORTANT: Amount must be formatted with 2 decimal places
+  const amountFormatted = amount.toFixed(2);
+  
+  const stringToSign = [
+    merchantAccount,
+    orderReference,
+    amountFormatted,
+    currency,
+    authCode,
+    cardPan,
+    transactionStatus,
+    reasonCode.toString(),
+  ].join(";");
+
+  console.log("[verifyWebhookSignature] String to sign:", stringToSign);
+
+  const hmac = crypto.createHmac("md5", secretKey);
+  hmac.update(stringToSign);
+  const expectedSignature = hmac.digest("hex");
+
+  console.log("[verifyWebhookSignature] Expected signature:", expectedSignature);
+  console.log("[verifyWebhookSignature] Received signature:", receivedSignature);
+  console.log("[verifyWebhookSignature] Match:", expectedSignature === receivedSignature);
+
+  return expectedSignature === receivedSignature;
+}
+
+export function generateWebhookResponseSignature(params: WebhookResponseParams): string {
+  const { orderReference, status, time, secretKey } = params;
+
+  // Response signature format: orderReference;status;time
+  const stringToSign = [orderReference, status, time.toString()].join(";");
+
+  console.log("[generateWebhookResponseSignature] String to sign:", stringToSign);
+
+  const hmac = crypto.createHmac("md5", secretKey);
+  hmac.update(stringToSign);
+  const signature = hmac.digest("hex");
+
+  console.log("[generateWebhookResponseSignature] Generated signature:", signature);
+
+  return signature;
+}
+
+// Payment form signature generation
+interface PaymentFormParams {
+  merchantAccount: string;
+  merchantDomainName: string;
+  orderReference: string;
+  orderDate: number;
+  amount: number;
+  currency: string;
+  productName: string[];
+  productCount: number[];
+  productPrice: number[];
+  secretKey: string;
+}
+
+export function generatePaymentSignature(params: PaymentFormParams): string {
+  const {
+    merchantAccount,
+    merchantDomainName,
+    orderReference,
+    orderDate,
+    amount,
+    currency,
+    productName,
+    productCount,
+    productPrice,
+    secretKey,
+  } = params;
+
+  // Payment signature format:
+  // merchantAccount;merchantDomainName;orderReference;orderDate;amount;currency;productName[];productCount[];productPrice[]
+  const productNameStr = productName.join(";");
+  const productCountStr = productCount.join(";");
+  const productPriceStr = productPrice.map(p => p.toFixed(2)).join(";");
+
+  const stringToSign = [
+    merchantAccount,
+    merchantDomainName,
+    orderReference,
+    orderDate.toString(),
+    amount.toFixed(2),
+    currency,
+    productNameStr,
+    productCountStr,
+    productPriceStr,
+  ].join(";");
+
+  console.log("[generatePaymentSignature] String to sign:", stringToSign);
+
+  const hmac = crypto.createHmac("md5", secretKey);
+  hmac.update(stringToSign);
+  const signature = hmac.digest("hex");
+
+  console.log("[generatePaymentSignature] Generated signature:", signature);
+
+  return signature;
+}
+
+// Legacy function names for backward compatibility
 export function generatePurchaseSignature(data: {
   merchantAccount: string;
   merchantDomainName: string;
@@ -26,70 +150,16 @@ export function generatePurchaseSignature(data: {
   productPrices: number[];
   secretKey: string;
 }): string {
-  const params = [
-    data.merchantAccount,
-    data.merchantDomainName,
-    data.orderReference,
-    data.orderDate.toString(),
-    data.amount.toFixed(2),
-    data.currency,
-    ...data.productNames,
-    ...data.productCounts.map((c) => c.toString()),
-    ...data.productPrices.map((p) => p.toFixed(2)),
-  ];
-  return generateWayForPaySignature(params, data.secretKey);
+  return generatePaymentSignature({
+    merchantAccount: data.merchantAccount,
+    merchantDomainName: data.merchantDomainName,
+    orderReference: data.orderReference,
+    orderDate: data.orderDate,
+    amount: data.amount,
+    currency: data.currency,
+    productName: data.productNames,
+    productCount: data.productCounts,
+    productPrice: data.productPrices,
+    secretKey: data.secretKey,
+  });
 }
-
-/**
- * Generate signature for webhook response
- */
-export function generateWebhookResponseSignature(data: {
-  orderReference: string;
-  status: string;
-  time: number;
-  secretKey: string;
-}): string {
-  const params = [
-    data.orderReference,
-    data.status,
-    data.time.toString(),
-  ];
-  return generateWayForPaySignature(params, data.secretKey);
-}
-
-/**
- * Verify webhook signature
- */
-export function verifyWebhookSignature(data: {
-  merchantAccount: string;
-  orderReference: string;
-  amount: number;
-  currency: string;
-  authCode: string;
-  cardPan: string;
-  transactionStatus: string;
-  reasonCode: number;
-  secretKey: string;
-  receivedSignature: string;
-}): boolean {
-  const params = [
-    data.merchantAccount,
-    data.orderReference,
-    data.amount.toFixed(2),
-    data.currency,
-    data.authCode,
-    data.cardPan,
-    data.transactionStatus,
-    data.reasonCode.toString(),
-  ];
-  const stringToSign = params.join(";");
-  const expectedSignature = generateWayForPaySignature(params, data.secretKey);
-  
-  console.log("[verifyWebhookSignature] String to sign:", stringToSign);
-  console.log("[verifyWebhookSignature] Expected signature:", expectedSignature);
-  console.log("[verifyWebhookSignature] Received signature:", data.receivedSignature);
-  console.log("[verifyWebhookSignature] Match:", expectedSignature === data.receivedSignature);
-  
-  return expectedSignature === data.receivedSignature;
-}
-

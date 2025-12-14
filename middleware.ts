@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Base64 decode function for edge runtime
 function base64Decode(str: string): string {
   try {
-    // Use Web API atob if available (edge runtime supports it)
     if (typeof atob !== 'undefined') {
       return atob(str);
     }
-    // Fallback: manual base64 decoding
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
     let output = '';
     let i = 0;
@@ -33,6 +30,25 @@ function base64Decode(str: string): string {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  
+  // CRITICAL FIX: Handle webhook routes FIRST before any other logic
+  // This prevents Server Actions validation from running
+  if (pathname.startsWith("/api/wayforpay/webhook") || 
+      pathname.startsWith("/api/plisio/webhook")) {
+    
+    console.log("[Middleware] Webhook route detected:", pathname);
+    
+    // Create a response that bypasses Server Actions
+    const response = NextResponse.next();
+    
+    // Set headers to indicate this is NOT a Server Action
+    response.headers.set("Content-Type", "application/json");
+    response.headers.set("X-Middleware-Webhook", "true");
+    
+    // The route handler config will handle Server Actions prevention
+    return response;
+  }
+
   const response = NextResponse.next();
 
   // Security headers
@@ -41,54 +57,43 @@ export function middleware(request: NextRequest) {
   response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
   response.headers.set('X-DNS-Prefetch-Control', 'on');
 
-  // Performance headers for images with mobile optimization
+  // Performance headers for images
   if (pathname.startsWith('/images/') || pathname.startsWith('/api/images/')) {
     response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-    response.headers.set('Accept-Ranges', 'bytes'); // Enable range requests for large images
+    response.headers.set('Accept-Ranges', 'bytes');
   }
 
-  // Static assets caching with compression
+  // Static assets caching
   if (pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$/)) {
     response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-    response.headers.set('Vary', 'Accept-Encoding'); // Enable compression
+    response.headers.set('Vary', 'Accept-Encoding');
   }
 
-  // Mobile-specific optimizations
+  // Mobile optimizations
   const userAgent = request.headers.get('user-agent') || '';
   const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent);
   
   if (isMobile) {
     response.headers.set('X-Mobile-Optimized', 'true');
-    // Hint to browsers to prioritize critical resources on mobile
     response.headers.set('Critical-CH', 'Viewport-Width, Device-Memory');
   }
 
-  // Skip Server Actions validation for webhook routes
-  if (pathname.startsWith("/api/wayforpay/webhook") || pathname.startsWith("/api/plisio/webhook")) {
-    // Remove headers that trigger Server Actions validation
-    response.headers.delete("x-forwarded-host");
-    response.headers.delete("origin");
-    return response;
-  }
-
-  // ONLY apply authentication logic to admin routes
+  // Admin authentication logic
   if (!pathname.startsWith("/admin")) {
     return response;
   }
 
-  // Allow access to API routes
   if (pathname.startsWith("/api/auth/")) {
     return response;
   }
 
-  // Check for authentication cookie
+  // Check authentication
   const authCookie = request.cookies.get("admin_auth");
   let isAuthenticated = false;
 
   if (authCookie) {
     try {
       const token = authCookie.value;
-      // Decode base64 token
       const decoded = base64Decode(token);
       const [user, password] = decoded.split(":");
 
@@ -99,34 +104,33 @@ export function middleware(request: NextRequest) {
         isAuthenticated = true;
       }
     } catch (e) {
-      return NextResponse.json(`INVALID TOKEN ${e}`);
+      console.error("[Middleware] Auth error:", e);
     }
   }
 
-  // If user is authenticated and trying to access login page, redirect to admin
+  // Redirect authenticated users away from login
   if (pathname === "/admin/login" && isAuthenticated) {
-    const adminUrl = new URL("/admin", request.url);
-    return NextResponse.redirect(adminUrl);
+    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
-  // Allow access to login page if not authenticated
+  // Allow login page
   if (pathname === "/admin/login") {
     return response;
   }
 
-  // If not authenticated, redirect to login
+  // Redirect unauthenticated users to login
   if (!isAuthenticated) {
-    const loginUrl = new URL("/admin/login", request.url);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
-  // User is authenticated, allow access
   return response;
 }
 
 export const config = {
   matcher: [
-    "/admin/:path*", // Protect admin pages
-    "/((?!_next/static|_next/image|favicon.ico).*)", // Apply headers to all routes except Next.js internals
+    "/admin/:path*",
+    "/api/wayforpay/webhook/:path*", // Explicitly include webhook routes
+    "/api/plisio/webhook/:path*",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
