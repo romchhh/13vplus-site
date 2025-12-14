@@ -310,7 +310,7 @@ export async function POST(req: NextRequest) {
           paymentData.clientPhone = phone_number;
         }
 
-        paymentData.returnUrl = `${PUBLIC_URL}/final`;
+        paymentData.returnUrl = `${PUBLIC_URL}/success?orderReference=${orderId}`;
         paymentData.serviceUrl = `${PUBLIC_URL}/api/wayforpay/webhook`;
 
         console.log(
@@ -361,8 +361,8 @@ export async function POST(req: NextRequest) {
               amount: fullAmount.toFixed(2),
               email: email || undefined,
               callbackUrl: `${PUBLIC_URL}/api/plisio/webhook`,
-              successCallbackUrl: `${PUBLIC_URL}/final?orderReference=${orderId}&json=true`,
-              failCallbackUrl: `${PUBLIC_URL}/final?orderReference=${orderId}&status=failed&json=true`,
+              successCallbackUrl: `${PUBLIC_URL}/success?orderReference=${orderId}`,
+              failCallbackUrl: `${PUBLIC_URL}/final?orderReference=${orderId}&status=failed`,
             }),
           }
         );
