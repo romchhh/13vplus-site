@@ -18,12 +18,71 @@ export async function POST(req: NextRequest) {
     if (contentType.includes("application/json")) {
       body = await req.json();
     } else {
-      // Handle form-data
+      // Handle form-data - WayForPay may send JSON as a string in form-data
       const formData = await req.formData();
-      body = Object.fromEntries(formData.entries());
-      // Convert string values to appropriate types
-      if (body.amount) body.amount = parseFloat(String(body.amount));
-      if (body.reasonCode) body.reasonCode = parseInt(String(body.reasonCode));
+      const formEntries: Record<string, unknown> = {};
+      
+      console.log("[WayForPay Webhook] Processing form-data");
+      
+      // Check if form-data contains a JSON string (WayForPay sends JSON as key with empty value)
+      let jsonParsed = false;
+      for (const [key, value] of formData.entries()) {
+        const stringValue = value instanceof File ? undefined : String(value);
+        
+        console.log("[WayForPay Webhook] Form entry:", { 
+          key: key.substring(0, 100), 
+          value: stringValue?.substring(0, 100) || "empty",
+          keyStartsWithBrace: key.trim().startsWith("{")
+        });
+        
+        // If key is a JSON string (starts with {) - WayForPay sends JSON as key
+        if (key.trim().startsWith("{")) {
+          try {
+            const parsed = JSON.parse(key);
+            console.log("[WayForPay Webhook] Successfully parsed JSON from form-data key");
+            Object.assign(formEntries, parsed);
+            jsonParsed = true;
+            break;
+          } catch (parseError) {
+            console.warn("[WayForPay Webhook] Failed to parse JSON from key:", parseError);
+            console.warn("[WayForPay Webhook] Key content:", key.substring(0, 200));
+          }
+        }
+        
+        // Also check if value is a JSON string
+        if (!jsonParsed && stringValue && stringValue.trim().startsWith("{")) {
+          try {
+            const parsed = JSON.parse(stringValue);
+            console.log("[WayForPay Webhook] Successfully parsed JSON from form-data value");
+            Object.assign(formEntries, parsed);
+            jsonParsed = true;
+            break;
+          } catch (parseError) {
+            console.warn("[WayForPay Webhook] Failed to parse JSON from value:", parseError);
+          }
+        }
+        
+        // Store regular form fields (only if we haven't parsed JSON yet)
+        if (stringValue !== undefined && !jsonParsed) {
+          formEntries[key] = stringValue;
+        }
+      }
+      
+      // If we parsed JSON, use it; otherwise use form entries
+      if (jsonParsed) {
+        body = formEntries;
+      } else {
+        body = formEntries;
+        // Convert string values to appropriate types
+        if (body.amount) {
+          const amountVal = body.amount;
+          body.amount = typeof amountVal === "string" ? parseFloat(amountVal) : Number(amountVal);
+        }
+        if (body.reasonCode) {
+          const reasonVal = body.reasonCode;
+          body.reasonCode = typeof reasonVal === "string" ? parseInt(reasonVal) : Number(reasonVal);
+        }
+      }
     }
 
     // Extract orderReference early for error handling
