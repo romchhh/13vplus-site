@@ -4,27 +4,60 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
+interface OrderItem {
+  id: number;
+  product_name: string;
+  size: string;
+  color?: string | null;
+  quantity: number;
+  price: number;
+}
+
+interface OrderData {
+  id: number;
+  invoice_id: string;
+  items: OrderItem[];
+  payment_type: string;
+  payment_status: string;
+}
+
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get orderReference from URL params
-    const orderRef = searchParams.get("orderReference");
-    
-    if (orderRef) {
-      setOrderId(orderRef);
-      // Clear basket and submitted order from localStorage
-      try {
-        localStorage.removeItem("basket");
-        localStorage.removeItem("submittedOrder");
-      } catch (error) {
-        console.error("Failed to clear localStorage:", error);
+    async function fetchOrder() {
+      // Get orderReference from URL params
+      const orderRef = searchParams.get("orderReference");
+      
+      if (orderRef) {
+        setOrderId(orderRef);
+        // Clear basket and submitted order from localStorage
+        try {
+          localStorage.removeItem("basket");
+          localStorage.removeItem("submittedOrder");
+        } catch (error) {
+          console.error("Failed to clear localStorage:", error);
+        }
+
+        // Fetch order details
+        try {
+          const response = await fetch(`/api/orders/by-invoice/${orderRef}`);
+          if (response.ok) {
+            const orderData = await response.json();
+            setOrder(orderData);
+          }
+        } catch (error) {
+          console.error("Failed to fetch order:", error);
+        }
       }
+      
+      setLoading(false);
     }
-    
-    setLoading(false);
+
+    fetchOrder();
   }, [searchParams]);
 
   if (loading) {
@@ -67,13 +100,70 @@ function PaymentSuccessContent() {
             Дякуємо за ваше замовлення. Ваш платіж було успішно оброблено.
           </p>
 
-          {/* Order ID */}
-          {orderId && (
+          {/* Order Items Table */}
+          {order && order.items && order.items.length > 0 ? (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 text-left">
+                Товари у замовленні
+              </h2>
+              <div className="overflow-x-auto rounded-lg border border-gray-200">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-100 text-gray-700">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-semibold">Назва продукту</th>
+                      <th className="px-4 py-3 text-left font-semibold">Розмір</th>
+                      <th className="px-4 py-3 text-left font-semibold">Колір</th>
+                      <th className="px-4 py-3 text-left font-semibold">Кількість</th>
+                      <th className="px-4 py-3 text-left font-semibold">Ціна (₴)</th>
+                      <th className="px-4 py-3 text-left font-semibold">Сума (₴)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {order.items.map((item) => {
+                      const itemTotal = Number(item.price) * item.quantity;
+                      return (
+                        <tr key={item.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-gray-800">{item.product_name}</td>
+                          <td className="px-4 py-3 text-gray-600">{item.size}</td>
+                          <td className="px-4 py-3 text-gray-600">{item.color || "—"}</td>
+                          <td className="px-4 py-3 text-gray-600">{item.quantity}</td>
+                          <td className="px-4 py-3 text-gray-600">{Number(item.price).toFixed(2)}</td>
+                          <td className="px-4 py-3 text-gray-600">{itemTotal.toFixed(2)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot className="bg-gray-50">
+                    <tr>
+                      <td colSpan={5} className="px-4 py-3 text-right font-semibold text-gray-800">
+                        Загальна сума:
+                      </td>
+                      <td className="px-4 py-3 font-bold text-green-600">
+                        {order.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0).toFixed(2)} ₴
+                      </td>
+                    </tr>
+                    {order.payment_type === "installment" && (
+                      <tr>
+                        <td colSpan={5} className="px-4 py-3 text-right font-semibold text-gray-800">
+                          Залишок до оплати:
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-gray-600">
+                          {order.payment_status === "paid" ? "0.00" : (
+                            (order.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0) * 0.7).toFixed(2)
+                          )} ₴
+                        </td>
+                      </tr>
+                    )}
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          ) : orderId ? (
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <p className="text-sm text-gray-500 mb-1">Номер замовлення:</p>
               <p className="text-lg font-semibold text-gray-900">{orderId}</p>
             </div>
-          )}
+          ) : null}
 
           {/* Information */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left">

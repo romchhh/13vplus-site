@@ -71,37 +71,35 @@ export default function EditOrderPage() {
   };
 
   const calculateTotal = () => {
-    return formData.items
-      .reduce(
-        (
-          total,
-          item: {
-            product_id: number;
-            size: string;
-            quantity: number;
-            price: string;
-          }
-        ) => {
-          const subtotal = parseFloat(item.price) * item.quantity;
-          return total + subtotal;
-        },
-        0
-      )
-      .toFixed(2);
+    return formData.items.reduce(
+      (
+        total,
+        item: {
+          product_id: number;
+          size: string;
+          quantity: number;
+          price: string;
+        }
+      ) => {
+        const subtotal = parseFloat(item.price) * item.quantity;
+        return total + subtotal;
+      },
+      0
+    );
   };
 
   const calculateRemainingPayment = () => {
-    const total = parseFloat(calculateTotal());
+    const total = calculateTotal();
     if (formData.payment_type === "full" || formData.payment_type === "crypto") {
-      return "0.00";
+      return 0;
     } else if (formData.payment_type === "prepay") {
-      return Math.max(0, total - 300).toFixed(2);
+      return Math.max(0, total - 300);
     } else if (formData.payment_type === "installment") {
       // For installment, calculate remaining after first payment (30% or minimum 300)
       const firstPayment = Math.max(300, Math.round(total * 0.3));
-      return Math.max(0, total - firstPayment).toFixed(2);
+      return Math.max(0, total - firstPayment);
     }
-    return total.toFixed(2);
+    return 0;
   };
 
   return (
@@ -258,11 +256,11 @@ export default function EditOrderPage() {
                         <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
                           {item.quantity}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
-                          {parseFloat(item.price).toFixed(2)}
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-right">
+                          {Number(item.price).toFixed(2)}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
-                          {(parseFloat(item.price) * item.quantity).toFixed(2)}
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-right font-semibold">
+                          {(Number(item.price) * item.quantity).toFixed(2)}
                         </td>
                       </tr>
                     )
@@ -277,7 +275,7 @@ export default function EditOrderPage() {
                       Загальна сума:
                     </td>
                     <td className="px-4 py-3 font-bold text-green-600 dark:text-green-400">
-                      {calculateTotal()} ₴
+                      {calculateTotal().toFixed(2)} ₴
                     </td>
                   </tr>
                   {formData.payment_type && (
@@ -289,7 +287,7 @@ export default function EditOrderPage() {
                         Залишок до оплати:
                       </td>
                       <td className="px-4 py-3 font-bold text-blue-600 dark:text-blue-400">
-                        {calculateRemainingPayment()} ₴
+                        {calculateRemainingPayment().toFixed(2)} ₴
                       </td>
                     </tr>
                   )}
