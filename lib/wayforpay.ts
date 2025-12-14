@@ -82,7 +82,14 @@ export function verifyWebhookSignature(data: {
     data.transactionStatus,
     data.reasonCode.toString(),
   ];
+  const stringToSign = params.join(";");
   const expectedSignature = generateWayForPaySignature(params, data.secretKey);
+  
+  console.log("[verifyWebhookSignature] String to sign:", stringToSign);
+  console.log("[verifyWebhookSignature] Expected signature:", expectedSignature);
+  console.log("[verifyWebhookSignature] Received signature:", data.receivedSignature);
+  console.log("[verifyWebhookSignature] Match:", expectedSignature === data.receivedSignature);
+  
   return expectedSignature === data.receivedSignature;
 }
 
