@@ -71,7 +71,7 @@ export default async function CatalogServer(props: CatalogServerProps) {
     getCategories(),
   ]);
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.PUBLIC_URL || 'http://localhost:3000';
   const categoryName = props.category || props.subcategory || null;
   const catalogUrl = `${baseUrl}/catalog${categoryName ? `?category=${encodeURIComponent(categoryName)}` : ""}`;
   const pageName = categoryName || "Каталог товарів";

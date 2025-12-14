@@ -40,7 +40,7 @@ export default async function ProductServer({ id }: ProductServerProps) {
     notFound();
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.PUBLIC_URL || 'http://localhost:3000';
   const breadcrumbs = [
     { name: "Головна", url: baseUrl },
     { name: "Каталог", url: `${baseUrl}/catalog` },

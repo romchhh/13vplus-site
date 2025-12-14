@@ -230,7 +230,7 @@ export async function POST(req: NextRequest) {
     // ✅ Створення платежу через WayForPay (якщо не крипта)
     if (payment_type !== "crypto") {
       try {
-        const PUBLIC_URL = process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
+        const PUBLIC_URL = process.env.PUBLIC_URL;
         
         const productNames = normalizedItems.map(
           (item) =>
@@ -347,7 +347,7 @@ export async function POST(req: NextRequest) {
     // ✅ Створення платежу через Plisio для криптоплатежів
     if (payment_type === "crypto") {
       try {
-        const PUBLIC_URL = process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
+        const PUBLIC_URL = process.env.PUBLIC_URL;
 
         // Create Plisio invoice
         const plisioResponse = await fetch(

@@ -22,7 +22,7 @@ async function getCategories() {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const baseUrl = process.env.PUBLIC_URL || 'http://localhost:3000';
   const [products, categories] = await Promise.all([
     getProducts(),
     getCategories(),

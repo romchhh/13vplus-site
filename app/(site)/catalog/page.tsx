@@ -15,7 +15,7 @@ export const revalidate = 300; // ISR every 5 minutes
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const params = await searchParams;
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.PUBLIC_URL;
   
   let title = "Каталог товарів | 13VPLUS";
   let description = "Перегляньте весь каталог жіночого одягу від 13VPLUS. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.";

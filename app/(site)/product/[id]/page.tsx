@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.PUBLIC_URL;
   const firstMedia = product.media && product.media.length > 0 ? product.media[0] : null;
   const imageUrl = firstMedia
     ? `${baseUrl}/api/images/${firstMedia.url}`

@@ -54,7 +54,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.PUBLIC_URL;
 
   return (
     <html lang="uk" className={montserrat.className}>

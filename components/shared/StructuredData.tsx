@@ -20,7 +20,7 @@ interface OrganizationStructuredDataProps {
   baseUrl?: string;
 }
 
-export function ProductStructuredData({ product, baseUrl = "http://localhost:3000" }: ProductStructuredDataProps) {
+export function ProductStructuredData({ product, baseUrl = process.env.PUBLIC_URL }: ProductStructuredDataProps) {
   const imageUrl = product.first_media
     ? `${baseUrl}/api/images/${product.first_media.url}`
     : `${baseUrl}/images/13VPLUS BLACK PNG 2.png`;
@@ -62,7 +62,7 @@ export function OrganizationStructuredData({
   name = "13VPLUS",
   url,
   logo,
-  baseUrl = "http://localhost:3000",
+  baseUrl = process.env.PUBLIC_URL,
 }: OrganizationStructuredDataProps) {
   const structuredData = {
     "@context": "https://schema.org",
