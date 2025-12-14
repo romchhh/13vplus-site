@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  let body: Record<string, any> = {};
+  let body: Record<string, unknown> = {};
   let orderReference: string = "unknown";
   
   try {
@@ -31,25 +31,24 @@ export async function POST(req: NextRequest) {
 
     console.log("[WayForPay Webhook] Received:", JSON.stringify(body, null, 2));
 
-    const {
-      merchantAccount,
-      merchantSignature,
-      amount,
-      currency,
-      authCode,
-      cardPan,
-      transactionStatus,
-      reasonCode,
-    } = body;
+    // Extract and type-check values from body
+    const merchantAccount = String(body.merchantAccount || "");
+    const merchantSignature = String(body.merchantSignature || "");
+    const amount = body.amount;
+    const currency = String(body.currency || "UAH");
+    const authCode = String(body.authCode || "");
+    const cardPan = String(body.cardPan || "");
+    const transactionStatus = String(body.transactionStatus || "");
+    const reasonCode = body.reasonCode;
     
     // Use orderReference from earlier extraction
     const orderRef = orderReference;
 
     // Validate required fields
-    if (!merchantAccount || !orderReference || !merchantSignature || !transactionStatus) {
+    if (!merchantAccount || !orderRef || !merchantSignature || !transactionStatus) {
       console.error("[WayForPay Webhook] Missing required fields:", {
         merchantAccount: !!merchantAccount,
-        orderReference: !!orderReference,
+        orderReference: !!orderRef,
         merchantSignature: !!merchantSignature,
         transactionStatus: !!transactionStatus,
       });
@@ -235,7 +234,10 @@ export async function POST(req: NextRequest) {
     
     try {
       // Use orderReference from outer scope or from error context
-      const ref = orderReference !== "unknown" ? orderReference : ((error as any)?.orderReference || "unknown");
+      const errorRef = error && typeof error === "object" && "orderReference" in error 
+        ? String((error as { orderReference?: unknown }).orderReference || "unknown")
+        : "unknown";
+      const ref = orderReference !== "unknown" ? orderReference : errorRef;
       const responseSignature = generateWebhookResponseSignature({
         orderReference: String(ref),
         status: "decline",
