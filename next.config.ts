@@ -35,6 +35,8 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: "100mb", // for images, videos
+      // Allow external origins for webhooks
+      allowedOrigins: ["secure.wayforpay.com", "plisio.net"],
     },
     // Enable optimized package imports with tree shaking
     optimizePackageImports: [

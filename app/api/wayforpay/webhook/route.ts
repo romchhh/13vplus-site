@@ -8,14 +8,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-// This is the key fix - explicitly disable Server Actions
-export const config = {
-  api: {
-    bodyParser: false, // Disable Next.js body parsing
-    externalResolver: true, // Tell Next.js this is an external resolver
-  },
-};
-
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown> = {};
   let orderReference: string = "unknown";

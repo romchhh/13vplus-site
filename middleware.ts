@@ -41,11 +41,15 @@ export function middleware(request: NextRequest) {
     // Create a response that bypasses Server Actions
     const response = NextResponse.next();
     
+    // Remove headers that trigger Server Actions validation
+    // These headers are set by the proxy/load balancer and cause Server Actions validation
+    response.headers.delete("x-forwarded-host");
+    response.headers.delete("origin");
+    
     // Set headers to indicate this is NOT a Server Action
     response.headers.set("Content-Type", "application/json");
     response.headers.set("X-Middleware-Webhook", "true");
     
-    // The route handler config will handle Server Actions prevention
     return response;
   }
 
