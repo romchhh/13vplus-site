@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import SidebarFilter from "../layout/SidebarFilter";
 import { useAppContext } from "@/lib/GeneralProvider";
@@ -8,6 +8,7 @@ import SidebarMenu from "../layout/SidebarMenu";
 import Link from "next/link";
 import Image from "next/image";
 import { getProductImageSrc } from "@/lib/getFirstProductImage";
+import ProductSkeleton from "./ProductSkeleton";
 
 interface Product {
   id: number;
@@ -52,6 +53,7 @@ export default function CatalogClient({
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [isFiltering, setIsFiltering] = useState(false);
 
   const filteredProducts = useMemo(() => {
     return initialProducts.filter((product) => {
@@ -73,6 +75,13 @@ export default function CatalogClient({
       return matchesSize && matchesMinPrice && matchesMaxPrice && matchesColor && matchesCategory;
     });
   }, [initialProducts, selectedSizes, minPrice, maxPrice, selectedColors, selectedCategories]);
+
+  // Show loading state when filters change
+  useEffect(() => {
+    setIsFiltering(true);
+    const timer = setTimeout(() => setIsFiltering(false), 300);
+    return () => clearTimeout(timer);
+  }, [selectedSizes, selectedColors, selectedCategories, minPrice, maxPrice, sortOrder]);
 
   const sortedProducts = useMemo(() => {
     const sorted = [...filteredProducts];
@@ -130,17 +139,60 @@ export default function CatalogClient({
           </div>
 
           <button
-            className="cursor-pointer text-base sm:text-lg font-medium font-['Montserrat'] uppercase tracking-wider text-gray-700 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-900 transition-all px-2 py-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="cursor-pointer text-base sm:text-lg font-medium font-['Montserrat'] uppercase tracking-wider text-gray-700 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-900 transition-all px-2 py-1 min-w-[44px] min-h-[44px] flex items-center justify-center gap-2 relative"
             onClick={() => setIsFilterOpen(true)}
             aria-label="Відкрити фільтри"
           >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
             Фільтри
+            {(selectedSizes.length > 0 || selectedColors.length > 0 || selectedCategories.length > 0 || minPrice !== null || maxPrice !== null) && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {(selectedSizes.length + selectedColors.length + selectedCategories.length + (minPrice !== null ? 1 : 0) + (maxPrice !== null ? 1 : 0))}
+              </span>
+            )}
           </button>
         </div>
 
         {/* Product Grid - Mobile Optimized */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
-          {visibleProducts.map((product, index) => {
+          {isFiltering ? (
+            // Show skeletons while filtering
+            Array.from({ length: 8 }).map((_, index) => (
+              <ProductSkeleton key={`skeleton-${index}`} />
+            ))
+          ) : visibleProducts.length === 0 ? (
+            // Empty state
+            <div className="col-span-full flex flex-col items-center justify-center py-16 gap-4">
+              <svg
+                className="w-16 h-16 text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <p className="text-gray-500 text-lg font-medium">Товарів не знайдено</p>
+              <p className="text-gray-400 text-sm">Спробуйте змінити фільтри</p>
+            </div>
+          ) : (
+            visibleProducts.map((product, index) => {
             // Debug logging
             if (product.first_media) {
               console.log(`[CatalogClient] Product ${product.id} - first_media:`, product.first_media);
@@ -212,7 +264,7 @@ export default function CatalogClient({
               </div>
               </Link>
             );
-          })}
+          }))}
         </div>
         {visibleCount < sortedProducts.length && (
           <div className="mt-12 flex justify-center">

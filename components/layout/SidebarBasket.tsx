@@ -43,7 +43,18 @@ export default function SidebarBasket({
           </div>
 
           <div className="flex flex-col gap-6">
-            {items.length === 0 && <p>Ваш кошик порожній</p>}
+            {items.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 gap-4">
+                <Image
+                  src="/images/light-theme/order.svg"
+                  alt="empty cart"
+                  width={120}
+                  height={120}
+                  className="opacity-50"
+                />
+                <p className="text-neutral-500 text-lg">Ваш кошик порожній</p>
+              </div>
+            )}
 
             {items.map((item) => (
               <div
@@ -158,19 +169,55 @@ export default function SidebarBasket({
             ))}
 
             {items.length > 0 && (
-              <Link
-                href="/final"
-                className="text-center py-3 rounded-md mt-4 bg-black text-white hover:bg-gray-800 transition-colors"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setIsOpen(false);
-                  setTimeout(() => {
-                    window.location.href = "/final";
-                  }, 100);
-                }}
-              >
-                Оформити замовлення
-              </Link>
+              <>
+                {/* Cart Summary */}
+                <div className="border-t pt-4 mt-4 space-y-2">
+                  <div className="flex justify-between text-base">
+                    <span className="text-gray-600">Товарів:</span>
+                    <span className="font-medium">
+                      {items.reduce((sum, item) => sum + item.quantity, 0)} шт.
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-lg font-semibold">
+                    <span>До сплати:</span>
+                    <span className="text-[#8C7461]">
+                      {items
+                        .reduce((total, item) => {
+                          const itemPrice =
+                            typeof item.price === "string"
+                              ? parseFloat(item.price)
+                              : item.price;
+                          const discount = item.discount_percentage
+                            ? typeof item.discount_percentage === "string"
+                              ? parseFloat(item.discount_percentage)
+                              : item.discount_percentage
+                            : 0;
+                          const price =
+                            discount > 0
+                              ? itemPrice * (1 - discount / 100)
+                              : itemPrice;
+                          return total + price * item.quantity;
+                        }, 0)
+                        .toFixed(2)}{" "}
+                      ₴
+                    </span>
+                  </div>
+                </div>
+
+                <Link
+                  href="/final"
+                  className="text-center py-3 rounded-md mt-4 bg-black text-white hover:bg-gray-800 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] font-medium"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsOpen(false);
+                    setTimeout(() => {
+                      window.location.href = "/final";
+                    }, 100);
+                  }}
+                >
+                  Оформити замовлення
+                </Link>
+              </>
             )}
           </div>
         </nav>

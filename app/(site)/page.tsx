@@ -12,6 +12,9 @@ const AboutUs = dynamic(() => import("@/components/main-page/AboutUs"), {
 const LimitedEdition = dynamic(() => import("@/components/main-page/LimitedEdition"), {
   loading: () => <div className="h-96 animate-pulse bg-white" />
 });
+const TopSale = dynamic(() => import("@/components/main-page/TopSale"), {
+  loading: () => <div className="h-96 animate-pulse bg-white" />
+});
 const ContactsSection = dynamic(() => import("@/components/main-page/ContactsSection"), {
   loading: () => <div className="h-96 animate-pulse bg-white" />
 });
@@ -29,6 +32,7 @@ export default function Home() {
       <AboutUs />
       <MediaGallery />
       <LimitedEdition />
+      <TopSale />
       <ContactsSection />
       <FAQ />
     </>

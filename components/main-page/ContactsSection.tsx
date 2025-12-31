@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 interface Location {
   title: string;
   address: string;
@@ -15,7 +13,6 @@ interface Location {
 }
 
 export default function ContactsSection() {
-  const [isContactsExpanded, setIsContactsExpanded] = useState(true);
 
   const locations: Location[] = [
     {
@@ -37,48 +34,27 @@ export default function ContactsSection() {
       id="contacts"
       className="scroll-mt-20 max-w-[1920px] w-full mx-auto bg-white py-16 lg:py-24 px-6"
     >
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-16 lg:mb-20">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold font-['Montserrat'] uppercase tracking-wider text-black mb-6">
-            ЦЕНТР ПІДТРИМКИ
-          </h1>
-          <div className="w-24 h-0.5 bg-black mx-auto"></div>
-        </div>
-
-        {/* Contacts Header */}
-        <div className="flex items-center justify-between mb-8 lg:mb-10">
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold font-['Montserrat'] uppercase tracking-wider text-black">
-            КОНТАКТИ
+      <div className="flex flex-col lg:flex-row justify-between gap-12 lg:gap-16">
+        {/* Left side - Title */}
+        <div className="lg:w-96">
+          <h2 className="text-4xl lg:text-6xl font-bold font-['Montserrat'] uppercase tracking-wider text-black leading-tight mb-6">
+            <span className="inline-block">
+              ЦЕНТР
+            </span>
+            <br />
+            <span className="inline-block">
+              ПІДТРИМКИ
+            </span>
           </h2>
-          <button
-            onClick={() => setIsContactsExpanded(!isContactsExpanded)}
-            className="text-black/50 hover:text-black transition-colors p-2 -mr-2"
-            aria-label={isContactsExpanded ? "Згорнути" : "Розгорнути"}
-          >
-            <svg
-              className={`w-6 h-6 transition-transform duration-300 ${
-                isContactsExpanded ? "" : "rotate-180"
-              }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 15l7-7 7 7"
-              />
-            </svg>
-          </button>
+          <p className="text-lg lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed">
+            Зв&apos;яжіться з нами зручним для вас способом
+          </p>
         </div>
 
-        {/* Contacts Content */}
-        {isContactsExpanded && (
-          <div className="space-y-8 lg:space-y-10">
+        {/* Right side - Contacts Content */}
+        <div className="flex-1 max-w-4xl space-y-8 lg:space-y-10">
             {/* General Support Info */}
-            <div className="bg-gradient-to-br from-black/5 to-black/3 p-8 lg:p-10 rounded-xl border border-black/10 shadow-sm space-y-6">
+            <div className="space-y-6">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-black/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <svg className="w-5 h-5 text-black/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,7 +68,7 @@ export default function ContactsSection() {
                 </div>
               </div>
               
-              <div className="space-y-4 pt-6 border-t border-black/10">
+              <div className="space-y-4 pt-6">
                 <a
                   href="tel:+380680785937"
                   className="flex items-center gap-4 group hover:opacity-80 transition-all duration-200 p-3 -m-3 rounded-lg hover:bg-black/5"
@@ -124,8 +100,8 @@ export default function ContactsSection() {
 
             {/* Locations */}
             {locations.map((location, index) => (
-              <div key={index} className="bg-gradient-to-br from-black/5 to-black/3 p-8 lg:p-10 rounded-xl border border-black/10 shadow-sm space-y-6">
-                <h3 className="text-xl lg:text-2xl font-bold font-['Montserrat'] uppercase tracking-wide text-black pb-3 border-b-2 border-black/20">
+              <div key={index} className="space-y-6">
+                <h3 className="text-xl lg:text-2xl font-bold font-['Montserrat'] uppercase tracking-wide text-black pb-3">
                   {location.title}
                 </h3>
                 
@@ -184,7 +160,7 @@ export default function ContactsSection() {
                     </div>
                   </div>
 
-                  <div className="pt-5 border-t border-black/10">
+                  <div className="pt-5">
                     <p className="text-xs font-['Montserrat'] text-black/50 uppercase tracking-widest mb-4 font-semibold">Месенджери</p>
                     <div className="flex flex-wrap gap-3">
                       {location.messengers.map((messenger, msgIndex) => (
@@ -203,8 +179,7 @@ export default function ContactsSection() {
                 </div>
               </div>
             ))}
-          </div>
-        )}
+        </div>
       </div>
     </section>
   );

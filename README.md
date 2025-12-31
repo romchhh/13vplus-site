@@ -2,6 +2,38 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Database Setup
+
+Before running the application, you need to create the database:
+
+**Option 1: Using the script (recommended)**
+```bash
+npm run create-db
+```
+
+**Option 2: Manual creation via psql**
+```bash
+# Connect to PostgreSQL
+psql -U your_username -h your_host
+
+# Create the database
+CREATE DATABASE 13vplus_db;
+
+# Or use the SQL script
+psql -U your_username -h your_host -f scripts/create-database.sql
+```
+
+**After creating the database, setup the schema:**
+```bash
+# First, create all tables from Prisma schema
+npm run setup-db
+
+# Then, run custom migrations (if needed)
+npm run migrate
+```
+
+### Running the Development Server
+
 First, run the development server:
 
 ```bash

@@ -182,15 +182,42 @@ export async function POST(req: NextRequest) {
         });
 
         if (order) {
-          await prisma.order.update({
-            where: { id: order.id },
-            data: {
-              paymentStatus: "paid",
-              status: "pending",
-            },
+          // Update order status and decrement stock in a transaction
+          await prisma.$transaction(async (tx) => {
+            // Update order status
+            await tx.order.update({
+              where: { id: order.id },
+              data: {
+                paymentStatus: "paid",
+                status: "pending",
+              },
+            });
+
+            // Decrement stock for each item
+            for (const item of order.items) {
+              const productSize = await tx.productSize.findFirst({
+                where: {
+                  productId: item.productId,
+                  size: item.size,
+                },
+              });
+
+              if (productSize && productSize.stock >= item.quantity) {
+                await tx.productSize.update({
+                  where: { id: productSize.id },
+                  data: {
+                    stock: {
+                      decrement: item.quantity,
+                    },
+                  },
+                });
+              } else {
+                console.warn(`[WayForPay Webhook] Insufficient stock for product ${item.productId} size ${item.size}`);
+              }
+            }
           });
 
-          console.log(`[WayForPay Webhook] ✓ Order ${orderReference} marked as paid`);
+          console.log(`[WayForPay Webhook] ✓ Order ${orderReference} marked as paid and stock decremented`);
 
           // Send Telegram notification
           try {

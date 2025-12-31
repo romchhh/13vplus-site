@@ -137,6 +137,63 @@ export function generatePaymentSignature(params: PaymentFormParams): string {
   return signature;
 }
 
+// Invoice signature generation for CREATE_INVOICE
+interface InvoiceSignatureParams {
+  merchantAccount: string;
+  merchantDomainName: string;
+  orderReference: string;
+  orderDate: number;
+  amount: number;
+  currency: string;
+  productName: string[];
+  productCount: number[];
+  productPrice: number[];
+  secretKey: string;
+}
+
+export function generateInvoiceSignature(params: InvoiceSignatureParams): string {
+  const {
+    merchantAccount,
+    merchantDomainName,
+    orderReference,
+    orderDate,
+    amount,
+    currency,
+    productName,
+    productCount,
+    productPrice,
+    secretKey,
+  } = params;
+
+  // Invoice signature format (same as payment):
+  // merchantAccount;merchantDomainName;orderReference;orderDate;amount;currency;productName[];productCount[];productPrice[]
+  const productNameStr = productName.join(";");
+  const productCountStr = productCount.join(";");
+  const productPriceStr = productPrice.map(p => p.toFixed(2)).join(";");
+
+  const stringToSign = [
+    merchantAccount,
+    merchantDomainName,
+    orderReference,
+    orderDate.toString(),
+    amount.toFixed(2),
+    currency,
+    productNameStr,
+    productCountStr,
+    productPriceStr,
+  ].join(";");
+
+  console.log("[generateInvoiceSignature] String to sign:", stringToSign);
+
+  const hmac = crypto.createHmac("md5", secretKey);
+  hmac.update(stringToSign);
+  const signature = hmac.digest("hex");
+
+  console.log("[generateInvoiceSignature] Generated signature:", signature);
+
+  return signature;
+}
+
 // Legacy function names for backward compatibility
 export function generatePurchaseSignature(data: {
   merchantAccount: string;

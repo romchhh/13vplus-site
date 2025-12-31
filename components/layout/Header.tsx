@@ -278,10 +278,10 @@ export default function Header() {
                 onClick={() => setIsBasketOpen(!isBasketOpen)}
               >
                 <Image
-                  height="32"
-                  width="32"
+                  height="36"
+                  width="36"
                   alt="shopping basket"
-                  src="/images/light-theme/basket.svg"
+                  src="/images/light-theme/cart.svg"
                 />
                 {totalItems > 0 && (
                   <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
@@ -338,10 +338,10 @@ export default function Header() {
               className="relative"
             >
               <Image
-                height="32"
-                width="32"
+                height="36"
+                width="36"
                 alt="shopping basket"
-                src="/images/light-theme/basket.svg"
+                src="/images/light-theme/cart.svg"
               />
               {totalItems > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">

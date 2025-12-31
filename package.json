@@ -13,6 +13,9 @@
     "start:prod": "NODE_ENV=production next start",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
+    "create-db": "ts-node --project tsconfig.scripts.json scripts/create-database.ts",
+    "create-db:simple": "./scripts/create-db.sh",
+    "setup-db": "ts-node --project tsconfig.scripts.json scripts/setup-database.ts",
     "migrate": "ts-node scripts/migrate.ts",
     "add-test-products": "ts-node --project tsconfig.scripts.json scripts/add-test-products.ts",
     "check-vitals": "echo 'Run lighthouse audit after deployment'"

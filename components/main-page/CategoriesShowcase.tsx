@@ -100,13 +100,6 @@ export default function CategoriesShowcase() {
     <section className="max-w-[1920px] w-full mx-auto relative bg-white pb-16 lg:pb-24">
       {/* Stylish Divider and Title Section */}
       <div className="relative py-16 lg:py-24 px-6 overflow-hidden">
-        {/* Diagonal divider line */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-black/20 to-transparent"></div>
-        
-        {/* Decorative elements */}
-        <div className="absolute top-1/2 left-0 w-full h-px bg-black/5 transform -translate-y-1/2"></div>
-        <div className="absolute top-1/2 left-1/2 w-32 h-px bg-black/10 transform -translate-x-1/2 -translate-y-1/2"></div>
-        
         <div className="max-w-6xl mx-auto text-center relative z-10">
           <div className="inline-block mb-6">
             <span className="text-sm lg:text-base font-['Montserrat'] uppercase tracking-[0.3em] text-black/50 font-light">
@@ -120,9 +113,6 @@ export default function CategoriesShowcase() {
             Кожна категорія — це унікальний світ стилю та елегантності
           </p>
         </div>
-        
-        {/* Bottom decorative line */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-black/20 to-transparent"></div>
       </div>
 
       {/* Fixed centered text */}

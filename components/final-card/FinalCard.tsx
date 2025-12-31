@@ -70,6 +70,156 @@ export default function FinalCard() {
 
   const [comment, setComment] = useState("");
   const [paymentType, setPaymentType] = useState("");
+  
+  // Form validation states
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    phone?: string;
+    email?: string;
+    city?: string;
+    postOffice?: string;
+    paymentType?: string;
+  }>({});
+
+  // Real-time validation functions
+  const validateName = (name: string) => {
+    if (!name.trim()) {
+      return "Ім'я та прізвище обов'язкові";
+    }
+    const nameParts = name.trim().split(/\s+/);
+    if (nameParts.length < 2) {
+      return "Введіть ім'я та прізвище повністю";
+    }
+    return "";
+  };
+
+  const validatePhone = (phone: string) => {
+    if (!phone.trim()) {
+      return "Телефон обов'язковий";
+    }
+    const phoneRegex = /^\+?\d{10,15}$/;
+    if (!phoneRegex.test(phone.replace(/\s/g, ""))) {
+      return "Введіть коректний номер телефону";
+    }
+    return "";
+  };
+
+  const validateEmail = (email: string) => {
+    if (email && email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return "Введіть коректний email";
+      }
+    }
+    return "";
+  };
+
+  const validateCity = (city: string) => {
+    if (!city.trim()) {
+      return "Місто обов'язкове";
+    }
+    return "";
+  };
+
+  const validatePostOffice = (postOffice: string) => {
+    if (!postOffice.trim()) {
+      return "Відділення/адреса обов'язкові";
+    }
+    return "";
+  };
+
+  const validatePaymentType = (paymentType: string) => {
+    if (!paymentType) {
+      return "Оберіть спосіб оплати";
+    }
+    return "";
+  };
+
+  // Handle field changes with validation
+  const handleNameChange = (value: string) => {
+    setCustomerName(value);
+    if (value) {
+      const error = validateName(value);
+      setFieldErrors((prev) => ({ ...prev, name: error || undefined }));
+    } else {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.name;
+        return newErrors;
+      });
+    }
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setPhoneNumber(value);
+    if (value) {
+      const error = validatePhone(value);
+      setFieldErrors((prev) => ({ ...prev, phone: error || undefined }));
+    } else {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.phone;
+        return newErrors;
+      });
+    }
+  };
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (value) {
+      const error = validateEmail(value);
+      setFieldErrors((prev) => ({ ...prev, email: error || undefined }));
+    } else {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.email;
+        return newErrors;
+      });
+    }
+  };
+
+  const handleCityChangeWithValidation = (value: string) => {
+    setCity(value);
+    if (value) {
+      const error = validateCity(value);
+      setFieldErrors((prev) => ({ ...prev, city: error || undefined }));
+    } else {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.city;
+        return newErrors;
+      });
+    }
+  };
+
+  const handlePostOfficeChangeWithValidation = (value: string) => {
+    setPostOffice(value);
+    if (value) {
+      const error = validatePostOffice(value);
+      setFieldErrors((prev) => ({ ...prev, postOffice: error || undefined }));
+    } else {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.postOffice;
+        return newErrors;
+      });
+    }
+  };
+
+  const handlePaymentTypeChange = (value: string) => {
+    setPaymentType(value);
+    if (value) {
+      const error = validatePaymentType(value);
+      setFieldErrors((prev) => ({ ...prev, paymentType: error || undefined }));
+    } else {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.paymentType;
+        return newErrors;
+      });
+    }
+  };
+
   const [submittedOrder, setSubmittedOrder] = useState<{
     items: typeof items;
     customer: {
@@ -231,9 +381,10 @@ export default function FinalCard() {
         const data = await response.json();
         console.log("[FinalCard] Success response:", data);
         
-        const { orderId, paymentUrl, paymentData } = data;
+        const { orderId, invoiceUrl, paymentUrl, paymentData } = data;
         
         console.log("[FinalCard] Order ID:", orderId);
+        console.log("[FinalCard] Invoice URL:", invoiceUrl);
         console.log("[FinalCard] Payment URL:", paymentUrl);
         console.log("[FinalCard] Payment Data:", paymentData);
 
@@ -267,8 +418,11 @@ export default function FinalCard() {
         const requiresPayment = paymentType !== "crypto";
         const isCryptoPayment = paymentType === "crypto";
         
-        // If payment URL is provided, redirect to payment gateway
-        if (paymentUrl) {
+        // Use invoiceUrl if available (new WayForPay invoice API), otherwise fallback to paymentUrl
+        const redirectUrl = invoiceUrl || paymentUrl;
+        
+        // If payment/invoice URL is provided, redirect to payment gateway
+        if (redirectUrl) {
           // Store order info temporarily (don't clear basket yet)
           localStorage.setItem(
             "pendingPayment",
@@ -294,44 +448,84 @@ export default function FinalCard() {
           
           setSuccess("Переходимо до оплати...");
           
-          if (isCryptoPayment) {
+          if (invoiceUrl) {
+            // For WayForPay Invoice API - simple redirect to invoice URL
+            setTimeout(() => {
+              window.location.href = invoiceUrl;
+            }, 1500);
+          } else if (isCryptoPayment && paymentUrl) {
             // For Plisio - simple redirect to invoice URL
             setTimeout(() => {
               window.location.href = paymentUrl;
             }, 1500);
-          } else if (paymentData) {
-            // For WayForPay - create and submit form
-            setTimeout(() => {
-              const form = document.createElement("form");
-              form.method = "POST";
-              form.action = paymentUrl;
-              form.acceptCharset = "utf-8";
-              
-              Object.entries(paymentData).forEach(([key, value]) => {
-                const input = document.createElement("input");
-                input.type = "hidden";
-                input.name = key;
-                input.value = String(value);
-                form.appendChild(input);
-              });
-              
-              document.body.appendChild(form);
-              form.submit();
-            }, 1500);
+          } else if (paymentData && paymentUrl) {
+            // Check if this is a CREATE_INVOICE request (to api.wayforpay.com/api)
+            if (paymentUrl === "https://api.wayforpay.com/api") {
+              // For CREATE_INVOICE, send JSON via fetch and redirect to invoiceUrl
+              setTimeout(async () => {
+                try {
+                  const response = await fetch(paymentUrl, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(paymentData),
+                  });
+
+                  const result = await response.json();
+                  
+                  if (result.reasonCode === "Ok" || result.reasonCode === 1100) {
+                    // Redirect to invoice URL
+                    if (result.invoiceUrl) {
+                      window.location.href = result.invoiceUrl;
+                    } else {
+                      setError("Не вдалося отримати посилання на оплату");
+                      setLoading(false);
+                    }
+                  } else {
+                    setError(result.reason || "Помилка створення рахунку");
+                    setLoading(false);
+                  }
+                } catch (error) {
+                  console.error("[FinalCard] Invoice creation error:", error);
+                  setError("Помилка створення рахунку. Спробуйте ще раз.");
+                  setLoading(false);
+                }
+              }, 500);
+            } else {
+              // For regular payment form (to secure.wayforpay.com/pay)
+              setTimeout(() => {
+                const form = document.createElement("form");
+                form.method = "POST";
+                form.action = paymentUrl;
+                form.acceptCharset = "utf-8";
+                
+                Object.entries(paymentData).forEach(([key, value]) => {
+                  const input = document.createElement("input");
+                  input.type = "hidden";
+                  input.name = key;
+                  input.value = String(value);
+                  form.appendChild(input);
+                });
+                
+                document.body.appendChild(form);
+                form.submit();
+              }, 1500);
+            }
           } else {
             // Fallback - simple redirect
             setTimeout(() => {
-              window.location.href = paymentUrl;
+              window.location.href = redirectUrl;
             }, 1500);
           }
-        } else if (requiresPayment && !paymentUrl) {
+        } else if (requiresPayment && !redirectUrl) {
           // Payment required but not created - show error
           setError(
             data.message || 
             "Не вдалося створити платіж. Будь ласка, спробуйте ще раз або зв'яжіться з нами."
           );
           setLoading(false);
-        } else if (isCryptoPayment && !paymentUrl) {
+        } else if (isCryptoPayment && !redirectUrl) {
           // Crypto payment failed to create
           setError(
             data.message || 
@@ -639,22 +833,22 @@ export default function FinalCard() {
   }, [postOffice, postOffices]); // Re-filter post offices whenever `postOffice` or `postOffices` changes
 
   const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCity(e.target.value);
+    handleCityChangeWithValidation(e.target.value);
     setCityListVisible(true); // Show the city list while typing
   };
 
   const handlePostOfficeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPostOffice(e.target.value);
+    handlePostOfficeChangeWithValidation(e.target.value);
     setPostOfficeListVisible(true); // Show the post office list while typing
   };
 
   const handleCitySelect = (cityOption: string) => {
-    setCity(cityOption);
+    handleCityChangeWithValidation(cityOption);
     setCityListVisible(false); // Hide the city list after selecting an option
   };
 
   const handlePostOfficeSelect = (postOfficeOption: string) => {
-    setPostOffice(postOfficeOption);
+    handlePostOfficeChangeWithValidation(postOfficeOption);
     setPostOfficeListVisible(false); // Hide the post office list after selecting an option
   };
 
@@ -813,8 +1007,8 @@ export default function FinalCard() {
       {items.length == 0 ? (
         <div className="py-12 px-4 sm:py-20 flex flex-col items-center gap-10 sm:gap-14 w-full max-w-2xl mx-auto">
           <Image
-            src="/images/light-theme/basket.svg"
-            alt="shopping basket icon"
+            src="/images/light-theme/order.svg"
+            alt="empty cart icon"
             width={200}
             height={200}
           />
@@ -855,12 +1049,23 @@ export default function FinalCard() {
                   type="text"
                   id="name"
                   placeholder="Напр.: Іван Петренко"
-                  className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                  className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all ${
+                    fieldErrors.name
+                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:ring-black focus:border-transparent"
+                  }`}
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  onBlur={(e) => {
+                    const error = validateName(e.target.value);
+                    setFieldErrors((prev) => ({ ...prev, name: error || undefined }));
+                  }}
                   required
                   autoComplete="name"
                 />
+                {fieldErrors.name && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.name}</p>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -874,11 +1079,22 @@ export default function FinalCard() {
                   type="email"
                   id="email"
                   placeholder="example@email.com"
-                  className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                  className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all ${
+                    fieldErrors.email
+                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:ring-black focus:border-transparent"
+                  }`}
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  onBlur={(e) => {
+                    const error = validateEmail(e.target.value);
+                    setFieldErrors((prev) => ({ ...prev, email: error || undefined }));
+                  }}
                   autoComplete="email"
                 />
+                {fieldErrors.email && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -894,12 +1110,23 @@ export default function FinalCard() {
                   placeholder="+380 50 123 4567"
                   pattern="^\+?\d{10,15}$"
                   title="Введіть номер телефону у форматі +380xxxxxxxxx"
-                  className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                  className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all ${
+                    fieldErrors.phone
+                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:ring-black focus:border-transparent"
+                  }`}
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  onBlur={(e) => {
+                    const error = validatePhone(e.target.value);
+                    setFieldErrors((prev) => ({ ...prev, phone: error || undefined }));
+                  }}
                   required
                   autoComplete="tel"
                 />
+                {fieldErrors.phone && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.phone}</p>
+                )}
               </div>
 
               {/* Add delivery method, city, and post office fields */}
@@ -951,10 +1178,21 @@ export default function FinalCard() {
                       id="city"
                       value={city}
                       onChange={handleCityChange} // Update city on input change
+                      onBlur={(e) => {
+                        const error = validateCity(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, city: error || undefined }));
+                      }}
                       placeholder="Напр.: Київ"
-                      className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                      className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all ${
+                        fieldErrors.city
+                          ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:ring-black focus:border-transparent"
+                      }`}
                       required
                     />
+                    {fieldErrors.city && (
+                      <p className="text-red-500 text-xs mt-1">{fieldErrors.city}</p>
+                    )}
                     {loadingCities ? (
                       <p className="text-sm text-gray-500 mt-1">Завантаження міст...</p>
                     ) : (
@@ -989,11 +1227,25 @@ export default function FinalCard() {
                         type="text"
                         id="postOffice"
                         value={postOffice}
-                        onChange={(e) => setPostOffice(e.target.value)}
+                        onChange={(e) => handlePostOfficeChangeWithValidation(e.target.value)}
+                        onBlur={(e) => {
+                          const error = validatePostOffice(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, postOffice: error || undefined }));
+                        }}
                         placeholder="Вул. Січових Стрільців, 10, кв. 25"
-                        className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                        className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all ${
+                          fieldErrors.postOffice
+                            ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                            : "border-gray-300 focus:ring-black focus:border-transparent"
+                        }`}
                         required
                       />
+                      {fieldErrors.postOffice && (
+                        <p className="text-red-500 text-xs mt-1">{fieldErrors.postOffice}</p>
+                      )}
+                      {fieldErrors.postOffice && (
+                        <p className="text-red-500 text-xs mt-1">{fieldErrors.postOffice}</p>
+                      )}
                       <p className="text-xs text-gray-500 mt-0.5">
                         Вкажіть вулицю, будинок та квартиру
                       </p>
@@ -1014,14 +1266,25 @@ export default function FinalCard() {
                         id="postOffice"
                         value={postOffice}
                         onChange={handlePostOfficeChange}
+                        onBlur={(e) => {
+                          const error = validatePostOffice(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, postOffice: error || undefined }));
+                        }}
                         placeholder={
                           deliveryMethod === "nova_poshta_locker"
                             ? "Начніть вводити назву поштомата"
                             : "Начніть вводити назву відділення"
                         }
-                        className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                        className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all ${
+                          fieldErrors.postOffice
+                            ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                            : "border-gray-300 focus:ring-black focus:border-transparent"
+                        }`}
                         required
                       />
+                      {fieldErrors.postOffice && (
+                        <p className="text-red-500 text-xs mt-1">{fieldErrors.postOffice}</p>
+                      )}
                       {loadingPostOffices ? (
                         <p className="text-sm text-gray-500 mt-1">Завантаження відділень...</p>
                       ) : (
@@ -1077,15 +1340,30 @@ export default function FinalCard() {
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor="paymentType"
-                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
+                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700 flex items-center gap-2"
                 >
+                  <Image
+                    src="/images/light-theme/tag.svg"
+                    alt="payment tag"
+                    width={18}
+                    height={18}
+                    className="opacity-70"
+                  />
                   Спосіб оплати <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="paymentType"
-                  className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all bg-white"
+                  className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all bg-white ${
+                    fieldErrors.paymentType
+                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:ring-black focus:border-transparent"
+                  }`}
                   value={paymentType}
-                  onChange={(e) => setPaymentType(e.target.value)}
+                  onChange={(e) => handlePaymentTypeChange(e.target.value)}
+                  onBlur={(e) => {
+                    const error = validatePaymentType(e.target.value);
+                    setFieldErrors((prev) => ({ ...prev, paymentType: error || undefined }));
+                  }}
                   required
                 >
                   <option value="">Оберіть спосіб оплати</option>
@@ -1094,10 +1372,13 @@ export default function FinalCard() {
                   <option value="installment">В розсрочку</option>
                   <option value="crypto">Крипта (USDT, BTC та інші)</option>
                 </select>
+                {fieldErrors.paymentType && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.paymentType}</p>
+                )}
               </div>
 
               <button
-                className="bg-black text-white px-4 py-3 rounded-md mt-2 font-medium text-sm sm:text-base hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-black text-white px-4 py-3 rounded-md mt-2 mb-6 font-medium text-sm sm:text-base hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 type="submit"
                 disabled={loading}
               >

@@ -66,26 +66,26 @@ const templateProduct = {
   name: "Шовкова сорочка без рукавів",
   price: 1780,
   first_media: { type: "photo", url: "template-placeholder" },
-  limited_edition: false,
+  top_sale: false,
 };
 
-export default function LimitedEdition() {
-  const { products: limitedEditionProducts, loading } = useProducts({ limitedEdition: true });
+export default function TopSale() {
+  const { products: topSaleProducts, loading } = useProducts({ topSale: true });
 
   // Fill with template products if there are not enough
   const products = useMemo(() => {
     // Fill up to 8 first (so we still get templates if needed)
     const filled =
-      limitedEditionProducts.length < 8
+      topSaleProducts.length < 8
         ? [
-            ...limitedEditionProducts,
-            ...Array(8 - limitedEditionProducts.length).fill(templateProduct),
+            ...topSaleProducts,
+            ...Array(8 - topSaleProducts.length).fill(templateProduct),
           ]
-        : limitedEditionProducts;
+        : topSaleProducts;
 
     // ✅ Then limit to 4
     return filled.slice(0, 4);
-  }, [limitedEditionProducts]);
+  }, [topSaleProducts]);
 
   if (loading) {
     return <div className="text-center py-10 text-black">Завантаження...</div>;
@@ -97,10 +97,10 @@ export default function LimitedEdition() {
         {/* Header */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 lg:gap-0 border-b border-black/10 pb-8 lg:pb-12">
           <h2 className="text-3xl lg:text-5xl font-bold font-['Montserrat'] uppercase tracking-wider text-black">
-            Лімітована колекція від 13VPLUS
+            Топ продажі
           </h2>
           <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed max-w-2xl">
-            Лімітована колекція — для тих кому важлива унікальність.
+            Найпопулярніші товари, які обирають наші клієнти.
           </p>
         </div>
 
@@ -231,3 +231,4 @@ export default function LimitedEdition() {
     </section>
   );
 }
+

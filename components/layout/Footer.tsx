@@ -157,7 +157,7 @@ export default function Footer() {
             </div>
             <div>
               <Link
-                href="https://telebots.site/"
+                href="https://new.telebots.site/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm sm:text-base font-semibold font-['Montserrat'] text-black/60 hover:text-black/80 transition-colors tracking-wide"

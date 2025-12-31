@@ -62,6 +62,13 @@ export default function SidebarFilter({
   filteredCount,
 }: SidebarFilterProps) {
   const availableSizes = ["O/S", "160 cm", "XXS", "XS", "XS/S", "S", "M", "M/L", "L", "L/XL"];
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    sort: true,
+    size: true,
+    color: true,
+    category: true,
+    price: true,
+  });
 
   // Calculate min and max price from products
   const priceRange = useMemo(() => {
@@ -114,6 +121,30 @@ export default function SidebarFilter({
     setIsOpen(false);
   };
 
+  const toggleSection = (section: string) => {
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const clearAllFilters = () => {
+    setSelectedSizes([]);
+    setSelectedColors([]);
+    setSelectedCategories([]);
+    setMinPrice(null);
+    setMaxPrice(null);
+    setLocalMinPrice(priceRange.min);
+    setLocalMaxPrice(priceRange.max);
+  };
+
+  const hasActiveFilters = useMemo(() => {
+    return (
+      selectedSizes.length > 0 ||
+      selectedColors.length > 0 ||
+      selectedCategories.length > 0 ||
+      minPrice !== null ||
+      maxPrice !== null
+    );
+  }, [selectedSizes, selectedColors, selectedCategories, minPrice, maxPrice]);
+
   return (
     <div className="relative z-50">
       {isOpen && (
@@ -133,22 +164,56 @@ export default function SidebarFilter({
           <h2 className="text-xl font-bold font-['Montserrat'] uppercase tracking-wider text-center flex-1">
             ФІЛЬТРИ
           </h2>
-          <button
-            className="text-white text-2xl hover:text-gray-300 transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-3">
+            {hasActiveFilters && (
+              <button
+                onClick={clearAllFilters}
+                className="text-sm text-white/80 hover:text-white underline transition-colors"
+                aria-label="Очистити всі фільтри"
+              >
+                Очистити
+              </button>
+            )}
+            <button
+              className="text-white text-2xl hover:text-gray-300 transition-colors"
+              onClick={() => setIsOpen(false)}
+              aria-label="Закрити фільтри"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           {/* Sorting Section */}
-          <div>
-            <h3 className="text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4">
-              СОРТУВАННЯ
-            </h3>
-            <div className="space-y-3">
+          <div className="border-b border-gray-200 pb-6">
+            <button
+              onClick={() => toggleSection("sort")}
+              className="w-full flex items-center justify-between text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4 hover:text-gray-700 transition-colors"
+            >
+              <span>СОРТУВАННЯ</span>
+              <svg
+                className={`w-5 h-5 transition-transform duration-200 ${
+                  openSections.sort ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            <div
+              className={`space-y-3 overflow-hidden transition-all duration-300 ${
+                openSections.sort ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
               <label className="flex items-center gap-3 cursor-pointer group">
                 <input
                   type="radio"
@@ -203,19 +268,41 @@ export default function SidebarFilter({
           </div>
 
           {/* Size Section */}
-          <div>
-            <h3 className="text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4">
-              РОЗМІР
-            </h3>
-            <div className="flex flex-wrap gap-2">
+          <div className="border-b border-gray-200 pb-6">
+            <button
+              onClick={() => toggleSection("size")}
+              className="w-full flex items-center justify-between text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4 hover:text-gray-700 transition-colors"
+            >
+              <span>РОЗМІР</span>
+              <svg
+                className={`w-5 h-5 transition-transform duration-200 ${
+                  openSections.size ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            <div
+              className={`flex flex-wrap gap-2 overflow-hidden transition-all duration-300 ${
+                openSections.size ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
               {availableSizes.map((size) => (
                 <button
                   key={size}
                   onClick={() => toggleSize(size)}
-                  className={`px-4 py-2 text-sm font-['Montserrat'] border-2 transition-colors ${
+                  className={`px-4 py-2 text-sm font-['Montserrat'] border-2 transition-all duration-200 rounded ${
                     selectedSizes.includes(size)
-                      ? "bg-gray-900 text-white border-gray-900"
-                      : "bg-white text-gray-900 border-gray-300 hover:border-gray-900"
+                      ? "bg-gray-900 text-white border-gray-900 scale-105 shadow-md"
+                      : "bg-white text-gray-900 border-gray-300 hover:border-gray-900 hover:scale-105"
                   }`}
                 >
                   {size}
@@ -225,26 +312,49 @@ export default function SidebarFilter({
           </div>
 
           {/* Color Section */}
-          <div>
-            <h3 className="text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4">
-              КОЛІР
-            </h3>
-            <div className="flex flex-wrap gap-3">
+          <div className="border-b border-gray-200 pb-6">
+            <button
+              onClick={() => toggleSection("color")}
+              className="w-full flex items-center justify-between text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4 hover:text-gray-700 transition-colors"
+            >
+              <span>КОЛІР</span>
+              <svg
+                className={`w-5 h-5 transition-transform duration-200 ${
+                  openSections.color ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            <div
+              className={`flex flex-wrap gap-3 overflow-hidden transition-all duration-300 ${
+                openSections.color ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
               {colors.map((colorItem, index) => {
                 const isSelected = selectedColors.includes(colorItem.color);
                 return (
                   <button
                     key={index}
                     onClick={() => toggleColor(colorItem.color)}
-                    className={`w-10 h-10 rounded-full border-2 transition-all ${
+                    className={`w-10 h-10 rounded-full border-2 transition-all duration-200 ${
                       isSelected
-                        ? "border-gray-900 scale-110"
-                        : "border-gray-300 hover:border-gray-600"
+                        ? "border-gray-900 scale-110 ring-2 ring-gray-900 ring-offset-2"
+                        : "border-gray-300 hover:border-gray-600 hover:scale-105"
                     }`}
                     style={{
                       backgroundColor: colorItem.hex || "#ccc",
                     }}
                     title={colorItem.color}
+                    aria-label={`Обрати колір ${colorItem.color}`}
                   />
                 );
               })}
@@ -252,11 +362,33 @@ export default function SidebarFilter({
           </div>
 
           {/* Category Section */}
-          <div>
-            <h3 className="text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4">
-              КАТЕГОРІЯ
-            </h3>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
+          <div className="border-b border-gray-200 pb-6">
+            <button
+              onClick={() => toggleSection("category")}
+              className="w-full flex items-center justify-between text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4 hover:text-gray-700 transition-colors"
+            >
+              <span>КАТЕГОРІЯ</span>
+              <svg
+                className={`w-5 h-5 transition-transform duration-200 ${
+                  openSections.category ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            <div
+              className={`space-y-3 max-h-64 overflow-y-auto transition-all duration-300 ${
+                openSections.category ? "opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+              }`}
+            >
               {categories.map((category) => (
                 <label
                   key={category.id}
@@ -275,22 +407,44 @@ export default function SidebarFilter({
           </div>
 
           {/* Price Section */}
-          <div>
-            <h3 className="text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4">
-              ВАРТІСТЬ
-            </h3>
-            <div className="space-y-6">
+          <div className="border-b border-gray-200 pb-6">
+            <button
+              onClick={() => toggleSection("price")}
+              className="w-full flex items-center justify-between text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4 hover:text-gray-700 transition-colors"
+            >
+              <span>ВАРТІСТЬ</span>
+              <svg
+                className={`w-5 h-5 transition-transform duration-200 ${
+                  openSections.price ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            <div
+              className={`space-y-6 overflow-hidden transition-all duration-300 ${
+                openSections.price ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
               {/* Price Range Display */}
-              <div className="flex items-center justify-between text-sm font-medium text-gray-700">
-                <span>{localMinPrice}₴</span>
+              <div className="flex items-center justify-between text-base font-semibold text-gray-900 bg-gray-50 px-4 py-3 rounded-lg">
+                <span className="text-[#8C7461]">{localMinPrice}₴</span>
                 <span className="text-gray-400">—</span>
-                <span>{localMaxPrice}₴</span>
+                <span className="text-[#8C7461]">{localMaxPrice}₴</span>
               </div>
 
               {/* Min Price Slider */}
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">
-                  Від
+                <label className="block text-sm font-medium mb-3 text-gray-700">
+                  Від: <span className="text-[#8C7461] font-semibold">{localMinPrice}₴</span>
                 </label>
                 <input
                   type="range"
@@ -303,14 +457,17 @@ export default function SidebarFilter({
                       handleMinPriceChange(value);
                     }
                   }}
-                  className="w-full"
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                  style={{
+                    background: `linear-gradient(to right, #000 0%, #000 ${((localMinPrice - priceRange.min) / (priceRange.max - priceRange.min)) * 100}%, #e5e7eb ${((localMinPrice - priceRange.min) / (priceRange.max - priceRange.min)) * 100}%, #e5e7eb 100%)`
+                  }}
                 />
               </div>
 
               {/* Max Price Slider */}
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">
-                  До
+                <label className="block text-sm font-medium mb-3 text-gray-700">
+                  До: <span className="text-[#8C7461] font-semibold">{localMaxPrice}₴</span>
                 </label>
                 <input
                   type="range"
@@ -323,7 +480,10 @@ export default function SidebarFilter({
                       handleMaxPriceChange(value);
                     }
                   }}
-                  className="w-full"
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                  style={{
+                    background: `linear-gradient(to right, #e5e7eb 0%, #e5e7eb ${((localMaxPrice - priceRange.min) / (priceRange.max - priceRange.min)) * 100}%, #000 ${((localMaxPrice - priceRange.min) / (priceRange.max - priceRange.min)) * 100}%, #000 100%)`
+                  }}
                 />
               </div>
             </div>
@@ -331,10 +491,13 @@ export default function SidebarFilter({
         </div>
 
         {/* Footer - Black button */}
-        <div className="bg-white border-t border-gray-200 p-6">
+        <div className="bg-white border-t border-gray-200 p-6 space-y-3">
+          <div className="text-center text-sm text-gray-600">
+            Знайдено товарів: <span className="font-bold text-gray-900">{filteredCount}</span>
+          </div>
           <button
             onClick={handleApplyFilters}
-            className="w-full bg-black text-white py-4 text-lg font-bold font-['Montserrat'] uppercase tracking-wider hover:bg-gray-900 transition-colors"
+            className="w-full bg-black text-white py-4 text-lg font-bold font-['Montserrat'] uppercase tracking-wider hover:bg-gray-900 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
           >
             ФІЛЬТРУВАТИ ({filteredCount})
           </button>

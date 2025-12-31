@@ -10,7 +10,7 @@ export default function ShoppingBasket() {
         height="32"
         width="32"
         alt="shopping basket"
-        src="/images/light-theme/basket.svg"
+        src="/images/light-theme/cart.svg"
       />
     </button>
   );

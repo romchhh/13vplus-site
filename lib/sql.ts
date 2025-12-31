@@ -709,7 +709,7 @@ type OrderInput = {
 };
 
 export async function sqlPostOrder(order: OrderInput) {
-  // Transaction: create order, insert items, decrement stock atomically
+  // Transaction: create order and insert items (stock will be decremented after payment confirmation)
   return await prisma.$transaction(async (tx) => {
     // Create order
     const created = await tx.order.create({
@@ -735,31 +735,6 @@ export async function sqlPostOrder(order: OrderInput) {
         },
       },
     });
-
-    // Decrement stock for each item
-    for (const item of order.items) {
-      const productSize = await tx.productSize.findFirst({
-        where: {
-          productId: item.product_id,
-          size: item.size,
-        },
-      });
-
-      if (!productSize || productSize.stock < item.quantity) {
-        throw new Error(
-          `Insufficient stock for product ${item.product_id} size ${item.size}`
-        );
-      }
-
-      await tx.productSize.update({
-        where: { id: productSize.id },
-        data: {
-          stock: {
-            decrement: item.quantity,
-          },
-        },
-      });
-    }
 
     return { orderId: created.id };
   });
