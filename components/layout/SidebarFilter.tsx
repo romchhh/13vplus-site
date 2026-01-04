@@ -174,13 +174,13 @@ export default function SidebarFilter({
                 Очистити
               </button>
             )}
-            <button
-              className="text-white text-2xl hover:text-gray-300 transition-colors"
-              onClick={() => setIsOpen(false)}
+          <button
+            className="text-white text-2xl hover:text-gray-300 transition-colors"
+            onClick={() => setIsOpen(false)}
               aria-label="Закрити фільтри"
-            >
-              ×
-            </button>
+          >
+            ×
+          </button>
           </div>
         </div>
 

@@ -518,24 +518,9 @@ export default function SearchSidebar({
                 {searchHistory.length > 0 && (
                   <div>
                     <div className="flex justify-between items-center mb-3">
-                      <div className="flex items-center gap-2">
-                        <svg
-                          className="w-5 h-5 text-stone-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <h3 className="text-base sm:text-lg font-semibold text-black">
-                          Недавні пошуки
-                        </h3>
-                      </div>
+                      <h3 className="text-base sm:text-lg font-semibold text-black">
+                        Недавні пошуки
+                      </h3>
                       <button
                         type="button"
                         onClick={() => {
@@ -553,21 +538,8 @@ export default function SearchSidebar({
                           key={index}
                           type="button"
                           onClick={() => handleSearch(item.query)}
-                          className="px-3 py-1.5 bg-white border border-stone-300 rounded-lg text-sm hover:bg-stone-200 hover:border-stone-400 transition-all duration-200 text-black flex items-center gap-1.5"
+                          className="px-3 py-1.5 bg-white border border-stone-300 rounded-lg text-sm hover:bg-stone-200 hover:border-stone-400 transition-all duration-200 text-black"
                         >
-                          <svg
-                            className="w-3.5 h-3.5 text-stone-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                            />
-                          </svg>
                           {item.query}
                         </button>
                       ))}
@@ -578,20 +550,7 @@ export default function SearchSidebar({
                 {/* Popular Searches */}
                 {popularSearches.length > 0 && (
                   <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <svg
-                        className="w-5 h-5 text-stone-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                        />
-                      </svg>
+                    <div className="mb-3">
                       <h3 className="text-base sm:text-lg font-semibold text-black">
                         Популярні запити
                       </h3>
@@ -602,15 +561,8 @@ export default function SearchSidebar({
                           key={index}
                           type="button"
                           onClick={() => handleSearch(search)}
-                          className="px-3 py-1.5 bg-stone-200 border border-stone-300 rounded-lg text-sm hover:bg-stone-300 hover:border-stone-400 transition-all duration-200 text-black flex items-center gap-1.5"
+                          className="px-3 py-1.5 bg-stone-200 border border-stone-300 rounded-lg text-sm hover:bg-stone-300 hover:border-stone-400 transition-all duration-200 text-black"
                         >
-                          <svg
-                            className="w-3.5 h-3.5 text-stone-500"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.834a1.5 1.5 0 001.5 1.5h1a1.5 1.5 0 001.5-1.5v-5.834a1.5 1.5 0 00-1.5-1.5h-1a1.5 1.5 0 00-1.5 1.5zM11.5 9.5a1.5 1.5 0 00-1.5 1.5v5a1.5 1.5 0 001.5 1.5h1a1.5 1.5 0 001.5-1.5v-5a1.5 1.5 0 00-1.5-1.5h-1zM16 6v10a1.5 1.5 0 001.5 1.5h1a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5h-1A1.5 1.5 0 0016 6z" />
-                          </svg>
                           {search}
                         </button>
                       ))}
@@ -620,23 +572,10 @@ export default function SearchSidebar({
 
                 {/* Popular Products */}
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <svg
-                      className="w-5 h-5 text-stone-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                      />
-                    </svg>
+                  <div className="mb-3">
                     <h3 className="text-base sm:text-lg font-semibold text-black">
-                    Люди часто цікавляться
-                  </h3>
+                      Люди часто цікавляться
+                    </h3>
                   </div>
                   {loadingPopular ? (
                     <div className="space-y-4">

@@ -95,6 +95,9 @@ export default function SidebarBasket({
                       )}
                     </div>
                     <p className="text-stone-900 mt-1">Розмір: {item.size}</p>
+                    {item.color && (
+                      <p className="text-stone-900 mt-1">Колір: {item.color}</p>
+                    )}
                     {quantityError[`${item.id}-${item.size}`] && (
                       <p className="text-red-600 text-sm mt-1">
                         {quantityError[`${item.id}-${item.size}`]}
@@ -171,14 +174,8 @@ export default function SidebarBasket({
             {items.length > 0 && (
               <>
                 {/* Cart Summary */}
-                <div className="border-t pt-4 mt-4 space-y-2">
-                  <div className="flex justify-between text-base">
-                    <span className="text-gray-600">Товарів:</span>
-                    <span className="font-medium">
-                      {items.reduce((sum, item) => sum + item.quantity, 0)} шт.
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-lg font-semibold">
+                <div className="pt-2 mt-2">
+                  <div className="flex justify-between items-center text-lg font-semibold whitespace-nowrap gap-4">
                     <span>До сплати:</span>
                     <span className="text-[#8C7461]">
                       {items
@@ -204,19 +201,19 @@ export default function SidebarBasket({
                   </div>
                 </div>
 
-                <Link
-                  href="/final"
+              <Link
+                href="/final"
                   className="text-center py-3 rounded-md mt-4 bg-black text-white hover:bg-gray-800 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] font-medium"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setIsOpen(false);
-                    setTimeout(() => {
-                      window.location.href = "/final";
-                    }, 100);
-                  }}
-                >
-                  Оформити замовлення
-                </Link>
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsOpen(false);
+                  setTimeout(() => {
+                    window.location.href = "/final";
+                  }, 100);
+                }}
+              >
+                Оформити замовлення
+              </Link>
               </>
             )}
           </div>

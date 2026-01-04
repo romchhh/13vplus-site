@@ -5,7 +5,7 @@ import Image from "next/image";
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-white text-black border-t border-black/10">
+    <footer className="w-full bg-black text-white border-t border-white/10">
       {/* Main footer content */}
       <div className="max-w-[1920px] mx-auto px-6 py-12 lg:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
@@ -13,19 +13,19 @@ export default function Footer() {
           <div className="flex flex-col gap-5">
             <Link href="/" className="inline-block">
               <Image
-                src="/images/13VPLUS BLACK PNG 2.png"
+                src="/images/dark-theme/13vplus-logo-header-white.png"
                 alt="13VPLUS Logo"
                 width={180}
                 height={60}
                 className="h-10 lg:h-12 w-auto"
               />
             </Link>
-            <p className="text-sm lg:text-base text-black/70 leading-relaxed max-w-xs">
+            <p className="text-sm lg:text-base text-white/70 leading-relaxed max-w-xs">
               Український бренд жіночого одягу. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.
             </p>
-            <div className="flex flex-col gap-2 text-sm text-black/80">
+            <div className="flex flex-col gap-2 text-sm text-white/80">
               <p className="font-medium">Індивідуальний пошив</p>
-              <p className="text-black/70">
+              <p className="text-white/70">
                 Ми відшиваємо під замовлення будь-який наш виріб у вашому розмірі. Ідеальна посадка гарантована.
               </p>
             </div>
@@ -37,25 +37,25 @@ export default function Footer() {
             <nav className="flex flex-col gap-3">
               <Link
                 href="/catalog"
-                className="text-sm lg:text-base text-black/70 hover:text-black transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
               >
                 Каталог
               </Link>
               <Link
                 href="/#about"
-                className="text-sm lg:text-base text-black/70 hover:text-black transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
               >
                 Про нас
               </Link>
               <Link
                 href="/#payment-and-delivery"
-                className="text-sm lg:text-base text-black/70 hover:text-black transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
               >
                 Доставка та оплата
               </Link>
               <Link
                 href="/#reviews"
-                className="text-sm lg:text-base text-black/70 hover:text-black transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
               >
                 Відгуки
               </Link>
@@ -68,21 +68,29 @@ export default function Footer() {
             <nav className="flex flex-col gap-3">
               <Link
                 href="/privacy-policy"
-                className="text-sm lg:text-base text-black/70 hover:text-black transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
               >
                 Політика конфіденційності
               </Link>
               <Link
                 href="/terms-of-service"
-                className="text-sm lg:text-base text-black/70 hover:text-black transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
               >
                 Договір оферти
               </Link>
               <Link
                 href="/#contacts"
-                className="text-sm lg:text-base text-black/70 hover:text-black transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
               >
                 Контакти
+              </Link>
+              <Link
+                href="https://share.google/M30THNhEWfigvRjzs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
+              >
+                Документи
               </Link>
             </nav>
           </div>
@@ -95,14 +103,14 @@ export default function Footer() {
                 href="https://www.instagram.com/13vplus"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 text-sm lg:text-base text-black/70 hover:text-black transition-colors duration-300 group"
+                className="flex items-center gap-3 text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 group"
               >
                 <Image
                   src="/images/instagram-icon.svg"
                   alt="Instagram"
                   width={24}
                   height={24}
-                  className="w-6 h-6 opacity-70 group-hover:opacity-100 transition-opacity"
+                  className="w-6 h-6 opacity-70 group-hover:opacity-100 transition-opacity brightness-0 invert"
                 />
                 <span>Instagram</span>
               </Link>
@@ -110,7 +118,7 @@ export default function Footer() {
                 href="https://www.tiktok.com/@13vplus?_r=1"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 text-sm lg:text-base text-black/70 hover:text-black transition-colors duration-300 group"
+                className="flex items-center gap-3 text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 group"
               >
                 <svg
                   className="w-6 h-6 opacity-70 group-hover:opacity-100 transition-opacity"
@@ -126,7 +134,7 @@ export default function Footer() {
                 href="https://t.me/b_13vplus"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 text-sm lg:text-base text-black/70 hover:text-black transition-colors duration-300 group"
+                className="flex items-center gap-3 text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 group"
               >
                 <svg
                   className="w-6 h-6 opacity-70 group-hover:opacity-100 transition-opacity"
@@ -139,8 +147,8 @@ export default function Footer() {
                 <span>Telegram</span>
               </Link>
             </div>
-            <div className="pt-4 border-t border-black/10">
-              <p className="text-xs text-black/50">
+            <div className="pt-4 border-t border-white/10">
+              <p className="text-xs text-white/50">
                 Більше відгуків дивіться у нашому Instagram профілі
               </p>
             </div>
@@ -149,10 +157,10 @@ export default function Footer() {
       </div>
 
       {/* Bottom section - All in one block */}
-      <div className="border-t border-black/10">
+      <div className="border-t border-white/10">
         <div className="max-w-[1920px] mx-auto px-6 py-5">
           <div className="flex flex-col items-center justify-center gap-2 text-center">
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs lg:text-sm text-black/50">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs lg:text-sm text-white/50">
               <span>© {new Date().getFullYear()} 13VPLUS. Всі права захищені.</span>
             </div>
             <div>
@@ -160,7 +168,7 @@ export default function Footer() {
                 href="https://new.telebots.site/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm sm:text-base font-semibold font-['Montserrat'] text-black/60 hover:text-black/80 transition-colors tracking-wide"
+                className="text-sm sm:text-base font-semibold font-['Montserrat'] text-white/60 hover:text-white/80 transition-colors tracking-wide"
               >
                 Telebots | Розробка сайтів
               </Link>

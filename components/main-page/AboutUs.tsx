@@ -9,7 +9,7 @@ export default function AboutUs() {
   return (
     <section
       id="about"
-      className="scroll-mt-20 max-w-[1920px] mx-auto w-full px-6 py-16 lg:py-24 relative overflow-hidden bg-[#1a1a1a]"
+      className="scroll-mt-20 max-w-[1920px] mx-auto w-full px-6 py-16 lg:py-24 relative overflow-hidden bg-black"
     >
       <div className="flex flex-col items-center gap-12 lg:gap-16">
         {/* Title */}

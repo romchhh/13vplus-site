@@ -129,8 +129,8 @@ export default function Header() {
       <header
         className={`max-w-[1920px] mx-auto fixed top-0 left-1/2 transform -translate-x-1/2 w-full z-50 transition-all duration-300 ${
           isMounted && isHomePage && !isScrolled
-            ? "bg-transparent text-white" 
-            : "bg-white text-black shadow-md"
+            ? "bg-transparent text-black" 
+            : "bg-black text-white shadow-md"
         }`}
         onMouseLeave={() => {
           if (!pinnedCatalog) {
@@ -145,14 +145,18 @@ export default function Header() {
           isMounted && isHomePage && !isScrolled ? '' : 'shadow-md'
         }`}>
           {/* Top nav */}
-          <div className="hidden lg:flex justify-between items-center h-20 px-10">
+          <div className="hidden lg:flex justify-between items-center h-16 px-10">
             <Link href="/">
               <Image
-                height={32}
-                width={120}
+                height={24}
+                width={90}
                 alt="logo"
-                src="/images/13VPLUS BLACK PNG 2.png"
-                className="h-8 w-auto"
+                src={
+                  isMounted && isHomePage && !isScrolled
+                    ? "/images/13VPLUS BLACK PNG 2.png"
+                    : "/images/dark-theme/13vplus-logo-header-white.png"
+                }
+                className="h-6 w-auto"
               />
             </Link>
 
@@ -181,7 +185,9 @@ export default function Header() {
                         category.name
                       )}`)
                     }
-                    className="cursor-pointer whitespace-nowrap hover:text-[#8C7461] text-lg font-normal font-['Montserrat']"
+                    className={`cursor-pointer whitespace-nowrap hover:text-[#8C7461] text-lg font-normal font-['Montserrat'] ${
+                      isMounted && isHomePage && !isScrolled ? "text-black" : "text-white"
+                    }`}
                   >
                     {category.name}
                   </button>
@@ -221,7 +227,9 @@ export default function Header() {
                   }, 200); // delay in ms
                 }}
               >
-                <span className="cursor-default whitespace-nowrap hover:text-[#8C7461] text-lg font-normal font-['Montserrat']">
+                <span className={`cursor-default whitespace-nowrap hover:text-[#8C7461] text-lg font-normal font-['Montserrat'] ${
+                  isMounted && isHomePage && !isScrolled ? "text-black" : "text-white"
+                }`}>
                   Інформація
                 </span>
 
@@ -270,7 +278,11 @@ export default function Header() {
                   height="32"
                   width="32"
                   alt="search icon"
-                  src="/images/light-theme/search.svg"
+                  src={
+                    isMounted && isHomePage && !isScrolled
+                      ? "/images/light-theme/search.svg"
+                      : "/images/dark-theme/search.svg"
+                  }
                 />
               </button>
               <button
@@ -278,8 +290,11 @@ export default function Header() {
                 onClick={() => setIsBasketOpen(!isBasketOpen)}
               >
                 <Image
-                  height="36"
-                  width="36"
+                  className={
+                    isMounted && isHomePage && !isScrolled ? "" : "brightness-0 invert"
+                  }
+                  height="44"
+                  width="44"
                   alt="shopping basket"
                   src="/images/light-theme/cart.svg"
                 />
@@ -294,43 +309,62 @@ export default function Header() {
         </div>
 
         {/* Mobile Header */}
-        <div className={`lg:hidden w-full h-16 relative overflow-hidden px-4 flex items-center justify-between transition-all duration-300 ${
+        <div className={`lg:hidden w-full h-14 relative overflow-hidden px-4 flex items-center justify-between transition-all duration-300 ${
           isSidebarOpen
-            ? "bg-white text-black"
+            ? "bg-black text-white"
             : isMounted && isHomePage && !isScrolled
-            ? "bg-transparent text-white"
-            : "bg-white text-black"
+            ? "bg-transparent text-black"
+            : "bg-black text-white shadow-md"
         }`}>
           <div className="flex gap-4">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="relative w-12 h-12 text-3xl flex items-center justify-center"
+              className={`relative w-12 h-12 text-4xl flex items-center justify-center ${
+                isSidebarOpen
+                  ? "text-white"
+                  : isMounted && isHomePage && !isScrolled
+                  ? "text-black"
+                  : "text-white"
+              }`}
             >
               {isSidebarOpen ? (
-                <span className="text-4xl">×</span>
+                <span className="text-5xl">×</span>
               ) : (
-                <span>☰</span>
+                <span className="text-4xl">☰</span>
               )}
             </button>
           </div>
 
-          <Link href="/">
+          <Link href="/" className="absolute left-1/2 transform -translate-x-1/2">
             <Image
-              height="28"
-              width="100"
+              height="20"
+              width="75"
               alt="logo"
-              src="/images/13VPLUS BLACK PNG 2.png"
-              className="h-7 w-auto"
+              src={
+                isSidebarOpen
+                  ? "/images/dark-theme/13vplus-logo-header-white.png"
+                  : isMounted && isHomePage && !isScrolled
+                  ? "/images/13VPLUS BLACK PNG 2.png"
+                  : "/images/dark-theme/13vplus-logo-header-white.png"
+              }
+              className="h-5 w-auto"
             />
           </Link>
 
-          <div className="flex gap-4">
+          <div className="flex gap-4 ml-auto">
             <button onClick={() => setIsSearchOpen(true)}>
               <Image
                 height="32"
                 width="32"
                 alt="search icon"
-                src="/images/light-theme/search.svg"
+                src={
+                  isSidebarOpen
+                    ? "/images/dark-theme/search.svg"
+                    : isMounted && isHomePage && !isScrolled
+                    ? "/images/light-theme/search.svg"
+                    : "/images/dark-theme/search.svg"
+                }
+                className=""
               />
             </button>
             <button
@@ -338,10 +372,17 @@ export default function Header() {
               className="relative"
             >
               <Image
-                height="36"
-                width="36"
+                height="44"
+                width="44"
                 alt="shopping basket"
                 src="/images/light-theme/cart.svg"
+                className={
+                  isSidebarOpen
+                    ? "brightness-0 invert"
+                    : isMounted && isHomePage && !isScrolled
+                    ? ""
+                    : "brightness-0 invert"
+                }
               />
               {totalItems > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">

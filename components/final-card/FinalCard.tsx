@@ -1368,7 +1368,7 @@ export default function FinalCard() {
                 >
                   <option value="">Оберіть спосіб оплати</option>
                   <option value="full">Повна оплата</option>
-                  <option value="prepay">Передоплата 300 ₴</option>
+                  <option value="prepay">Передоплата 50%</option>
                   <option value="installment">В розсрочку</option>
                   <option value="crypto">Крипта (USDT, BTC та інші)</option>
                 </select>
@@ -1405,69 +1405,69 @@ export default function FinalCard() {
                 items.map((item) => (
                   <div
                     key={`${item.id}-${item.size}`}
-                    className="w-full rounded p-4 flex flex-col sm:flex-row gap-4 sm:gap-3 items-center"
+                    className="flex gap-4 border-b pb-4 last:border-none"
                   >
                     <Image
-                      className="w-24 h-32 sm:w-28 sm:h-40 object-cover rounded"
                       src={
                         item.imageUrl
                           ? `/api/images/${item.imageUrl}`
-                          : "https://placehold.co/200x300/cccccc/666666?text=No+Image"
+                          : "https://placehold.co/100x150/cccccc/666666?text=No+Image"
                       }
                       alt={item.name}
                       width={112}
                       height={160}
+                      className="w-28 h-40 object-cover"
                     />
-                    <div className="flex flex-col flex-1 gap-1">
-                      <div className="text-base font-normal font-['Helvetica Neue'] leading-normal">
-                        {item.name}
-                      </div>
-                      <div className="text-zinc-600 text-base font-normal font-['Helvetica Neue'] leading-relaxed tracking-wide">
-                        {item.discount_percentage ? (
-                          <div className="flex items-center gap-2">
-                            {/* Discounted price */}
-                            <span className="font-medium text-red-600">
-                              {(
-                                item.price *
-                                (1 - item.discount_percentage / 100)
-                              ).toFixed(2)}
-                              ₴
-                            </span>
-
-                            {/* Original (crossed-out) price */}
-                            <span className="text-gray-500 line-through">
-                              {item.price}₴
-                            </span>
-
-                            {/* Optional: show discount percentage */}
-                            <span className="text-green-600 text-sm">
-                              -{item.discount_percentage}%
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="font-medium">{item.price}₴</span>
+                    <div className="flex flex-col justify-between flex-1">
+                      <div>
+                        <p className="text-base font-medium">{item.name}</p>
+                        <div className="text-zinc-600 mt-1">
+                          {item.discount_percentage ? (
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-red-600">
+                                {(
+                                  item.price *
+                                  (1 - item.discount_percentage / 100)
+                                ).toFixed(2)}
+                                ₴
+                              </span>
+                              <span className="line-through">{item.price}₴</span>
+                              <span className="text-green-600 text-sm">
+                                -{item.discount_percentage}%
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="font-medium">{item.price}₴</span>
+                          )}
+                        </div>
+                        <p className="text-stone-900 mt-1">Розмір: {item.size}</p>
+                        {item.color && (
+                          <p className="text-stone-900 mt-1">Колір: {item.color}</p>
                         )}
                       </div>
-                      <div className="text-base font-normal font-['Helvetica Neue'] leading-relaxed tracking-wide">
-                        {item.size}
-                      </div>
-                      {item.color && (
-                        <div className="text-base font-normal font-['Helvetica Neue'] leading-relaxed tracking-wide">
-                          Колір: {item.color}
-                        </div>
-                      )}
 
-                      <div className="flex justify-start items-center gap-3 mt-auto">
-                        <div className="w-20 h-9 border border-neutral-400/60 flex justify-around items-center rounded">
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center border border-neutral-400/60 w-24 h-9 justify-between px-2">
                           <button
-                            className="text-zinc-500 text-base font-normal font-['Helvetica Neue'] leading-normal"
+                            className="text-zinc-500 text-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
                             onClick={async () => {
                               try {
-                                await updateQuantity(
-                                  item.id,
-                                  item.size,
-                                  item.quantity + 1
-                                );
+                                await updateQuantity(item.id, item.size, item.quantity - 1);
+                              } catch (error) {
+                                console.error("Error updating quantity:", error);
+                              }
+                            }}
+                            aria-label={`Зменшити кількість ${item.name}`}
+                            disabled={item.quantity <= 1}
+                          >
+                            −
+                          </button>
+                          <span aria-live="polite" aria-atomic="true">{item.quantity}</span>
+                          <button
+                            className="text-zinc-500 text-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            onClick={async () => {
+                              try {
+                                await updateQuantity(item.id, item.size, item.quantity + 1);
                               } catch (error) {
                                 setError(
                                   error instanceof Error
@@ -1477,41 +1477,17 @@ export default function FinalCard() {
                                 setTimeout(() => setError(null), 5000);
                               }
                             }}
+                            aria-label={`Збільшити кількість ${item.name}`}
                           >
                             +
                           </button>
-                          <div className="text-base font-normal font-['Helvetica Neue'] leading-normal">
-                            {item.quantity}
-                          </div>
-                          <button
-                            className="text-zinc-500 text-base font-normal font-['Helvetica Neue'] leading-normal"
-                            onClick={async () => {
-                              try {
-                                await updateQuantity(
-                                  item.id,
-                                  item.size,
-                                  item.quantity - 1
-                                );
-                              } catch (error) {
-                                // Error handling for decrease is less critical
-                                console.error("Error updating quantity:", error);
-                              }
-                            }}
-                            disabled={item.quantity <= 1}
-                          >
-                            -
-                          </button>
                         </div>
                         <button
-                          className="text-red-500 font-semibold"
+                          className="text-red-600 text-xl font-bold min-w-[44px] min-h-[44px] flex items-center justify-center"
                           onClick={() => removeItem(item.id, item.size)}
+                          aria-label={`Видалити ${item.name} з кошика`}
                         >
-                          <Image
-                            src={"/images/trashcan.svg"}
-                            width={30}
-                            height={30}
-                            alt={""}
-                          ></Image>
+                          ×
                         </button>
                       </div>
                     </div>
@@ -1520,18 +1496,30 @@ export default function FinalCard() {
               )}
 
               {/* Total price container */}
-              <div className="p-5 border-t flex justify-between text-base sm:text-2xl font-normal font-['Helvetica Neue'] mt-4">
-                <div>Всього</div>
-                <div className="font-['Helvetica Neue'] leading-relaxed tracking-wide">
-                  {items
-                    .reduce((total, item) => {
-                      const price = item.discount_percentage
-                        ? item.price * (1 - item.discount_percentage / 100)
-                        : item.price;
-                      return total + price * item.quantity;
-                    }, 0)
-                    .toFixed(2)}{" "}
-                  ₴
+              <div className="pt-2 mt-2">
+                <div className="flex justify-between items-center text-lg font-semibold whitespace-nowrap gap-4">
+                  <span>До сплати:</span>
+                  <span className="text-[#8C7461]">
+                    {items
+                      .reduce((total, item) => {
+                        const itemPrice =
+                          typeof item.price === "string"
+                            ? parseFloat(item.price)
+                            : item.price;
+                        const discount = item.discount_percentage
+                          ? typeof item.discount_percentage === "string"
+                            ? parseFloat(item.discount_percentage)
+                            : item.discount_percentage
+                          : 0;
+                        const price =
+                          discount > 0
+                            ? itemPrice * (1 - discount / 100)
+                            : itemPrice;
+                        return total + price * item.quantity;
+                      }, 0)
+                      .toFixed(2)}{" "}
+                    ₴
+                  </span>
                 </div>
               </div>
             </div>

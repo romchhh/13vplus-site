@@ -175,61 +175,56 @@ export default function CategoriesShowcase() {
           className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth"
         >
           <div className="flex gap-4 md:gap-6 min-w-max px-4 md:px-6">
-          {categories.map((category, index) => (
-            <div key={category.id} className="flex items-center">
-              <Link
-                href={`/catalog?category=${encodeURIComponent(category.name)}`}
-                className="group relative flex-shrink-0 flex flex-col"
-                style={{ width: "42.5vw", minWidth: "340px", maxWidth: "510px" }}
-                aria-label={`Переглянути категорію ${category.name}`}
-              >
-                <div className="aspect-[2/3] w-full overflow-hidden relative bg-black/5">
-                  {category.mediaType === "video" ? (
-                    <>
-                      <video
-                        src={`/api/images/${category.mediaUrl}`}
-                        className="object-cover group-hover:opacity-90 transition duration-300 w-full h-full"
-                        loop
-                        muted
-                        playsInline
-                        autoPlay
-                        preload="metadata"
-                      />
-                      {/* Button overlay for video */}
-                      <div className="absolute inset-0 flex items-end justify-center pb-8 pointer-events-none">
-                        <div className="bg-transparent border-2 border-white text-white px-8 py-4 text-lg font-medium font-['Montserrat'] uppercase tracking-wider group-hover:bg-white group-hover:text-black transition-colors duration-300">
-                          {category.name}
-                        </div>
+          {categories.map((category) => (
+            <Link
+              key={category.id}
+              href={`/catalog?category=${encodeURIComponent(category.name)}`}
+              className="group relative flex-shrink-0 flex flex-col"
+              style={{ width: "42.5vw", minWidth: "340px", maxWidth: "510px" }}
+              aria-label={`Переглянути категорію ${category.name}`}
+            >
+              <div className="aspect-[2/3] w-full overflow-hidden relative bg-black/5">
+                {category.mediaType === "video" ? (
+                  <>
+                    <video
+                      src={`/api/images/${category.mediaUrl}`}
+                      className="object-cover group-hover:opacity-90 transition duration-300 w-full h-full"
+                      loop
+                      muted
+                      playsInline
+                      autoPlay
+                      preload="metadata"
+                    />
+                    {/* Button overlay for video */}
+                    <div className="absolute inset-0 flex items-end justify-center pb-8 pointer-events-none">
+                      <div className="bg-transparent border-2 border-white text-white px-8 py-4 text-lg font-medium font-['Montserrat'] uppercase tracking-wider group-hover:bg-white group-hover:text-black transition-colors duration-300">
+                        {category.name}
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <Image
-                        className="object-cover group-hover:opacity-90 transition duration-300"
-                        src={`/api/images/${category.mediaUrl}`}
-                        alt={`Категорія ${category.name} від 13VPLUS`}
-                        fill
-                        sizes="(max-width: 640px) 85vw, (max-width: 1024px) 42.5vw, 510px"
-                        loading="lazy"
-                        quality={80}
-                        placeholder="blur"
-                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-                      />
-                      {/* Button overlay for image */}
-                      <div className="absolute inset-0 flex items-end justify-center pb-8 pointer-events-none">
-                        <div className="bg-transparent border-2 border-white text-white px-8 py-4 text-lg font-medium font-['Montserrat'] uppercase tracking-wider group-hover:bg-white group-hover:text-black transition-colors duration-300">
-                          {category.name}
-                        </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Image
+                      className="object-cover group-hover:opacity-90 transition duration-300"
+                      src={`/api/images/${category.mediaUrl}`}
+                      alt={`Категорія ${category.name} від 13VPLUS`}
+                      fill
+                      sizes="(max-width: 640px) 85vw, (max-width: 1024px) 42.5vw, 510px"
+                      loading="lazy"
+                      quality={80}
+                      placeholder="blur"
+                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                    />
+                    {/* Button overlay for image */}
+                    <div className="absolute inset-0 flex items-end justify-center pb-8 pointer-events-none">
+                      <div className="bg-transparent border-2 border-white text-white px-8 py-4 text-lg font-medium font-['Montserrat'] uppercase tracking-wider group-hover:bg-white group-hover:text-black transition-colors duration-300">
+                        {category.name}
                       </div>
-                    </>
-                  )}
-                </div>
-              </Link>
-              {/* Vertical divider between categories */}
-              {index < categories.length - 1 && (
-                <div className="w-px h-3/4 bg-black/10 mx-2 md:mx-3" />
-              )}
-            </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </Link>
           ))}
           </div>
         </div>

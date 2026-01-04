@@ -18,17 +18,20 @@ export default function YouMightLike() {
   if (loading) return null; // or a spinner
 
   return (
-    <section className="max-w-[1920px] w-full mx-auto px-4 md:px-0">
+    <section className="max-w-[1920px] w-full mx-auto px-4 md:px-0 py-16 lg:py-24">
       <div className="flex flex-col gap-10">
-        {/* Title */}
-        <div
-          className={`mx-0 md:mx-10 text-4xl md:text-7xl font-normal font-['Helvetica Neue'] leading-tight md:leading-[84.91px] text-center md:text-left`}
-        >
-          ЗАВЕРШІТЬ LOOK
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 lg:gap-0 border-b border-black/10 pb-8 lg:pb-12 mx-0 md:mx-10">
+          <h2 className="text-3xl lg:text-5xl font-bold font-['Montserrat'] uppercase tracking-wider text-black">
+            Завершіть look
+          </h2>
+          <p className="text-base lg:text-xl font-light font-['Montserrat'] text-black/60 leading-relaxed max-w-2xl tracking-wide">
+            Доповніть свій образ ідеальними акцентами. Рекомендації, які допоможуть створити цілісний стиль.
+          </p>
         </div>
 
         {/* Products list - Mobile Optimized */}
-        <div className="grid grid-cols-2 sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 pl-4 md:pl-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:pl-10">
           {products.map((product) => {
             const isVideo = product.first_media?.type === "video";
             
@@ -38,7 +41,7 @@ export default function YouMightLike() {
                 href={`/product/${product.id}`}
                 className="flex flex-col gap-2 group w-full"
               >
-                <div className="relative w-full aspect-[2/3] bg-white group-hover:filter group-hover:brightness-90 transition duration-300 overflow-hidden">
+                <div className="relative w-full aspect-[2/3] bg-black group-hover:filter group-hover:brightness-90 transition duration-300 overflow-hidden">
                   {isVideo && product.first_media ? (
                     <video
                       src={`/api/images/${product.first_media.url}`}

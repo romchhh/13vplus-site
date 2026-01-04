@@ -68,7 +68,7 @@ export default function SidebarMenu({
       {/* Overlay - only below header */}
       {isOpen && (
         <div
-          className="fixed top-16 left-0 right-0 bottom-0 bg-black/40 z-30"
+          className="fixed top-14 left-0 right-0 bottom-0 bg-black/40 z-30"
           onClick={() => {
             setIsOpen(false);
           }}
@@ -77,12 +77,12 @@ export default function SidebarMenu({
 
       {/* Sidebar */}
       <div
-        className={`fixed top-16 left-0 h-[calc(100vh-4rem)] w-full sm:w-4/5 sm:max-w-md bg-white shadow-md z-40 transform transition-transform duration-300 ${
+        className={`fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-full sm:w-4/5 sm:max-w-md bg-black shadow-md z-40 transform transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } overflow-y-auto flex flex-col`}
       >
         <nav className="flex flex-col px-6 pt-8 pb-6 space-y-4 flex-grow">
-          {loading && <p className="text-lg">Завантаження...</p>}
+          {loading && <p className="text-lg text-white">Завантаження...</p>}
           {error && <p className="text-red-500 text-lg">Помилка: {error}</p>}
 
           {!loading &&
@@ -92,7 +92,7 @@ export default function SidebarMenu({
                 <div className="flex justify-between items-center">
                   <Link
                     href={`/catalog?category=${encodeURIComponent(cat.name)}`}
-                    className="text-2xl sm:text-3xl font-medium text-black hover:text-black/70 transition-colors"
+                    className="text-2xl sm:text-3xl font-medium text-white hover:text-white/70 transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     {cat.name}
@@ -100,7 +100,7 @@ export default function SidebarMenu({
 
                   {cat.subcategories && cat.subcategories.length > 0 && (
                     <button
-                      className="ml-4 text-2xl sm:text-3xl font-bold text-black/60 hover:text-black transition-all duration-300"
+                      className="ml-4 text-2xl sm:text-3xl font-bold text-white/60 hover:text-white transition-all duration-300"
                       onClick={() =>
                         setOpenCategoryId(
                           openCategoryId === cat.id ? null : cat.id
@@ -135,7 +135,7 @@ export default function SidebarMenu({
                         href={`/catalog?subcategory=${encodeURIComponent(
                           sub.name
                         )}`}
-                        className="text-xl sm:text-2xl text-black/70 hover:text-black transition-colors"
+                        className="text-xl sm:text-2xl text-white/70 hover:text-white transition-colors"
                         onClick={() => setIsOpen(false)}
                       >
                         {sub.name}
@@ -148,26 +148,26 @@ export default function SidebarMenu({
         </nav>
 
         {/* Bottom section with Instagram and contacts */}
-        <div className="mt-auto px-6 py-6 border-t border-black/10">
+        <div className="mt-auto px-6 py-6 border-t border-white/10">
           <div className="flex flex-col gap-4">
             <Link
               href="https://www.instagram.com/13vplus"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 text-lg font-medium text-black hover:text-black/70 transition-colors"
+              className="flex items-center gap-3 text-lg font-medium text-white hover:text-white/70 transition-colors"
             >
               <Image
                 src="/images/instagram-icon.svg"
                 alt="Instagram"
                 width={24}
                 height={24}
-                className="w-6 h-6"
+                className="w-6 h-6 brightness-0 invert"
               />
               <span>Instagram</span>
             </Link>
             <Link
               href="/#contacts"
-              className="text-lg font-medium text-black hover:text-black/70 transition-colors"
+              className="text-lg font-medium text-white hover:text-white/70 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               Контакти

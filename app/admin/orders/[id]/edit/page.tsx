@@ -174,7 +174,7 @@ export default function EditOrderPage() {
                   formData.payment_type === "full"
                     ? "Повна оплата"
                     : formData.payment_type === "prepay"
-                    ? "Передоплата 300 ₴"
+                    ? "Передоплата 50%"
                     : formData.payment_type === "installment"
                     ? "В розсрочку"
                     : formData.payment_type === "crypto"

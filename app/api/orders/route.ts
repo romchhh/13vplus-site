@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
     // Calculate amount to pay based on payment type
     let amountToPay = fullAmount;
     if (payment_type === "prepay") {
-      amountToPay = 300;
+      amountToPay = Math.round(fullAmount * 0.5 * 100) / 100; // 50% передоплата
     } else if (payment_type === "installment") {
       // For installment, MUST use full amount - banks don't allow installment on partial payments
       amountToPay = fullAmount;

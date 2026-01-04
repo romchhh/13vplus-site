@@ -99,8 +99,8 @@ export default function LimitedEdition() {
           <h2 className="text-3xl lg:text-5xl font-bold font-['Montserrat'] uppercase tracking-wider text-black">
             Лімітована колекція від 13VPLUS
           </h2>
-          <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed max-w-2xl">
-            Лімітована колекція — для тих кому важлива унікальність.
+          <p className="text-base lg:text-xl font-light font-['Montserrat'] text-black/60 leading-relaxed max-w-2xl tracking-wide">
+            Ексклюзивні моделі для тих, хто шукає унікальність. Обмежена серія, що підкреслює вашу індивідуальність.
           </p>
         </div>
 

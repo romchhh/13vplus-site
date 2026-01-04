@@ -174,22 +174,30 @@ export default function CatalogClient({
             ))
           ) : visibleProducts.length === 0 ? (
             // Empty state
-            <div className="col-span-full flex flex-col items-center justify-center py-16 gap-4">
-              <svg
-                className="w-16 h-16 text-gray-300"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p className="text-gray-500 text-lg font-medium">Товарів не знайдено</p>
-              <p className="text-gray-400 text-sm">Спробуйте змінити фільтри</p>
+            <div className="col-span-full flex flex-col items-center justify-center py-20 lg:py-32 gap-6">
+              <div className="relative">
+                <svg
+                  className="w-20 h-20 lg:w-24 lg:h-24 text-black/10"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <div className="flex flex-col items-center gap-3 text-center max-w-md">
+                <h3 className="text-2xl lg:text-3xl font-bold font-['Montserrat'] uppercase tracking-wider text-black">
+                  Товарів не знайдено
+                </h3>
+                <p className="text-base lg:text-lg font-light font-['Montserrat'] text-black/50 leading-relaxed tracking-wide">
+                  Спробуйте змінити параметри фільтрів або перегляньте інші категорії колекції
+                </p>
+              </div>
             </div>
           ) : (
             visibleProducts.map((product, index) => {
