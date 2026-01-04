@@ -185,8 +185,10 @@ export default function Header() {
                         category.name
                       )}`)
                     }
-                    className={`cursor-pointer whitespace-nowrap hover:text-[#8C7461] text-lg font-normal font-['Montserrat'] ${
-                      isMounted && isHomePage && !isScrolled ? "text-black" : "text-white"
+                    className={`cursor-pointer whitespace-nowrap text-lg font-normal font-['Montserrat'] transition-all duration-200 ${
+                      isMounted && isHomePage && !isScrolled 
+                        ? "text-black hover:bg-white hover:px-3 hover:py-1.5 hover:rounded-full" 
+                        : "text-white hover:bg-white hover:text-black hover:px-3 hover:py-1.5 hover:rounded-full"
                     }`}
                   >
                     {category.name}
@@ -204,7 +206,7 @@ export default function Header() {
                             href={`/catalog?subcategory=${encodeURIComponent(
                               subcat.name
                             )}`}
-                            className="hover:text-[#8C7461] text-base py-1 font-normal font-['Montserrat'] text-black"
+                            className="text-gray-600 hover:text-black text-base py-1 font-normal font-['Montserrat'] transition-colors duration-200"
                           >
                             {subcat.name}
                           </Link>
@@ -227,45 +229,53 @@ export default function Header() {
                   }, 200); // delay in ms
                 }}
               >
-                <span className={`cursor-default whitespace-nowrap hover:text-[#8C7461] text-lg font-normal font-['Montserrat'] ${
-                  isMounted && isHomePage && !isScrolled ? "text-black" : "text-white"
-                }`}>
-                  Інформація
+                <span className={`cursor-default whitespace-nowrap text-lg font-normal font-['Montserrat'] transition-all duration-200 ${
+                  isMounted && isHomePage && !isScrolled 
+                    ? "text-black hover:bg-white hover:px-3 hover:py-1.5 hover:rounded-full" 
+                    : "text-white hover:bg-white hover:text-black hover:px-3 hover:py-1.5 hover:rounded-full"
+                } ${infoMenuOpen ? (isMounted && isHomePage && !isScrolled ? "bg-white rounded-full px-3 py-1.5" : "bg-white text-black rounded-full px-3 py-1.5") : ""}`}>
+                  ІНФО
                 </span>
 
                 <div
-                  className={`absolute top-full left-0 mt-2 shadow-md rounded px-4 py-2 flex flex-col min-w-[200px] z-50 transition-opacity duration-200 ${
-                    isMounted && isHomePage && !isScrolled ? 'bg-white/95 backdrop-blur-sm' : 'bg-white'
-                  } ${
+                  className={`fixed top-16 left-0 w-full bg-white shadow-md px-4 py-2 z-50 transition-opacity duration-200 ${
                     infoMenuOpen
                       ? "opacity-100 pointer-events-auto"
                       : "opacity-0 pointer-events-none"
                   }`}
                 >
-                  <Link
-                    href="/#about"
-                    className="hover:text-[#8C7461] text-lg py-1 font-normal font-['Montserrat'] text-black"
-                  >
-                    Про нас
-                  </Link>
-                  <Link
-                    href="/#payment-and-delivery"
-                    className="hover:text-[#8C7461] text-lg py-1 font-normal font-['Montserrat'] text-black"
-                  >
-                    Оплата і доставка
-                  </Link>
-                  <Link
-                    href="/#reviews"
-                    className="hover:text-[#8C7461] text-lg py-1 font-normal font-['Montserrat'] text-black"
-                  >
-                    Відгуки
-                  </Link>
-                  <Link
-                    href="/#contacts"
-                    className="hover:text-[#8C7461] text-lg py-1 font-normal font-['Montserrat'] text-black"
-                  >
-                    Контакти
-                  </Link>
+                  <div className="max-w-[1920px] mx-auto w-full flex flex-col gap-1">
+                    <Link
+                      href="/#about"
+                      className="text-gray-600 hover:text-black text-lg py-2 font-normal font-['Montserrat'] transition-colors duration-200"
+                    >
+                      Про нас
+                    </Link>
+                    <Link
+                      href="/#contacts"
+                      className="text-gray-600 hover:text-black text-lg py-2 font-normal font-['Montserrat'] transition-colors duration-200"
+                    >
+                      Контакти
+                    </Link>
+                    <Link
+                      href="/#payment-and-delivery"
+                      className="text-gray-600 hover:text-black text-lg py-2 font-normal font-['Montserrat'] transition-colors duration-200"
+                    >
+                      Доставка
+                    </Link>
+                    <Link
+                      href="/#payment-and-delivery"
+                      className="text-gray-600 hover:text-black text-lg py-2 font-normal font-['Montserrat'] transition-colors duration-200"
+                    >
+                      Оплата
+                    </Link>
+                    <Link
+                      href="/#reviews"
+                      className="text-gray-600 hover:text-black text-lg py-2 font-normal font-['Montserrat'] transition-colors duration-200"
+                    >
+                      Повернення та обмін
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
