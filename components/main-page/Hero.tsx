@@ -88,8 +88,8 @@ export default function Hero() {
   }, [isMobile]);
 
   return (
-    <section>
-      <div className="max-w-[1920px] mx-auto w-full h-screen sm:h-[720px] md:h-[900px] lg:h-[1080px] relative overflow-hidden">
+    <section id="hero" className="pt-14 lg:pt-16">
+      <div className="max-w-[1920px] mx-auto w-full h-screen relative overflow-hidden">
         {/* Show image on mobile, video on desktop */}
         
           <>
@@ -156,9 +156,15 @@ export default function Hero() {
             )}
           </>
         
-        <div className="relative z-10 flex flex-col justify-end md:justify-center p-10 md:p-20 gap-8 md:gap-12 h-full" style={{ zIndex: 2 }}>
+        {/* Gradient overlay at the bottom */}
+        <div 
+          className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"
+          style={{ zIndex: 1 }}
+        />
+        
+        <div className="relative z-10 flex flex-col justify-center p-10 md:p-20 gap-8 md:gap-12 h-full" style={{ zIndex: 2 }}>
           {/* Luxury text overlay */}
-          <div className="flex flex-col items-center justify-center gap-5 md:gap-7 mb-24 md:mb-20">
+          <div className="flex flex-col items-center justify-center gap-5 md:gap-7 mt-[20vh] md:-mt-0">
             <h1 className="text-white text-4xl sm:text-6xl md:text-7xl lg:text-6xl xl:text-7xl font-bold font-['Montserrat'] uppercase text-center leading-tight" style={{ letterSpacing: '0.15em' }}>
               Urban Stillness
             </h1>
@@ -170,7 +176,7 @@ export default function Hero() {
           {/* Catalog button */}
           <Link
             href="/catalog"
-            className="cursor-pointer mx-auto w-48 sm:w-56 md:w-64 lg:w-72 h-14 sm:h-16 md:h-18 lg:h-20 p-2 bg-transparent border-2 border-white text-white inline-flex justify-center items-center gap-2 hover:bg-white hover:text-black transition-all duration-300 font-['Montserrat'] group"
+            className="cursor-pointer mx-auto w-48 sm:w-56 md:w-64 lg:w-72 h-10 sm:h-12 md:h-14 lg:h-16 p-2 bg-transparent border-2 border-white text-white inline-flex justify-center items-center gap-2 hover:bg-white hover:text-black transition-all duration-300 font-['Montserrat'] group"
           >
             <div className="text-center justify-center text-base sm:text-lg md:text-xl lg:text-2xl font-normal uppercase tracking-wider leading-none">
               Переглянути

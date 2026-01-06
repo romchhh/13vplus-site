@@ -92,7 +92,7 @@ export default function TopSale() {
   }
 
   return (
-    <section className="max-w-[1920px] w-full mx-auto relative px-4 sm:px-6 py-16 lg:py-24 bg-white">
+    <section className="max-w-[1920px] w-full mx-auto relative px-4 sm:px-6 pt-8 lg:pt-12 pb-8 lg:pb-12 bg-white">
       <div className="flex flex-col gap-12 lg:gap-16">
         {/* Header */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 lg:gap-0 border-b border-black/10 pb-8 lg:pb-12">

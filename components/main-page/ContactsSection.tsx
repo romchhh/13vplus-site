@@ -32,7 +32,7 @@ export default function ContactsSection() {
   return (
     <section
       id="contacts"
-      className="scroll-mt-20 max-w-[1920px] w-full mx-auto bg-white py-16 lg:py-24 px-6"
+      className="scroll-mt-20 max-w-[1920px] w-full mx-auto bg-white pt-8 lg:pt-12 pb-16 lg:pb-24 px-6"
     >
       <div className="flex flex-col lg:flex-row justify-between gap-12 lg:gap-16">
         {/* Left side - Title */}

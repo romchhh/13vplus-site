@@ -196,33 +196,46 @@ export default function Catalog() {
 
   return (
     <>
-      <section className="max-w-[1824px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 mt-10 mb-20">
+      <section className="max-w-[1824px] mx-auto px-4 sm:px-6 lg:px-8 pt-2 mt-2 mb-20">
         {/* Top Controls */}
-        <div className="flex justify-between items-center text-xl sm:text-2xl md:text-3xl mb-6">
-          <div className="flex items-center gap-3">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="cursor-pointer text-2xl sm:text-3xl"
+              className="cursor-pointer text-2xl sm:text-3xl text-gray-700 hover:text-gray-900 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Відкрити меню"
             >
               {"<"}
             </button>
-            <span>
+            <h1 className="text-base sm:text-lg font-medium font-['Montserrat'] uppercase tracking-wider text-gray-900 flex items-center">
               {subcategory
-                ? `Підкатегорія ${subcategory}${
-                    category ? ` (Категорія ${category})` : ""
-                  }`
+                ? subcategory
                 : category
-                ? `Категорія ${category}`
+                ? category
                 : season
                 ? `Сезон ${season}`
                 : "Усі товари"}
-            </span>
+            </h1>
           </div>
 
           <button
-            className="cursor-pointer text-base sm:text-lg"
+            className="cursor-pointer text-base sm:text-lg font-medium font-['Montserrat'] uppercase tracking-wider text-gray-700 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-900 transition-all px-2 py-1 min-w-[44px] min-h-[44px] flex items-center justify-center gap-2 relative"
             onClick={() => setIsFilterOpen(true)}
+            aria-label="Відкрити фільтри"
           >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
             Фільтри
           </button>
         </div>

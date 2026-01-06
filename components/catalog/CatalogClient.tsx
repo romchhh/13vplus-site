@@ -118,7 +118,7 @@ export default function CatalogClient({
     <>
       <section className="max-w-[1824px] mx-auto px-4 sm:px-6 lg:px-8 pt-2 mt-2 mb-20">
         {/* Top Controls */}
-        <div className="flex justify-between items-center mb-12">
+        <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -127,7 +127,7 @@ export default function CatalogClient({
             >
               {"<"}
             </button>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold font-['Montserrat'] uppercase tracking-wider text-gray-900">
+            <h1 className="text-base sm:text-lg font-medium font-['Montserrat'] uppercase tracking-wider text-gray-900 flex items-center">
               {subcategory
                 ? subcategory
                 : category
@@ -242,28 +242,27 @@ export default function CatalogClient({
 
               {/* Product Title + Price - More prominent */}
               <div className="flex flex-col gap-1">
-                <h3 className="text-sm sm:text-base font-semibold font-['Montserrat'] text-gray-900 leading-snug uppercase tracking-wider">
+                <h3 className="text-sm sm:text-base font-normal font-['Montserrat'] text-gray-900 leading-snug uppercase tracking-wider">
                   {product.name}
                 </h3>
                 {product.discount_percentage ? (
                   <div className="flex items-baseline gap-1 flex-wrap">
-                    {/* Discounted price */}
-                    <span className="font-bold text-gray-900 text-base sm:text-lg tracking-tight">
-                      {(
-                        product.price *
-                        (1 - product.discount_percentage / 100)
-                      ).toFixed(0)}
-                      ₴
-                    </span>
-
                     {/* Original (crossed-out) price */}
-                    <span className="text-gray-400 line-through text-sm font-normal">
-                      {product.price}₴
+                    <span className="text-gray-900 line-through text-base sm:text-lg font-normal">
+                      {product.price.toLocaleString()} ₴
                     </span>
 
                     {/* Discount badge */}
-                    <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded">
+                    <span className="text-gray-900 text-base sm:text-lg font-normal">
                       -{product.discount_percentage}%
+                    </span>
+
+                    {/* Discounted price */}
+                    <span className="font-bold text-red-800 text-base sm:text-lg tracking-tight">
+                      {(
+                        product.price *
+                        (1 - product.discount_percentage / 100)
+                      ).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} ₴
                     </span>
                   </div>
                 ) : (

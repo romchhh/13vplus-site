@@ -8,9 +8,9 @@ export default function Footer() {
     <footer className="w-full bg-black text-white border-t border-white/10">
       {/* Main footer content */}
       <div className="max-w-[1920px] mx-auto px-6 py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 items-center md:items-start text-center md:text-left">
           {/* Brand Column */}
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-5 items-center md:items-start">
             <Link href="/" className="inline-block">
               <Image
                 src="/images/dark-theme/13vplus-logo-header-white.png"
@@ -32,9 +32,9 @@ export default function Footer() {
           </div>
 
           {/* Navigation Column */}
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-5 items-center md:items-start">
             <h3 className="text-base lg:text-lg font-semibold uppercase tracking-wider">Навігація</h3>
-            <nav className="flex flex-col gap-3">
+            <nav className="flex flex-row md:flex-col gap-3 flex-wrap justify-center md:justify-start">
               <Link
                 href="/catalog"
                 className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
@@ -63,9 +63,9 @@ export default function Footer() {
           </div>
 
           {/* Information Column */}
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-5 items-center md:items-start">
             <h3 className="text-base lg:text-lg font-semibold uppercase tracking-wider">Інформація</h3>
-            <nav className="flex flex-col gap-3">
+            <nav className="flex flex-row md:flex-col gap-3 flex-wrap justify-center md:justify-start">
               <Link
                 href="/privacy-policy"
                 className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
@@ -96,9 +96,9 @@ export default function Footer() {
           </div>
 
           {/* Social & Contact Column */}
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-5 items-center md:items-start">
             <h3 className="text-base lg:text-lg font-semibold uppercase tracking-wider">Зв&apos;язок</h3>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-row md:flex-col gap-3 flex-wrap justify-center md:justify-start">
               <Link
                 href="https://www.instagram.com/13vplus"
                 target="_blank"

@@ -67,6 +67,7 @@ export default function ProductClient({ product: initialProduct }: ProductClient
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const isAddingToCartRef = useRef(false);
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
   // Auto-select first color if available
   useEffect(() => {
@@ -223,29 +224,11 @@ export default function ProductClient({ product: initialProduct }: ProductClient
   useEffect(() => setIsMounted(true), []);
   if (!isMounted || !media?.length) return null;
 
-  const handleNext = () => {
-    if (!swiper) return;
-    if (activeImageIndex >= media.length - 1) {
-      swiper.slideTo(0);
-    } else {
-      swiper.slideTo(activeImageIndex + 1);
-    }
-  };
-
-  const handlePrev = () => {
-    if (!swiper) return;
-    if (activeImageIndex === 0) {
-      swiper.slideTo(media.length - 1);
-    } else {
-      swiper.slideTo(activeImageIndex - 1);
-    }
-  };
-
   return (
     <section className="max-w-[1920px] w-full mx-auto bg-white">
-      <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 p-6 md:p-10 lg:p-16 lg:items-start">
+      <div className="flex flex-col lg:flex-row gap-0 lg:gap-12 p-0 md:p-10 lg:pt-0 lg:px-16 lg:pb-16 lg:items-start">
         {/* Images Slider - Left Side */}
-        <div className="w-full lg:w-1/2 relative h-[70vh] min-h-[400px] lg:h-[calc(100vh-8rem)]">
+        <div className="w-screen md:w-full lg:w-1/2 relative h-[100vh] md:h-[70vh] min-h-[400px] lg:h-[calc(100vh-6rem)] mb-6 lg:mb-0 left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] md:left-0 md:right-0 md:ml-0 md:mr-0 -mt-14 md:mt-0 lg:mt-0">
           <Swiper
             modules={[Navigation, Autoplay]}
             onSwiper={setSwiper}
@@ -260,10 +243,18 @@ export default function ProductClient({ product: initialProduct }: ProductClient
           >
             {media.map((item, i) => (
               <SwiperSlide key={i}>
-                <div className="relative w-full h-full bg-white flex items-start justify-center min-h-[400px] lg:h-[calc(100vh-8rem)]">
+                <div 
+                  className="relative w-full h-full bg-white flex items-start justify-center cursor-pointer lg:cursor-default"
+                  onClick={() => {
+                    if (window.innerWidth < 1024) {
+                      setIsMediaModalOpen(true);
+                      setActiveImageIndex(i);
+                    }
+                  }}
+                >
                   {item.type === "video" ? (
                     <video
-                      className="object-contain w-full h-full"
+                      className="object-cover md:object-contain w-full h-full"
                       src={`/api/images/${item.url}`}
                       autoPlay
                       loop
@@ -275,7 +266,7 @@ export default function ProductClient({ product: initialProduct }: ProductClient
                       src={`/api/images/${item.url}`}
                       alt={`Product view ${i + 1}`}
                       fill
-                      className="object-contain"
+                      className="object-cover md:object-contain"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 800px"
                       priority={i === 0}
                       loading={i <= 1 ? undefined : "lazy"}
@@ -289,29 +280,6 @@ export default function ProductClient({ product: initialProduct }: ProductClient
             ))}
           </Swiper>
 
-          {media.length > 1 && (
-            <>
-              <button
-                onClick={handlePrev}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-white/80 rounded-full hover:bg-white transition-all"
-                aria-label="Previous"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                onClick={handleNext}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-white/80 rounded-full hover:bg-white transition-all"
-                aria-label="Next"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </>
-          )}
-
           {/* Model info text */}
           {selectedSize && (
             <div className="mt-4 text-sm font-['Montserrat'] text-gray-600">
@@ -321,9 +289,9 @@ export default function ProductClient({ product: initialProduct }: ProductClient
         </div>
 
         {/* Info Section - Right Side */}
-        <div className="flex flex-col gap-6 w-full lg:w-1/2">
+        <div className="flex flex-col gap-6 w-full lg:w-1/2 px-4 md:px-0">
           {/* Product Name */}
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold font-['Montserrat'] uppercase tracking-wider leading-tight">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-normal font-['Montserrat'] uppercase tracking-wider leading-tight mb-4">
             {product.name}
           </h1>
 
@@ -331,14 +299,17 @@ export default function ProductClient({ product: initialProduct }: ProductClient
           <div className="text-2xl md:text-3xl font-bold font-['Montserrat'] tracking-tight">
             {product.discount_percentage ? (
               <div className="flex items-center gap-3">
-                <span className="text-gray-900">
+                <span className="text-gray-900 line-through text-2xl md:text-3xl font-normal">
+                  {product.price.toLocaleString()} ₴
+                </span>
+                <span className="text-gray-900 text-2xl md:text-3xl font-normal">
+                  -{product.discount_percentage}%
+                </span>
+                <span className="text-red-800">
                   {(
                     product.price *
                     (1 - product.discount_percentage / 100)
-                  ).toFixed(0)} ₴
-                </span>
-                <span className="text-gray-400 line-through text-xl">
-                  {product.price} ₴
+                  ).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} ₴
                 </span>
               </div>
             ) : (
@@ -650,6 +621,76 @@ export default function ProductClient({ product: initialProduct }: ProductClient
           )}
         </div>
       </div>
+
+      {/* Media Modal for Mobile */}
+      {isMediaModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center bg-black/95 lg:hidden"
+          onClick={() => setIsMediaModalOpen(false)}
+        >
+          <div className="relative w-full h-full flex items-start justify-center">
+            <Swiper
+              modules={[Navigation]}
+              initialSlide={activeImageIndex}
+              onSlideChange={(s) => setActiveImageIndex(s.activeIndex)}
+              slidesPerView={1}
+              spaceBetween={0}
+              className="w-full h-full"
+            >
+              {media.map((item, i) => (
+                <SwiperSlide key={i}>
+                  <div className="relative w-full h-full flex items-start justify-center">
+                    {item.type === "video" ? (
+                      <video
+                        className="object-contain w-full h-full"
+                        src={`/api/images/${item.url}`}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <Image
+                        src={`/api/images/${item.url}`}
+                        alt={`Product view ${i + 1}`}
+                        fill
+                        className="object-contain"
+                        sizes="100vw"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    )}
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+            <button
+              onClick={() => setIsMediaModalOpen(false)}
+              className="absolute top-4 right-4 text-white hover:text-white/80 transition-colors z-10 bg-black/50 rounded-full p-2"
+              aria-label="Закрити"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            {media.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm z-10">
+                {activeImageIndex + 1} / {media.length}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

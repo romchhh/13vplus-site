@@ -13,7 +13,6 @@ import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { WebVitals } from "@/components/shared/WebVitals";
 import MainContent from "@/components/shared/MainContent";
 import { OrganizationStructuredData } from "@/components/shared/StructuredData";
-import BackToTop from "@/components/shared/BackToTop";
 
 const montserrat = Montserrat({
   subsets: ["latin", "cyrillic"],
@@ -146,7 +145,6 @@ export default function RootLayout({
               <Header />
               <MainContent id="main-content">{children}</MainContent>
               <Footer />
-              <BackToTop />
               </WishlistProvider>
             </BasketProvider>
           </AppProvider>

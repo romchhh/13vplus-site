@@ -18,6 +18,7 @@
     "setup-db": "ts-node --project tsconfig.scripts.json scripts/setup-database.ts",
     "migrate": "ts-node scripts/migrate.ts",
     "add-test-products": "ts-node --project tsconfig.scripts.json scripts/add-test-products.ts",
+    "add-categories": "ts-node --project tsconfig.scripts.json scripts/add-categories.ts",
     "check-vitals": "echo 'Run lighthouse audit after deployment'"
   },
   "dependencies": {
