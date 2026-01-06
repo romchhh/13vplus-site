@@ -252,13 +252,13 @@ export async function POST(req: NextRequest) {
 
         const orderDate = Math.floor(Date.now() / 1000);
 
-        // For installment, use CREATE_INVOICE with form-based payment
+        // For installment, use PURCHASE method with payment form
         if (payment_type === "installment") {
           // Import WayForPay utilities
-          const { generateInvoiceSignature } = await import("@/lib/wayforpay");
+          const { generatePaymentSignature } = await import("@/lib/wayforpay");
 
-          // Generate signature for invoice
-          const merchantSignature = generateInvoiceSignature({
+          // Generate signature for PURCHASE payment
+          const merchantSignature = generatePaymentSignature({
             merchantAccount,
             merchantDomainName,
             orderReference: orderId,
@@ -271,28 +271,27 @@ export async function POST(req: NextRequest) {
             secretKey: merchantSecret,
           });
 
-          // Prepare invoice data for CREATE_INVOICE API
-          // WayForPay expects productName, productPrice, productCount as arrays (JSON format)
-          // IMPORTANT: amount and productPrice must be sent as STRINGS with 2 decimal places for JSON API
-          const invoiceData: Record<string, string | number | string[] | number[]> = {
-            transactionType: "CREATE_INVOICE",
+          // Prepare payment form data for PURCHASE with installment
+          // WayForPay expects productName, productPrice, productCount as arrays
+          const paymentFormData: Record<string, string | number | string[] | number[]> = {
             merchantAccount,
             merchantAuthType: "SimpleSignature",
             merchantDomainName,
+            merchantTransactionType: "AUTH", // CRITICAL: AUTH type enables installment options
+            merchantTransactionSecureType: "AUTO",
             merchantSignature,
             apiVersion: 1,
             language: "UA",
             orderReference: orderId,
             orderDate,
-            amount: amountToPay.toFixed(2), // Send as string "1000.00" for full installment
+            amount: amountToPay.toFixed(2),
             currency: "UAH",
             orderTimeout: 86400, // 24 hours
             // Specify all installment payment systems with available parts
             // Format: systemName:parts (e.g., payParts:2,3,4,5,6)
-            paymentSystems: "card;privat24;payParts:2,3,4,5,6;payPartsMono:2,3,4,5,6;payPartsPrivat:2,3,4,5,6;payPartsAbank:2,3,4,5,6;instantAbank;OnusInstallment;payPartsOtp:2,3,4,5,6;globusPlus:2,3,4,5,6",
-            // WayForPay CREATE_INVOICE expects arrays, not indexed fields
+            paymentSystems: "payParts:2,3,4,5,6;payPartsMono:2,3,4,5,6;payPartsPrivat:2,3,4,5,6;payPartsAbank:2,3,4,5,6;instantAbank;OnusInstallment;payPartsOtp:2,3,4,5,6;globusPlus:2,3,4,5,6",
             productName: productNames,
-            productPrice: productPrices.map(p => p.toFixed(2)), // Send as strings ["1000.00"]
+            productPrice: productPrices.map(p => p.toFixed(2)),
             productCount: productCounts,
           };
 
@@ -300,75 +299,82 @@ export async function POST(req: NextRequest) {
           if (customer_name) {
             const nameParts = customer_name.trim().split(/\s+/);
             if (nameParts.length >= 2) {
-              invoiceData.clientFirstName = nameParts[0];
-              invoiceData.clientLastName = nameParts.slice(1).join(" ");
+              paymentFormData.clientFirstName = nameParts[0];
+              paymentFormData.clientLastName = nameParts.slice(1).join(" ");
             } else {
-              invoiceData.clientFirstName = customer_name;
+              paymentFormData.clientFirstName = customer_name;
             }
           }
 
           if (email) {
-            invoiceData.clientEmail = email;
+            paymentFormData.clientEmail = email;
           }
 
           if (phone_number) {
-            invoiceData.clientPhone = phone_number;
+            paymentFormData.clientPhone = phone_number;
           }
 
-          invoiceData.serviceUrl = `${PUBLIC_URL_FULL}/api/wayforpay/webhook`;
+          paymentFormData.serviceUrl = `${PUBLIC_URL_FULL}/api/wayforpay/webhook`;
+          paymentFormData.returnUrl = `${PUBLIC_URL_FULL}/order-success?orderId=${orderId}`;
 
-          console.log("[POST /api/orders] Creating WayForPay invoice...");
-          console.log("[POST /api/orders] Invoice data:", JSON.stringify(invoiceData, null, 2));
+          console.log("[POST /api/orders] Creating WayForPay payment form for installment...");
+          console.log("[POST /api/orders] Payment form data:", JSON.stringify(paymentFormData, null, 2));
 
-          // Call WayForPay API server-side to create invoice
+          // Call WayForPay API to get payment URL (using behavior=offline for mobile)
           try {
-            const wayforpayResponse = await fetch("https://api.wayforpay.com/api", {
+            const wayforpayResponse = await fetch("https://secure.wayforpay.com/pay?behavior=offline", {
               method: "POST",
               headers: {
-                "Content-Type": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded",
               },
-              body: JSON.stringify(invoiceData),
+              body: new URLSearchParams(
+                Object.entries(paymentFormData).flatMap(([key, value]) => {
+                  if (Array.isArray(value)) {
+                    return value.map((v, i) => [`${key}[${i}]`, String(v)]);
+                  }
+                  return [[key, String(value)]];
+                })
+              ),
             });
 
             const wayforpayResult = await wayforpayResponse.json();
             console.log("[POST /api/orders] WayForPay response:", JSON.stringify(wayforpayResult, null, 2));
 
-            if (wayforpayResult.reasonCode === "Ok" || wayforpayResult.reasonCode === 1100) {
-              console.log("[POST /api/orders] WayForPay invoice created successfully");
-              console.log("[POST /api/orders] Invoice URL:", wayforpayResult.invoiceUrl);
-              console.log("[POST /api/orders] Returning response with invoice URL");
-          console.log("[POST /api/orders] Successfully completed order creation");
-          console.log("=".repeat(50));
+            if (wayforpayResult.url) {
+              console.log("[POST /api/orders] WayForPay payment URL created successfully");
+              console.log("[POST /api/orders] Payment URL:", wayforpayResult.url);
+              console.log("[POST /api/orders] Successfully completed order creation");
+              console.log("=".repeat(50));
 
-              // Return invoice URL for direct redirect
-          return NextResponse.json({
-            success: true,
-            orderId: orderId,
-                invoiceUrl: wayforpayResult.invoiceUrl,
-                qrCode: wayforpayResult.qrCode,
-            paymentType: payment_type,
-          });
+              // Return payment URL for redirect
+              return NextResponse.json({
+                success: true,
+                orderId: orderId,
+                paymentUrl: wayforpayResult.url,
+                paymentType: payment_type,
+                formData: paymentFormData, // Also return form data as fallback
+              });
             } else {
-              console.error("[POST /api/orders] WayForPay invoice creation failed:", wayforpayResult);
-              return NextResponse.json(
-                {
-                  error: "Не вдалося створити рахунок для оплати",
-                  orderId: orderId,
-                  details: wayforpayResult.reason || "Unknown error",
-                },
-                { status: 500 }
-              );
+              console.error("[POST /api/orders] WayForPay payment URL creation failed:", wayforpayResult);
+              // Fallback: return form data for client-side form submission
+              return NextResponse.json({
+                success: true,
+                orderId: orderId,
+                paymentType: payment_type,
+                formData: paymentFormData,
+                formAction: "https://secure.wayforpay.com/pay",
+              });
             }
           } catch (wayforpayError) {
             console.error("[POST /api/orders] Error calling WayForPay API:", wayforpayError);
-            return NextResponse.json(
-              {
-                error: "Помилка при створенні рахунку",
-                orderId: orderId,
-                details: wayforpayError instanceof Error ? wayforpayError.message : "Unknown error",
-              },
-              { status: 500 }
-            );
+            // Fallback: return form data for client-side form submission
+            return NextResponse.json({
+              success: true,
+              orderId: orderId,
+              paymentType: payment_type,
+              formData: paymentFormData,
+              formAction: "https://secure.wayforpay.com/pay",
+            });
           }
         }
 
