@@ -598,7 +598,7 @@ export async function sqlDeleteProduct(id: number) {
     select: { url: true },
   });
 
-  // Step 2: Delete the product (cascade removes sizes/media/colors)
+  // Step 2: Delete the product (cascade removes sizes/media/colors, order_items.productId will be set to null)
   await prisma.product.delete({
     where: { id },
   });

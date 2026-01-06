@@ -83,7 +83,13 @@ export default function ProductsTable() {
       const res = await fetch(`/api/products/${productId}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete product");
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        const errorMessage = errorData.error || "Не вдалося видалити товар";
+        alert(errorMessage);
+        return;
+      }
 
       // Оновлюємо стан
       const updatedProducts = products.filter((p) => p.id !== productId);
@@ -97,6 +103,7 @@ export default function ProductsTable() {
       );
     } catch (error) {
       console.error("Error deleting product:", error);
+      alert("Помилка при видаленні товару. Спробуйте ще раз.");
     }
   }
 
