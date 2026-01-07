@@ -430,7 +430,7 @@ export default function ProductClient({ product: initialProduct }: ProductClient
 
           {/* Telegram Manager Link */}
           <a
-            href="https://t.me/13vplusukraineanbrand"
+            href="https://t.me/brand13vplus"
             target="_blank"
             rel="noopener noreferrer"
             className="w-full text-center border border-gray-400 text-gray-600 hover:border-black hover:text-black py-3 px-4 text-sm md:text-base font-light font-['Montserrat'] cursor-pointer transition-all duration-200"
