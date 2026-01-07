@@ -34,26 +34,6 @@ export default function Header() {
   const { items } = useBasket();
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const pathname = usePathname();
-  
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  const isHomePage = pathname === '/';
-
-  // Ensure component is mounted before using scroll state (prevents hydration mismatch)
-  useEffect(() => {
-    setIsMounted(true);
-    
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      setIsScrolled(scrollY > 20);
-    };
-
-    // Initial check after mount
-    handleScroll();
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);

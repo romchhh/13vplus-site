@@ -9,7 +9,6 @@ import CartAlert from "@/components/shared/CartAlert";
 import { getFirstProductImage } from "@/lib/getFirstProductImage";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay } from "swiper/modules";
-import type { Swiper as SwiperType } from "swiper";
 import "swiper/css";
 import "swiper/css/navigation";
 
@@ -52,7 +51,6 @@ export default function ProductClient({ product: initialProduct }: ProductClient
   const [product, setProduct] = useState(initialProduct);
   const [isLoading, setIsLoading] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [swiper, setSwiper] = useState<SwiperType | null>(null);
   
   // Use basket hook - component is client-side only with 'use client'
   const { addItem } = useBasket();
@@ -231,7 +229,6 @@ export default function ProductClient({ product: initialProduct }: ProductClient
         <div className="w-screen md:w-full lg:w-[55%] relative h-[100vh] md:h-[70vh] min-h-[400px] lg:h-[calc(100vh-6rem)] mb-6 lg:mb-0 left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] md:left-0 md:right-0 md:ml-0 md:mr-0 -mt-14 md:mt-0 lg:mt-0">
           <Swiper
             modules={[Navigation, Autoplay]}
-            onSwiper={setSwiper}
             slidesPerView={1}
             spaceBetween={0}
             onSlideChange={(s) => setActiveImageIndex(s.activeIndex)}
