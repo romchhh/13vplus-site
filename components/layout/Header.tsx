@@ -237,17 +237,17 @@ export default function Header() {
                         className="fixed top-16 left-0 w-full bg-white shadow-md px-4 py-4 z-50 transition-opacity duration-200 opacity-100 pointer-events-auto"
                       >
                         <div className="max-w-[1920px] mx-auto w-full flex flex-col gap-1" style={{ paddingLeft: `${categoryLeftPositions.get(category.id) || 0}px` }}>
-                          {subcategories.map((subcat) => (
-                            <Link
-                              key={subcat.id}
-                              href={`/catalog?subcategory=${encodeURIComponent(
-                                subcat.name
-                              )}`}
+                        {subcategories.map((subcat) => (
+                          <Link
+                            key={subcat.id}
+                            href={`/catalog?subcategory=${encodeURIComponent(
+                              subcat.name
+                            )}`}
                               className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
-                            >
-                              {subcat.name}
-                            </Link>
-                          ))}
+                          >
+                            {subcat.name}
+                          </Link>
+                        ))}
                           <Link
                             href={`/catalog?category=${encodeURIComponent(category.name)}`}
                             className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200 underline mt-2"

@@ -1496,7 +1496,7 @@ export default function FinalCard() {
               )}
 
               {/* Total price container */}
-              <div className="pt-2 mt-2">
+              <div className="pt-2 mt-2 mb-6 md:mb-0">
                 <div className="flex justify-between items-center text-lg font-semibold whitespace-nowrap gap-4">
                   <span>До сплати:</span>
                   <span className="text-[#8C7461]">

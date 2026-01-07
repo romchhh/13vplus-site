@@ -228,7 +228,7 @@ export default function ProductClient({ product: initialProduct }: ProductClient
     <section className="max-w-[1920px] w-full mx-auto bg-white">
       <div className="flex flex-col lg:flex-row gap-0 lg:gap-12 p-0 md:p-10 lg:pt-0 lg:px-16 lg:pb-16 lg:items-start">
         {/* Images Slider - Left Side */}
-        <div className="w-screen md:w-full lg:w-1/2 relative h-[100vh] md:h-[70vh] min-h-[400px] lg:h-[calc(100vh-6rem)] mb-6 lg:mb-0 left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] md:left-0 md:right-0 md:ml-0 md:mr-0 -mt-14 md:mt-0 lg:mt-0">
+        <div className="w-screen md:w-full lg:w-[55%] relative h-[100vh] md:h-[70vh] min-h-[400px] lg:h-[calc(100vh-6rem)] mb-6 lg:mb-0 left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] md:left-0 md:right-0 md:ml-0 md:mr-0 -mt-14 md:mt-0 lg:mt-0">
           <Swiper
             modules={[Navigation, Autoplay]}
             onSwiper={setSwiper}
