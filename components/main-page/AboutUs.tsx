@@ -19,34 +19,34 @@ export default function AboutUs() {
 
         {/* Main Content */}
         <div className="max-w-4xl mx-auto text-center space-y-4 lg:space-y-6">
-          <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-justify">
-            13vplus — це бренд жіночого одягу про індивідуальність, свободу бути собою та любов у кожній деталі. Ми створюємо одяг не &laquo;під стандарти&raquo;, а під жінку. Під її настрій. Фігуру. Ритм життя. Сьогодні вона ніжна, завтра зухвала. І це нормально. Ми віримо: жінка має право бути різною. Наші колекції — це продумані образи, які легко поєднуються між собою. Ми не прив&apos;язані до однієї кольорової гами, або сілуєту, але завжди думаємо про гармонію, щоб речі з гардероба працювали разом, а не лежали &laquo;на потім&raquo;.
+          <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-justify tracking-tight">
+            13vplus<span className="mx-0.5 lg:mx-1">-</span>це бренд жіночого одягу про індивідуальність, свободу бути собою та любов у кожній деталі. Ми створюємо одяг не &laquo;під стандарти&raquo;, а під жінку. Під її настрій. Фігуру. Ритм життя. Сьогодні вона ніжна, завтра зухвала. І це нормально. Ми віримо: жінка має право бути різною. Наші колекції<span className="mx-0.5 lg:mx-1">-</span>це продумані образи, які легко поєднуються між собою. Ми не прив&apos;язані до однієї кольорової гами, або сілуєту, але завжди думаємо про гармонію, щоб речі з гардероба працювали разом, а не лежали &laquo;на потім&raquo;.
           </p>
-          <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-justify">
-            13vPlus — одяг, який не маскує, а розкриває тебе.
+          <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-justify tracking-tight">
+            13vPlus<span className="mx-0.5 lg:mx-1">-</span>одяг, який не маскує, а розкриває тебе.
           </p>
 
           <div className="py-4 lg:py-6 border-t border-black/20">
-            <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-4 lg:mb-6">
+            <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-4 lg:mb-6 tracking-tight">
               Що для нас важливо
             </p>
             <div className="text-left space-y-3 lg:space-y-4">
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify tracking-tight">
                 • комфорт без компромісів
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify tracking-tight">
                 • якість, яку не лише видно з першого погляду, а й відчуваєш на дотик.
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify tracking-tight">
                 • силуети, що підкреслюють переваги та делікатно приховують зайве
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify tracking-tight">
                 • одяг, який не маскує, а розкриває особистість
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify">
-                • жіночність і тонка сексуальність — без виклику, але з характером
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify tracking-tight">
+                • жіночність і тонка сексуальність<span className="mx-0.5 lg:mx-1">-</span>без виклику, але з характером
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify tracking-tight">
                 • наші речі це коли дорого виглядаєш без надмірності
             </p>
             </div>
@@ -55,19 +55,16 @@ export default function AboutUs() {
           {/* Individual Tailoring Section */}
           <div className="mt-6 lg:mt-8 space-y-4 lg:space-y-6">
             <div className="pt-4 lg:pt-6 pb-2 lg:pb-3 border-t border-black/20">
-              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-4 lg:mb-6">
+              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-4 lg:mb-6 tracking-tight">
                 Наші переваги
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed mb-3 lg:mb-4 text-justify">
-                З будь-якого обраного одягу в нашому магазині ми пошиємо річ індивідуально під вашу фігуру та зріст.
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed mb-3 lg:mb-4 text-justify tracking-tight">
+                З будь-якого обраного одягу в нашому магазині ми пошиємо річ індивідуально під вашу фігуру та зріст. Ми шиємо для будь-якої фігури, адже краса не має розміру. Кожна річ<span className="mx-0.5 lg:mx-1">-</span>це про впевненість, жіночність і відчуття: «я собі подобаюсь».
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed mb-3 lg:mb-4 text-justify">
-                Ми шиємо для будь-якої фігури, адже краса не має розміру. Кожна річ — це про впевненість, жіночність і відчуття: «я собі подобаюсь».
+              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mt-6 lg:mt-8 tracking-tight">
+                13vplus<span className="mx-0.5 lg:mx-1">-</span>це не просто одяг.
               </p>
-              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mt-6 lg:mt-8">
-                13vplus — це не просто одяг.
-              </p>
-              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed">
+              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed tracking-tight">
                 Це стан. Це вибір. Це любов у кожній нитці.
               </p>
             </div>

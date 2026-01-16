@@ -18,6 +18,7 @@ export default function CategoriesShowcase() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [isMobile, setIsMobile] = useState(true);
 
   useEffect(() => {
     async function fetchCategories() {
@@ -64,6 +65,15 @@ export default function CategoriesShowcase() {
     }
   }, [categories]);
 
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const scrollLeft = () => {
     const container = scrollContainerRef.current;
     if (container) {
@@ -106,7 +116,7 @@ export default function CategoriesShowcase() {
 
       {/* Fixed centered text */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-        <div className="text-white text-3xl md:text-4xl lg:text-5xl font-bold font-['Montserrat'] uppercase tracking-wider text-center px-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] mt-16 md:mt-20">
+        <div className="text-white text-2xl md:text-3xl lg:text-4xl font-bold font-['Montserrat'] uppercase tracking-wider text-center px-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] mt-24 md:mt-28">
           АКТУАЛЬНО ЗАРАЗ
         </div>
       </div>
@@ -134,12 +144,17 @@ export default function CategoriesShowcase() {
         </button>
         <div className="h-screen overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth" ref={scrollContainerRef}>
           <div className="flex gap-4 md:gap-4 lg:gap-6 h-full items-center">
-          {categories.map((category) => (
+          {categories.map((category, index) => (
             <Link
               key={category.id}
               href={`/catalog?category=${encodeURIComponent(category.name)}`}
               className="group relative flex-shrink-0 flex flex-col h-full"
-              style={{ width: "calc(100vh * 2 / 3)" }}
+              style={{
+                width:
+                  index === 0 && isMobile
+                    ? "100vw"
+                    : "calc(100vh * 2 / 3)",
+              }}
               aria-label={`Переглянути категорію ${category.name}`}
             >
               <div className="h-full w-full overflow-hidden relative bg-black/5">
