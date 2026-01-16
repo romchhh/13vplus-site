@@ -84,7 +84,7 @@ export default function MediaGallery() {
             <video
               ref={videoRef1}
               className="absolute inset-0 w-full h-full object-cover"
-              src="/images/IMG_0355.webm"
+              src="/images/IMG_1844.webm"
               loop
               muted
               playsInline
@@ -105,7 +105,7 @@ export default function MediaGallery() {
             <video
               ref={videoRef2}
               className="absolute inset-0 w-full h-full object-cover"
-              src="/images/IMG_0366.webm"
+              src="/images/IMG_1845.webm"
               loop
               muted
               playsInline
@@ -168,7 +168,7 @@ export default function MediaGallery() {
               <video
                 ref={videoRef1}
                 className="absolute inset-0 w-full h-full object-cover group-hover:opacity-90 transition-opacity duration-300"
-                src="/images/IMG_0355.webm"
+                src="/images/IMG_1844.webm"
                 loop
                 muted
                 playsInline
@@ -193,7 +193,7 @@ export default function MediaGallery() {
               <video
                 ref={videoRef2}
                 className="absolute inset-0 w-full h-full object-cover group-hover:opacity-90 transition-opacity duration-300"
-                src="/images/IMG_0366.webm"
+                src="/images/IMG_1845.webm"
                 loop
                 muted
                 playsInline

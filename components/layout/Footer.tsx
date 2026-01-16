@@ -168,7 +168,7 @@ export default function Footer() {
                 href="https://new.telebots.site/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm sm:text-base font-semibold font-['Montserrat'] text-white/60 hover:text-white/80 transition-colors tracking-wide"
+                className="text-sm sm:text-base font-semibold font-['Montserrat'] text-white hover:text-white/80 transition-colors tracking-wide"
               >
                 Telebots | Розробка сайтів
               </Link>
