@@ -277,7 +277,7 @@ export default function CatalogClient({
           <div className="mt-12 flex justify-center">
             <button
               onClick={() => setVisibleCount((prev) => prev + 12)}
-              className="cursor-pointer px-8 py-3 bg-gray-900 text-white font-medium font-['Montserrat'] uppercase tracking-wider hover:bg-gray-800 transition-colors duration-300 min-w-[44px] min-h-[44px]"
+              className="cursor-pointer px-8 py-3 bg-black text-white font-medium font-['Montserrat'] uppercase tracking-wider hover:bg-gray-900 transition-colors duration-300 min-w-[44px] min-h-[44px]"
               aria-label="Показати більше товарів"
             >
               Показати ще

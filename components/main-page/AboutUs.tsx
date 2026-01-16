@@ -19,52 +19,55 @@ export default function AboutUs() {
 
         {/* Main Content */}
         <div className="max-w-4xl mx-auto text-center space-y-4 lg:space-y-6">
-          <p className="text-lg lg:text-2xl font-normal font-['Montserrat'] text-black/80 leading-relaxed">
+          <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-justify">
             13vplus — це бренд жіночого одягу про індивідуальність, свободу бути собою та любов у кожній деталі. Ми створюємо одяг не &laquo;під стандарти&raquo;, а під жінку. Під її настрій. Фігуру. Ритм життя. Сьогодні вона ніжна, завтра зухвала. І це нормально. Ми віримо: жінка має право бути різною. Наші колекції — це продумані образи, які легко поєднуються між собою. Ми не прив&apos;язані до однієї кольорової гами, або сілуєту, але завжди думаємо про гармонію, щоб речі з гардероба працювали разом, а не лежали &laquo;на потім&raquo;.
+          </p>
+          <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-justify">
+            13vPlus — одяг, який не маскує, а розкриває тебе.
           </p>
 
           <div className="py-4 lg:py-6 border-t border-black/20">
-            <p className="text-xl lg:text-3xl font-medium font-['Montserrat'] text-black leading-relaxed mb-4 lg:mb-6">
+            <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-4 lg:mb-6">
               Що для нас важливо
             </p>
-            <div className="text-left space-y-3 lg:space-y-4 max-w-2xl mx-auto">
-              <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed">
+            <div className="text-left space-y-3 lg:space-y-4">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify">
                 • комфорт без компромісів
               </p>
-              <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify">
                 • якість, яку не лише видно з першого погляду, а й відчуваєш на дотик.
               </p>
-              <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify">
                 • силуети, що підкреслюють переваги та делікатно приховують зайве
               </p>
-              <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify">
                 • одяг, який не маскує, а розкриває особистість
               </p>
-              <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify">
                 • жіночність і тонка сексуальність — без виклику, але з характером
               </p>
-              <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-justify">
                 • наші речі це коли дорого виглядаєш без надмірності
-              </p>
+            </p>
             </div>
           </div>
 
           {/* Individual Tailoring Section */}
           <div className="mt-6 lg:mt-8 space-y-4 lg:space-y-6">
             <div className="pt-4 lg:pt-6 pb-2 lg:pb-3 border-t border-black/20">
-              <p className="text-xl lg:text-3xl font-medium font-['Montserrat'] text-black leading-relaxed mb-4 lg:mb-6">
+              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-4 lg:mb-6">
                 Наші переваги
               </p>
-              <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed mb-3 lg:mb-4">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed mb-3 lg:mb-4 text-justify">
                 З будь-якого обраного одягу в нашому магазині ми пошиємо річ індивідуально під вашу фігуру та зріст.
               </p>
-              <p className="text-base lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed mb-3 lg:mb-4">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed mb-3 lg:mb-4 text-justify">
                 Ми шиємо для будь-якої фігури, адже краса не має розміру. Кожна річ — це про впевненість, жіночність і відчуття: «я собі подобаюсь».
               </p>
-              <p className="text-xl lg:text-3xl font-medium font-['Montserrat'] text-black leading-relaxed mt-6 lg:mt-8">
+              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mt-6 lg:mt-8">
                 13vplus — це не просто одяг.
               </p>
-              <p className="text-xl lg:text-3xl font-medium font-['Montserrat'] text-black leading-relaxed">
+              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed">
                 Це стан. Це вибір. Це любов у кожній нитці.
               </p>
             </div>
@@ -83,6 +86,21 @@ export default function AboutUs() {
             <p className="text-base lg:text-lg font-normal font-['Montserrat'] text-black/80 leading-relaxed">
               Лімітована колекція — для тих кому важлива унікальність.
             </p>
+          </div>
+
+          {/* Mobile: Phone */}
+          <div className="sm:hidden mb-6">
+            <div className="flex flex-col items-center gap-3">
+              <a
+                href="tel:+380933099503"
+                className="flex items-center gap-2 text-base font-['Montserrat'] text-black font-semibold hover:opacity-70 transition-opacity"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                <span>+38 (093) 309-95-03</span>
+              </a>
+            </div>
           </div>
 
           {/* Screens with Buttons */}
@@ -115,14 +133,14 @@ export default function AboutUs() {
                   e.preventDefault();
                   setEnlargedImage("/images/Group 1000007075.png");
                 }}
-                className="hidden sm:block relative w-[200px] lg:w-[300px] h-[400px] lg:h-[500px] bg-transparent cursor-pointer group"
+                className="relative w-[150px] h-[300px] sm:w-[200px] sm:h-[400px] lg:w-[300px] lg:h-[500px] bg-transparent cursor-pointer group"
               >
                 <Image
                   src="/images/Group 1000007075.png"
                   alt="13VPLUS TikTok"
                   fill
                   className="object-contain group-hover:opacity-90 transition-opacity duration-300"
-                  sizes="(max-width: 1024px) 200px, 300px"
+                  sizes="(max-width: 640px) 150px, (max-width: 1024px) 200px, 300px"
                 />
               </Link>
             </div>
@@ -155,14 +173,14 @@ export default function AboutUs() {
                   e.preventDefault();
                   setEnlargedImage("/images/Group 1000007076.png");
                 }}
-                className="hidden sm:block relative w-[200px] lg:w-[300px] h-[400px] lg:h-[500px] bg-transparent cursor-pointer group"
+                className="relative w-[150px] h-[300px] sm:w-[200px] sm:h-[400px] lg:w-[300px] lg:h-[500px] bg-transparent cursor-pointer group"
               >
                 <Image
                   src="/images/Group 1000007076.png"
                   alt="13VPLUS Instagram"
                   fill
                   className="object-contain group-hover:opacity-90 transition-opacity duration-300"
-                  sizes="(max-width: 1024px) 200px, 300px"
+                  sizes="(max-width: 640px) 150px, (max-width: 1024px) 200px, 300px"
                 />
               </Link>
             </div>
@@ -193,14 +211,14 @@ export default function AboutUs() {
                   e.preventDefault();
                   setEnlargedImage("/Group 1000007085.png");
                 }}
-                className="hidden sm:block relative w-[200px] lg:w-[300px] h-[400px] lg:h-[500px] bg-transparent cursor-pointer group"
+                className="relative w-[150px] h-[300px] sm:w-[200px] sm:h-[400px] lg:w-[300px] lg:h-[500px] bg-transparent cursor-pointer group"
               >
                 <Image
                   src="/Group 1000007085.png"
                   alt="13VPLUS Telegram"
                   fill
                   className="object-contain group-hover:opacity-90 transition-opacity duration-300"
-                  sizes="(max-width: 1024px) 200px, 300px"
+                  sizes="(max-width: 640px) 150px, (max-width: 1024px) 200px, 300px"
                 />
               </Link>
             </div>

@@ -10,7 +10,7 @@ export default function Footer() {
       <div className="max-w-[1920px] mx-auto px-6 py-12 lg:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 items-center md:items-start text-center md:text-left">
           {/* Brand Column */}
-          <div className="flex flex-col gap-5 items-center md:items-start">
+          <div className="flex flex-col gap-5 items-center md:items-start max-w-md mx-auto md:mx-0">
             <Link href="/" className="inline-block">
               <Image
                 src="/images/dark-theme/13vplus-logo-header-white.png"
@@ -20,42 +20,42 @@ export default function Footer() {
                 className="h-10 lg:h-12 w-auto"
               />
             </Link>
-            <p className="text-sm lg:text-base text-white/70 leading-relaxed max-w-xs">
+            <p className="text-sm lg:text-base text-white/70 leading-relaxed w-full text-justify sm:text-left">
               Український бренд жіночого одягу. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.
             </p>
             <div className="flex flex-col gap-2 text-sm text-white/80">
-              <p className="font-medium">Індивідуальний пошив</p>
-              <p className="text-white/70">
+              <p className="font-medium text-justify sm:text-left">Індивідуальний пошив</p>
+              <p className="text-white/70 text-justify sm:text-left">
                 Ми відшиваємо під замовлення будь-який наш виріб у вашому розмірі. Ідеальна посадка гарантована.
               </p>
             </div>
           </div>
 
           {/* Navigation Column */}
-          <div className="flex flex-col gap-5 items-center md:items-start">
+          <div className="flex flex-col gap-5 items-center md:items-start max-w-md mx-auto md:mx-0">
             <h3 className="text-base lg:text-lg font-semibold uppercase tracking-wider">Навігація</h3>
-            <nav className="flex flex-row md:flex-col gap-3 flex-wrap justify-center md:justify-start">
+            <nav className="flex flex-row md:flex-col gap-3 flex-nowrap md:flex-wrap justify-center md:justify-start w-full">
               <Link
                 href="/catalog"
-                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap"
               >
                 Каталог
               </Link>
               <Link
                 href="/#about"
-                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap"
               >
                 Про нас
               </Link>
               <Link
                 href="/#payment-and-delivery"
-                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap"
               >
                 Доставка та оплата
               </Link>
               <Link
                 href="/#reviews"
-                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap"
               >
                 Відгуки
               </Link>
@@ -63,7 +63,7 @@ export default function Footer() {
           </div>
 
           {/* Information Column */}
-          <div className="flex flex-col gap-5 items-center md:items-start">
+          <div className="flex flex-col gap-5 items-center md:items-start max-w-md mx-auto md:mx-0">
             <h3 className="text-base lg:text-lg font-semibold uppercase tracking-wider">Інформація</h3>
             <nav className="flex flex-row md:flex-col gap-3 flex-wrap justify-center md:justify-start">
               <Link
@@ -96,7 +96,7 @@ export default function Footer() {
           </div>
 
           {/* Social & Contact Column */}
-          <div className="flex flex-col gap-5 items-center md:items-start">
+          <div className="flex flex-col gap-5 items-center md:items-start max-w-md mx-auto md:mx-0">
             <h3 className="text-base lg:text-lg font-semibold uppercase tracking-wider">Зв&apos;язок</h3>
             <div className="flex flex-row md:flex-col gap-3 flex-wrap justify-center md:justify-start">
               <Link
@@ -148,7 +148,7 @@ export default function Footer() {
               </Link>
             </div>
             <div className="pt-4 border-t border-white/10">
-              <p className="text-xs text-white/50">
+              <p className="text-xs text-white/50 text-justify sm:text-left">
                 Більше відгуків дивіться у нашому Instagram профілі
               </p>
             </div>

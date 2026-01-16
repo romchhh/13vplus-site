@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -15,6 +15,9 @@ interface Category {
 export default function CategoriesShowcase() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   useEffect(() => {
     async function fetchCategories() {
@@ -38,6 +41,43 @@ export default function CategoriesShowcase() {
     fetchCategories();
   }, []);
 
+  const checkScrollability = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      setCanScrollLeft(container.scrollLeft > 0);
+      setCanScrollRight(
+        container.scrollLeft < container.scrollWidth - container.clientWidth - 1
+      );
+    }
+  };
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      checkScrollability();
+      container.addEventListener("scroll", checkScrollability);
+      window.addEventListener("resize", checkScrollability);
+      return () => {
+        container.removeEventListener("scroll", checkScrollability);
+        window.removeEventListener("resize", checkScrollability);
+      };
+    }
+  }, [categories]);
+
+  const scrollLeft = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollBy({ left: -400, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollBy({ left: 400, behavior: "smooth" });
+    }
+  };
+
   if (loading) {
     return (
       <div className="text-center py-20 text-lg text-white bg-black">
@@ -59,7 +99,7 @@ export default function CategoriesShowcase() {
             Колекції
           </h2>
           <p className="text-sm lg:text-base font-['Montserrat'] text-white/60 max-w-xl mx-auto tracking-wide">
-            Кожна категорія — це унікальний світ стилю та елегантності
+            Кожна категорія — це унікальний світ стилю та оригінальності
           </p>
         </div>
       </div>
@@ -72,8 +112,28 @@ export default function CategoriesShowcase() {
       </div>
 
       {/* Scroll container */}
-      <div className="relative h-screen overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth">
-        <div className="flex gap-4 md:gap-4 lg:gap-6 h-full items-center">
+      <div className="relative h-screen">
+        {/* Navigation arrows - fixed outside scroll container */}
+        <button
+          onClick={scrollLeft}
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 text-white hover:text-white/80 transition-colors duration-200 pointer-events-auto"
+          aria-label="Прокрутити вліво"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
+        <button
+          onClick={scrollRight}
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 text-white hover:text-white/80 transition-colors duration-200 pointer-events-auto"
+          aria-label="Прокрутити вправо"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+        <div className="h-screen overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth" ref={scrollContainerRef}>
+          <div className="flex gap-4 md:gap-4 lg:gap-6 h-full items-center">
           {categories.map((category) => (
             <Link
               key={category.id}
@@ -125,6 +185,7 @@ export default function CategoriesShowcase() {
               </div>
             </Link>
           ))}
+          </div>
         </div>
       </div>
     </section>

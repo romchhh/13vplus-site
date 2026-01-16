@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useRef, useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
 import "swiper/css";
+import "swiper/css/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { getProductImageSrc } from "@/lib/getFirstProductImage";
@@ -71,6 +73,9 @@ const templateProduct = {
 
 export default function LimitedEdition() {
   const { products: limitedEditionProducts, loading } = useProducts({ limitedEdition: true });
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   // Fill with template products if there are not enough
   const products = useMemo(() => {
@@ -86,6 +91,43 @@ export default function LimitedEdition() {
     // ✅ Then limit to 4
     return filled.slice(0, 4);
   }, [limitedEditionProducts]);
+
+  const checkScrollability = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      setCanScrollLeft(container.scrollLeft > 0);
+      setCanScrollRight(
+        container.scrollLeft < container.scrollWidth - container.clientWidth - 1
+      );
+    }
+  };
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      checkScrollability();
+      container.addEventListener("scroll", checkScrollability);
+      window.addEventListener("resize", checkScrollability);
+      return () => {
+        container.removeEventListener("scroll", checkScrollability);
+        window.removeEventListener("resize", checkScrollability);
+      };
+    }
+  }, [products]);
+
+  const scrollLeft = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollBy({ left: -400, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollBy({ left: 400, behavior: "smooth" });
+    }
+  };
 
   if (loading) {
     return <div className="text-center py-10 text-black">Завантаження...</div>;
@@ -105,13 +147,18 @@ export default function LimitedEdition() {
         </div>
 
         {/* Mobile layout: Single slider */}
-        <div className="sm:hidden -mx-4 px-4">
+        <div className="sm:hidden -mx-4 px-4 relative">
           <Swiper
+            modules={[Navigation]}
             spaceBetween={16}
             slidesPerView={1.5}
             centeredSlides={false}
             grabCursor={true}
             initialSlide={0}
+            navigation={{
+              nextEl: ".swiper-button-next-limited",
+              prevEl: ".swiper-button-prev-limited",
+            }}
             breakpoints={{
               320: { slidesPerView: 1.2, spaceBetween: 16 },
               480: { slidesPerView: 1.5, spaceBetween: 20 },
@@ -167,11 +214,41 @@ export default function LimitedEdition() {
               </SwiperSlide>
             ))}
           </Swiper>
+          <button className="swiper-button-prev-limited absolute left-2 top-1/2 -translate-y-1/2 z-10 text-black hover:text-black/80 transition-colors duration-200">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <button className="swiper-button-next-limited absolute right-2 top-1/2 -translate-y-1/2 z-10 text-black hover:text-black/80 transition-colors duration-200">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
         </div>
 
         {/* Desktop layout: Horizontal scrollable grid */}
-        <div className="hidden sm:block overflow-x-auto overflow-y-hidden scrollbar-hide relative">
-          <div className="flex gap-4 md:gap-6 min-w-max pb-4 px-4 md:px-6 scroll-smooth">
+        <div className="hidden sm:block relative">
+          {/* Navigation arrows - fixed outside scroll container */}
+          <button
+            onClick={scrollLeft}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 text-black hover:text-black/80 transition-colors duration-200 pointer-events-auto"
+            aria-label="Прокрутити вліво"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <button
+            onClick={scrollRight}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 text-black hover:text-black/80 transition-colors duration-200 pointer-events-auto"
+            aria-label="Прокрутити вправо"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide" ref={scrollContainerRef}>
+            <div className="flex gap-4 md:gap-6 min-w-max pb-4 px-4 md:px-6 scroll-smooth">
             {products.map((product, i) => (
               <div key={product.id !== -1 ? product.id : `template-${i}`} className="flex items-center">
                 <Link
@@ -225,6 +302,7 @@ export default function LimitedEdition() {
                 </Link>
               </div>
             ))}
+            </div>
           </div>
         </div>
       </div>

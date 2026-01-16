@@ -34,7 +34,7 @@ export default function Header() {
   const { items } = useBasket();
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const pathname = usePathname();
-
+  
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<number | null>(
