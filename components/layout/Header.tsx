@@ -173,7 +173,7 @@ export default function Header() {
               />
             </Link>
 
-            <div className="flex items-center gap-10 text-xs font-bold font-['Montserrat']">
+            <div className="flex items-center gap-4 text-xs font-bold font-['Montserrat']">
               {/* Product Categories shown directly in top nav */}
               {Array.isArray(categories) && categories.map((category) => (
                 <div
