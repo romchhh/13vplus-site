@@ -20,12 +20,12 @@ export default function Footer() {
                 className="h-10 lg:h-12 w-auto"
               />
             </Link>
-            <p className="text-sm lg:text-base text-white/70 leading-relaxed w-full text-justify sm:text-left">
+            <p className="text-sm lg:text-base text-white/70 leading-relaxed w-full text-justify sm:text-left tracking-normal">
               Український бренд жіночого одягу. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.
             </p>
             <div className="flex flex-col gap-2 text-sm text-white/80">
-              <p className="font-medium text-justify sm:text-left">Індивідуальний пошив</p>
-              <p className="text-white/70 text-justify sm:text-left">
+              <p className="font-medium text-justify sm:text-left tracking-normal">Індивідуальний пошив</p>
+              <p className="text-white/70 text-justify sm:text-left tracking-normal">
                 Ми відшиваємо під замовлення будь-який наш виріб у вашому розмірі. Ідеальна посадка гарантована.
               </p>
             </div>
@@ -37,25 +37,25 @@ export default function Footer() {
             <nav className="flex flex-row md:flex-col gap-3 flex-nowrap md:flex-wrap justify-center md:justify-start w-full">
               <Link
                 href="/catalog"
-                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap tracking-normal"
               >
                 Каталог
               </Link>
               <Link
                 href="/#about"
-                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap tracking-normal"
               >
                 Про нас
               </Link>
               <Link
                 href="/#payment-and-delivery"
-                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap tracking-normal"
               >
                 Доставка та оплата
               </Link>
               <Link
                 href="/#reviews"
-                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap tracking-normal"
               >
                 Відгуки
               </Link>
@@ -68,19 +68,19 @@ export default function Footer() {
             <nav className="flex flex-row md:flex-col gap-3 flex-wrap justify-center md:justify-start">
               <Link
                 href="/privacy-policy"
-                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 tracking-normal"
               >
                 Політика конфіденційності
               </Link>
               <Link
                 href="/terms-of-service"
-                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 tracking-normal"
               >
                 Договір оферти
               </Link>
               <Link
                 href="/#contacts"
-                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 tracking-normal"
               >
                 Контакти
               </Link>
@@ -88,7 +88,7 @@ export default function Footer() {
                 href="https://share.google/M30THNhEWfigvRjzs"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300"
+                className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 tracking-normal"
               >
                 Документи
               </Link>
@@ -103,7 +103,7 @@ export default function Footer() {
                 href="https://www.instagram.com/13vplus"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 group"
+                className="flex items-center gap-3 text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 group tracking-normal"
               >
                 <Image
                   src="/images/instagram-icon.svg"
@@ -118,7 +118,7 @@ export default function Footer() {
                 href="https://www.tiktok.com/@13vplus?_r=1"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 group"
+                className="flex items-center gap-3 text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 group tracking-normal"
               >
                 <svg
                   className="w-6 h-6 opacity-70 group-hover:opacity-100 transition-opacity"
@@ -134,7 +134,7 @@ export default function Footer() {
                 href="https://t.me/b_13vplus"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 group"
+                className="flex items-center gap-3 text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 group tracking-normal"
               >
                 <svg
                   className="w-6 h-6 opacity-70 group-hover:opacity-100 transition-opacity"
@@ -148,7 +148,7 @@ export default function Footer() {
               </Link>
             </div>
             <div className="pt-4 border-t border-white/10">
-              <p className="text-xs text-white/50 text-justify sm:text-left">
+              <p className="text-xs text-white/50 text-justify sm:text-left tracking-normal">
                 Більше відгуків дивіться у нашому Instagram профілі
               </p>
             </div>
@@ -161,7 +161,7 @@ export default function Footer() {
         <div className="max-w-[1920px] mx-auto px-6 py-5">
           <div className="flex flex-col items-center justify-center gap-2 text-center">
             <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs lg:text-sm text-white/50">
-              <span>© {new Date().getFullYear()} 13VPLUS. Всі права захищені.</span>
+              <span className="tracking-normal">© {new Date().getFullYear()} 13VPLUS. Всі права захищені.</span>
             </div>
             <div>
               <Link
