@@ -393,7 +393,7 @@ export default function Header() {
                 height="18"
                 width="65"
                 alt="logo"
-                src="/images/dark-theme/13vplus-logo-header-white.png"
+                src="/images/13VPLUSlogonew.png"
                 className="h-[18px] w-auto"
               />
             </Link>

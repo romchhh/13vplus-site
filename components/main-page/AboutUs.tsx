@@ -19,34 +19,34 @@ export default function AboutUs() {
 
         {/* Main Content */}
         <div className="max-w-4xl mx-auto text-center space-y-6">
-          <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-left tracking-normal">
+          <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-center tracking-normal">
             13vplus<span className="mx-0.5 lg:mx-1">-</span>це бренд жіночого одягу про індивідуальність, свободу бути собою та любов у кожній деталі. Ми створюємо одяг не &laquo;під стандарти&raquo;, а під жінку. Під її настрій. Фігуру. Ритм життя. Сьогодні вона ніжна, завтра зухвала. І це нормально. Ми віримо: жінка має право бути різною. Наші колекції<span className="mx-0.5 lg:mx-1">-</span>це продумані образи, які легко поєднуються між собою. Ми не прив&apos;язані до однієї кольорової гами, або сілуєту, але завжди думаємо про гармонію, щоб речі з гардероба працювали разом, а не лежали &laquo;на потім&raquo;.
           </p>
-          <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-left tracking-normal">
+          <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-center tracking-normal">
             13vPlus<span className="mx-0.5 lg:mx-1">-</span>одяг, який не маскує, а розкриває тебе.
           </p>
 
           <div className="py-6 border-t border-black/20">
-            <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-6 tracking-normal">
+            <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-6 tracking-normal text-center">
               Що для нас важливо
             </p>
-            <div className="text-left space-y-4">
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-left tracking-normal">
+            <div className="text-center space-y-4">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-center tracking-normal">
                 • комфорт без компромісів
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-left tracking-normal">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-center tracking-normal">
                 • якість, яку не лише видно з першого погляду, а й відчуваєш на дотик.
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-left tracking-normal">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-center tracking-normal">
                 • силуети, що підкреслюють переваги та делікатно приховують зайве
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-left tracking-normal">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-center tracking-normal">
                 • одяг, який не маскує, а розкриває особистість
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-left tracking-normal">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-center tracking-normal">
                 • жіночність і тонка сексуальність<span className="mx-0.5 lg:mx-1">-</span>без виклику, але з характером
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-left tracking-normal">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-center tracking-normal">
                 • наші речі це коли дорого виглядаєш без надмірності
             </p>
             </div>
@@ -55,10 +55,10 @@ export default function AboutUs() {
           {/* Individual Tailoring Section */}
           <div className="mt-8 space-y-6">
             <div className="pt-6 pb-3 border-t border-black/20">
-              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-6 tracking-normal">
+              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-6 tracking-normal text-center">
                 Наші переваги
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed mb-4 text-left tracking-normal">
+              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed mb-4 text-center tracking-normal">
                 З будь-якого обраного одягу в нашому магазині ми пошиємо річ індивідуально під вашу фігуру та зріст. Ми шиємо для будь-якої фігури, адже краса не має розміру. Кожна річ<span className="mx-0.5 lg:mx-1">-</span>це про впевненість, жіночність і відчуття: «я собі подобаюсь».
               </p>
               <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mt-8 tracking-normal">
@@ -206,12 +206,12 @@ export default function AboutUs() {
                 rel="noopener noreferrer"
                 onClick={(e) => {
                   e.preventDefault();
-                  setEnlargedImage("/Group 1000007085.png");
+                  setEnlargedImage("/images/Group 1000007085.png");
                 }}
                 className="relative w-[150px] h-[300px] sm:w-[200px] sm:h-[400px] lg:w-[300px] lg:h-[500px] bg-transparent cursor-pointer group"
               >
                 <Image
-                  src="/Group 1000007085.png"
+                  src="/images/Group 1000007085.png"
                   alt="13VPLUS Telegram"
                   fill
                   className="object-contain group-hover:opacity-90 transition-opacity duration-300"

@@ -20,12 +20,12 @@ export default function Footer() {
                 className="h-10 lg:h-12 w-auto"
               />
             </Link>
-            <p className="text-sm lg:text-base text-white/70 leading-relaxed w-full text-justify sm:text-left tracking-normal">
+            <p className="text-sm lg:text-base text-white/70 leading-relaxed w-full text-left tracking-normal">
               Український бренд жіночого одягу. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.
             </p>
             <div className="flex flex-col gap-2 text-sm text-white/80">
-              <p className="font-medium text-justify sm:text-left tracking-normal">Індивідуальний пошив</p>
-              <p className="text-white/70 text-justify sm:text-left tracking-normal">
+              <p className="font-medium text-left tracking-normal">Індивідуальний пошив</p>
+              <p className="text-white/70 text-left tracking-normal">
                 Ми відшиваємо під замовлення будь-який наш виріб у вашому розмірі. Ідеальна посадка гарантована.
               </p>
             </div>
