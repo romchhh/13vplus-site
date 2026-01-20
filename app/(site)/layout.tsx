@@ -32,9 +32,9 @@ export const metadata: Metadata = {
   keywords:
     "13VPLUS, жіночий одяг, одяг для жінок, повсякденний одяг, домашній одяг, купальники, український бренд одягу, мінімалізм, лакшері стиль, індивідуальний пошив, одяг на замовлення, українська мода, стильний одяг для жінок",
   icons: {
-    icon: "/images/13VPLUS BLACK PNG 2.png",
-    shortcut: "/images/13VPLUS BLACK PNG 2.png",
-    apple: "/images/13VPLUS BLACK PNG 2.png",
+    icon: "/images/13vplus-logo-favicon.png",
+    shortcut: "/images/13vplus-logo-favicon.png",
+    apple: "/images/13vplus-logo-favicon.png",
   },
   openGraph: {
     title: "13VPLUS — Жіночий Одяг | Повсякденний, Домашній Одяг та Купальники",
@@ -65,15 +65,15 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         
         {/* Favicon and App Icons */}
-        <link rel="icon" type="image/png" href="/images/13VPLUS BLACK PNG 2.png" />
-        <link rel="shortcut icon" type="image/png" href="/images/13VPLUS BLACK PNG 2.png" />
-        <link rel="apple-touch-icon" href="/images/13VPLUS BLACK PNG 2.png" />
+        <link rel="icon" type="image/png" href="/images/13vplus-logo-favicon.png" />
+        <link rel="shortcut icon" type="image/png" href="/images/13vplus-logo-favicon.png" />
+        <link rel="apple-touch-icon" href="/images/13vplus-logo-favicon.png" />
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#000000" />
         <meta name="msapplication-TileColor" content="#000000" />
         
         {/* Preload critical resources */}
-        <link rel="preload" href="/images/13VPLUS BLACK PNG 2.png" as="image" />
+        <link rel="preload" href="/images/13vplus-logo-favicon.png" as="image" />
         {/* Conditional preload: image for mobile, video for desktop */}
         <link rel="preload" href="/images/Знімок екрана 2025-10-17 о 22.25.53.png" as="image" media="(max-width: 767px)" />
         <link rel="preload" href="/images/hero-video.webm" as="video" type="video/webm" media="(min-width: 768px)" />
@@ -101,7 +101,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         
         {/* Apple touch icon */}
-        <link rel="apple-touch-icon" href="/images/13VPLUS BLACK PNG 2.png" />
+        <link rel="apple-touch-icon" href="/images/13vplus-logo-favicon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         

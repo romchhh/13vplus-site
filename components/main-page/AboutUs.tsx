@@ -128,12 +128,12 @@ export default function AboutUs() {
                 rel="noopener noreferrer"
                 onClick={(e) => {
                   e.preventDefault();
-                  setEnlargedImage("/images/Group 1000007075.png");
+                  setEnlargedImage("/images/about-us-tiktok-phone.png");
                 }}
                 className="relative w-[150px] h-[300px] sm:w-[200px] sm:h-[400px] lg:w-[300px] lg:h-[500px] bg-transparent cursor-pointer group"
               >
                 <Image
-                  src="/images/Group 1000007075.png"
+                  src="/images/about-us-tiktok-phone.png"
                   alt="13VPLUS TikTok"
                   fill
                   className="object-contain group-hover:opacity-90 transition-opacity duration-300"
@@ -168,12 +168,12 @@ export default function AboutUs() {
                 rel="noopener noreferrer"
                 onClick={(e) => {
                   e.preventDefault();
-                  setEnlargedImage("/images/Group 1000007076.png");
+                  setEnlargedImage("/images/about-us-instagram-phone.png");
                 }}
                 className="relative w-[150px] h-[300px] sm:w-[200px] sm:h-[400px] lg:w-[300px] lg:h-[500px] bg-transparent cursor-pointer group"
               >
                 <Image
-                  src="/images/Group 1000007076.png"
+                  src="/images/about-us-instagram-phone.png"
                   alt="13VPLUS Instagram"
                   fill
                   className="object-contain group-hover:opacity-90 transition-opacity duration-300"
@@ -206,12 +206,12 @@ export default function AboutUs() {
                 rel="noopener noreferrer"
                 onClick={(e) => {
                   e.preventDefault();
-                  setEnlargedImage("/images/Group 1000007085.png");
+                  setEnlargedImage("/images/about-us-telegram-phone.png");
                 }}
                 className="relative w-[150px] h-[300px] sm:w-[200px] sm:h-[400px] lg:w-[300px] lg:h-[500px] bg-transparent cursor-pointer group"
               >
                 <Image
-                  src="/images/Group 1000007085.png"
+                  src="/images/about-us-telegram-phone.png"
                   alt="13VPLUS Telegram"
                   fill
                   className="object-contain group-hover:opacity-90 transition-opacity duration-300"
@@ -260,7 +260,7 @@ export default function AboutUs() {
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
               <Link
                 href={
-                  enlargedImage === "/images/Group 1000007075.png"
+                  enlargedImage === "/images/about-us-tiktok-phone.png"
                     ? "https://www.tiktok.com/@13vplus?_r=1"
                     : "https://www.instagram.com/13vplus"
                 }
@@ -269,7 +269,7 @@ export default function AboutUs() {
                 onClick={(e) => e.stopPropagation()}
                 className="flex items-center justify-center gap-3 px-6 py-4 bg-white text-black hover:bg-white/90 transition-colors duration-300 font-['Montserrat'] font-medium uppercase tracking-wider text-sm lg:text-base"
               >
-                {enlargedImage === "/images/Group 1000007075.png" ? (
+                {enlargedImage === "/images/about-us-tiktok-phone.png" ? (
                   <>
                     <svg
                       width="20"
