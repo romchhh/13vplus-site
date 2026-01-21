@@ -393,7 +393,7 @@ export default function Header() {
                 height="18"
                 width="65"
                 alt="logo"
-                src="/images/13VPLUSlogonew.png"
+                src="/images/tg_image_3614117882.png"
                 className="h-[18px] w-auto"
               />
             </Link>
