@@ -168,7 +168,7 @@ export default function Header() {
                 height={20}
                 width={75}
                 alt="logo"
-                src="/images/dark-theme/13vplus-logo-header-white.png"
+                src="/images/tg_image_3614117882.png"
                 className="h-5 w-auto"
               />
             </Link>

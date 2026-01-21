@@ -248,7 +248,7 @@ export default function LimitedEdition() {
             </svg>
           </button>
           <div className="overflow-x-auto overflow-y-hidden scrollbar-hide" ref={scrollContainerRef}>
-            <div className="flex gap-4 md:gap-6 min-w-max pb-4 px-4 md:px-6 scroll-smooth">
+          <div className="flex gap-4 md:gap-6 min-w-max pb-4 px-4 md:px-6 scroll-smooth">
             {products.map((product, i) => (
               <div key={product.id !== -1 ? product.id : `template-${i}`} className="flex items-center">
                 <Link

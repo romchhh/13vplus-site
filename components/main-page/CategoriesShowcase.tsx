@@ -143,7 +143,7 @@ export default function CategoriesShowcase() {
           </svg>
         </button>
         <div className="h-screen overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth" ref={scrollContainerRef}>
-          <div className="flex gap-4 md:gap-4 lg:gap-6 h-full items-center">
+        <div className="flex gap-4 md:gap-4 lg:gap-6 h-full items-center">
           {categories.map((category, index) => (
             <Link
               key={category.id}

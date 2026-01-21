@@ -151,14 +151,14 @@ export default function YouMightLike() {
                 key={product.id !== -1 ? product.id : `template-${i}`}
               >
                 <Link
-                  href={`/product/${product.id}`}
+                href={`/product/${product.id}`}
                   className="w-full group space-y-4 relative"
-                >
+              >
                   <div className="relative w-full h-[500px] bg-black/5 overflow-hidden">
                     {product.first_media?.type === "video" ? (
                       <>
                         <VideoWithAutoplay
-                          src={`/api/images/${product.first_media.url}`}
+                      src={`/api/images/${product.first_media.url}`}
                           className="object-cover group-hover:opacity-90 transition duration-300 w-full h-full"
                         />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -169,7 +169,7 @@ export default function YouMightLike() {
                       </>
                     ) : (
                       <>
-                        <Image
+                    <Image
                           className="object-cover group-hover:opacity-90 transition duration-300"
                           src={getProductImageSrc(product.first_media, "https://placehold.co/432x682")}
                           alt={product.name}
@@ -256,32 +256,32 @@ export default function YouMightLike() {
                       <Image
                         className="object-cover group-hover:opacity-90 transition duration-300"
                         src={getProductImageSrc(product.first_media, "https://placehold.co/432x682")}
-                        alt={`${product.name} від 13VPLUS`}
-                        fill
+                      alt={`${product.name} від 13VPLUS`}
+                      fill
                         sizes="(max-width: 640px) 85vw, (max-width: 1024px) 42.5vw, 510px"
-                        loading="lazy"
-                        quality={75}
-                        placeholder="blur"
-                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-                      />
+                      loading="lazy"
+                      quality={75}
+                      placeholder="blur"
+                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                    />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <div className="bg-white/90 text-black px-8 py-4 text-lg font-medium font-['Montserrat'] uppercase tracking-wider">
                           Переглянути
                         </div>
-                      </div>
+                    </div>
                     </>
                   )}
                 </div>
 
                 <div className="mt-6 text-center space-y-3">
                   <div className="text-base font-light font-['Montserrat'] text-black/80 uppercase tracking-wider">
-                    {product.name}
+                  {product.name}
                   </div>
                   <div className="text-lg font-medium font-['Montserrat'] text-black">
                     {product.price.toLocaleString()} ₴
                   </div>
                 </div>
-                </Link>
+              </Link>
               </div>
             ))}
             </div>

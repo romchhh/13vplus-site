@@ -13,7 +13,7 @@ export default function Footer() {
           <div className="flex flex-col gap-5 items-center md:items-start max-w-md mx-auto md:mx-0">
             <Link href="/" className="inline-block">
               <Image
-                src="/images/dark-theme/13vplus-logo-header-white.png"
+                src="/images/tg_image_3614117882.png"
                 alt="13VPLUS Logo"
                 width={180}
                 height={60}
