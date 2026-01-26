@@ -20,7 +20,11 @@ export default function AboutUs() {
         {/* Main Content */}
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-center tracking-normal">
-            13vplus<span className="mx-0.5 lg:mx-1">-</span>це бренд жіночого одягу про індивідуальність, свободу бути собою та любов у кожній деталі. Ми створюємо одяг не &laquo;під стандарти&raquo;, а під жінку. Під її настрій. Фігуру. Ритм життя. Сьогодні вона ніжна, завтра зухвала. І це нормально. Ми віримо: жінка має право бути різною. Наші колекції<span className="mx-0.5 lg:mx-1">-</span>це продумані образи, які легко поєднуються між собою. Ми не прив&apos;язані до однієї кольорової гами, або сілуєту, але завжди думаємо про гармонію, щоб речі з гардероба працювали разом, а не лежали &laquo;на потім&raquo;.
+            13vPlus<span className="mx-0.5 lg:mx-1">—</span>це не про одяг.
+            <br />
+            Це про жінку, яка знає, хто вона,
+            <br />
+            і не пояснює свій вибір.
           </p>
           <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-center tracking-normal">
             13vPlus<span className="mx-0.5 lg:mx-1">-</span>одяг, який не маскує, а розкриває тебе.
