@@ -1,5 +1,6 @@
 /**
  * Client-side cache utilities for API responses
+ * OPTIMIZED FOR MOBILE: Memory-only cache to avoid slow localStorage operations
  */
 
 interface CacheItem<T> {
@@ -7,52 +8,34 @@ interface CacheItem<T> {
   expiry: number;
 }
 
-const CACHE_DURATION = 20 * 60 * 1000; // 20 хвилин
+const CACHE_DURATION = 20 * 60 * 1000; // 20 minutes
 
-// In-memory cache (faster than localStorage, especially on mobile)
+// In-memory cache ONLY (much faster on mobile, especially iOS Safari)
+// NOTE: This cache will be cleared on page reload, but that's acceptable
+// because server-side caching (ISR) and HTTP caching will handle persistence
 const memoryCache = new Map<string, CacheItem<unknown>>();
 
 /**
- * Get data from cache (checks memory first, then localStorage)
+ * Get data from cache (memory-only for mobile speed)
  */
 export function getCachedData<T>(key: string): T | null {
   if (typeof window === "undefined") return null;
 
-  // First, check in-memory cache (fastest)
-  const memCached = memoryCache.get(key) as CacheItem<T> | undefined;
-  if (memCached) {
-    const now = Date.now();
-    if (now < memCached.expiry) {
-      return memCached.data;
-    } else {
-      memoryCache.delete(key);
-    }
+  const cached = memoryCache.get(key) as CacheItem<T> | undefined;
+  if (!cached) return null;
+
+  const now = Date.now();
+  if (now < cached.expiry) {
+    return cached.data;
   }
 
-  // Fallback to localStorage
-  try {
-    const cached = localStorage.getItem(key);
-    if (!cached) return null;
-
-    const item: CacheItem<T> = JSON.parse(cached);
-    const now = Date.now();
-
-    if (now >= item.expiry) {
-      localStorage.removeItem(key);
-      return null;
-    }
-
-    // Restore to memory cache
-    memoryCache.set(key, item);
-    return item.data;
-  } catch (error) {
-    console.error("Error reading from cache:", error);
-    return null;
-  }
+  // Expired - remove it
+  memoryCache.delete(key);
+  return null;
 }
 
 /**
- * Set data to cache (stores in both memory and localStorage)
+ * Set data to cache (memory-only for mobile speed)
  */
 export function setCachedData<T>(
   key: string,
@@ -66,50 +49,28 @@ export function setCachedData<T>(
     expiry: Date.now() + duration,
   };
 
-  // Store in memory cache (fastest access)
+  // Store in memory cache ONLY (10-100x faster on mobile than localStorage)
   memoryCache.set(key, item);
-
-  // Also store in localStorage (persists across page reloads)
-  try {
-    localStorage.setItem(key, JSON.stringify(item));
-  } catch (error) {
-    // localStorage quota exceeded or disabled - memory cache will still work
-    console.warn("Failed to write to localStorage, using memory cache only:", error);
-  }
 }
 
 /**
- * Clear specific cache key (from both memory and localStorage)
+ * Clear specific cache key
  */
 export function clearCache(key: string): void {
   if (typeof window === "undefined") return;
   memoryCache.delete(key);
-  localStorage.removeItem(key);
 }
 
 /**
- * Clear all cache with a prefix (from both memory and localStorage)
+ * Clear all cache with a prefix
  */
 export function clearCacheByPrefix(prefix: string): void {
   if (typeof window === "undefined") return;
 
-  // Clear from memory cache
   for (const key of memoryCache.keys()) {
     if (key.startsWith(prefix)) {
       memoryCache.delete(key);
     }
-  }
-
-  // Clear from localStorage
-  try {
-    const keys = Object.keys(localStorage);
-    keys.forEach((key) => {
-      if (key.startsWith(prefix)) {
-        localStorage.removeItem(key);
-      }
-    });
-  } catch (error) {
-    console.error("Error clearing cache:", error);
   }
 }
 
@@ -126,12 +87,10 @@ export async function cachedFetch<T>(
   // Try to get from cache first
   const cached = getCachedData<T>(key);
   if (cached) {
-    console.log(`Using cached data for: ${url}`);
     return cached;
   }
 
   // Fetch from server
-  console.log(`Fetching from server: ${url}`);
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch: ${response.statusText}`);

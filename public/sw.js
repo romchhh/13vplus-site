@@ -1,9 +1,9 @@
 // Mobile-optimized service worker for 13VPLUS e-commerce
-  const CACHE_NAME = '13vplus-mobile-v3';
-const STATIC_CACHE = '13vplus-static-v3';
-const DYNAMIC_CACHE = '13vplus-dynamic-v3';
-const IMAGE_CACHE = '13vplus-images-v3';
-const MOBILE_CACHE = '13vplus-mobile-v3';
+const CACHE_NAME = '13vplus-mobile-v4';
+const STATIC_CACHE = '13vplus-static-v4';
+const DYNAMIC_CACHE = '13vplus-dynamic-v4';
+const IMAGE_CACHE = '13vplus-images-v4';
+const API_CACHE = '13vplus-api-v4';
 
 // Critical resources to cache immediately
 const STATIC_ASSETS = [
@@ -38,7 +38,8 @@ self.addEventListener('activate', (event) => {
         cacheNames.map((cacheName) => {
           if (cacheName !== STATIC_CACHE && 
               cacheName !== DYNAMIC_CACHE && 
-              cacheName !== IMAGE_CACHE) {
+              cacheName !== IMAGE_CACHE &&
+              cacheName !== API_CACHE) {
             console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -56,28 +57,38 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (request.method !== 'GET') return;
 
-  // Handle API requests with network-first strategy
+  // Handle API requests with cache-first strategy for mobile speed
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Cache successful API responses for 5 minutes
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(DYNAMIC_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-              // Clean cache after 5 minutes
-              setTimeout(() => {
-                cache.delete(request);
-              }, 5 * 60 * 1000);
-            });
+      caches.open(API_CACHE).then((cache) => {
+        return cache.match(request).then((cachedResponse) => {
+          // Return cached immediately if available
+          if (cachedResponse) {
+            // Update in background (stale-while-revalidate)
+            fetch(request).then((response) => {
+              if (response.status === 200) {
+                cache.put(request, response.clone());
+              }
+            }).catch(() => {});
+            
+            return cachedResponse;
           }
-          return response;
-        })
-        .catch(() => {
-          // Fallback to cache if network fails
-          return caches.match(request);
-        })
+          
+          // No cache - fetch from network
+          return fetch(request).then((response) => {
+            if (response.status === 200) {
+              cache.put(request, response.clone());
+            }
+            return response;
+          }).catch(() => {
+            // Network failed - return error
+            return new Response(JSON.stringify({ error: 'Network unavailable' }), {
+              status: 503,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          });
+        });
+      })
     );
     return;
   }

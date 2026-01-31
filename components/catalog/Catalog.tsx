@@ -87,8 +87,7 @@ export default function Catalog() {
   const [products, setProducts] = useState<Product[]>([]);
   const [colors, setColors] = useState<Color[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [initialLoad, setInitialLoad] = useState(true); // Track first render
+  const [error, setError] = useState<string | null>(null)
 
   const [sortOrder, setSortOrder] = useState<"recommended" | "newest" | "asc" | "desc" | "sale">("recommended");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
@@ -162,12 +161,11 @@ export default function Catalog() {
           cacheKey = CACHE_KEYS.PRODUCTS_SEASON(season);
         }
 
-        // Check cache first for instant render
+        // Check in-memory cache ONLY (NO localStorage on mobile!)
         const cached = getCachedData<Product[]>(cacheKey);
         if (cached && cached.length > 0) {
           setProducts(cached);
           setLoading(false);
-          setInitialLoad(false);
           return;
         }
 
@@ -179,32 +177,22 @@ export default function Catalog() {
 
         const data: Product[] = await response.json();
         
-        // Progressive rendering: show products in batches
-        const BATCH_SIZE = 6; // Show 6 products at a time
+        // Show ALL products immediately (no batching - was causing 15-20s delays!)
+        setProducts(data);
         
-        for (let i = 0; i < data.length; i += BATCH_SIZE) {
-          const batch = data.slice(0, i + BATCH_SIZE);
-          setProducts(batch);
-          
-          // Small delay for smooth UI updates (only on initial load)
-          if (i + BATCH_SIZE < data.length) {
-            await new Promise(resolve => setTimeout(resolve, 50));
-          }
-        }
-        
-        // Save full data to cache
+        // Save to cache (in-memory only for mobile speed)
         setCachedData(cacheKey, data, 20 * 60 * 1000); // 20 minutes
-        setInitialLoad(false);
+        setLoading(false);
       } catch (err: unknown) {
         if (err instanceof Error) {
           setError(err.message);
         } else {
           setError("An unknown error occurred");
         }
-      } finally {
         setLoading(false);
       }
     }
+    
     // Fetch colors
     async function fetchColors() {
       try {
@@ -275,13 +263,7 @@ export default function Catalog() {
 
         {/* Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-0.5 sm:gap-1">
-          {sortedProducts.map((product, index) => {
-            // Debug logging
-            if (product.first_media) {
-              console.log(`[Catalog] Product ${product.id} - first_media:`, product.first_media);
-            }
-            
-            return (
+          {sortedProducts.map((product, index) => (
             <Link
               href={`/product/${product.id}`}
               key={product.id}
@@ -301,9 +283,9 @@ export default function Catalog() {
                     className="object-cover transition-all duration-300 group-hover:brightness-90"
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                    loading={index < 6 ? "eager" : "lazy"}
+                    loading={index < 8 ? "eager" : "lazy"}
                     priority={index < 4}
-                    quality={85}
+                    quality={80}
                     placeholder="blur"
                     blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                   />
@@ -316,17 +298,8 @@ export default function Catalog() {
                 <br /> {product.price}₴
               </span>
             </Link>
-          );
-          })}
+          ))}
         </div>
-        
-        {/* Loading indicator for progressive rendering */}
-        {loading && products.length > 0 && (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-            <p className="mt-2 text-sm text-gray-600">Завантаження ще {products.length} товарів...</p>
-          </div>
-        )}
       </section>
 
       <SidebarFilter
