@@ -12,15 +12,41 @@ interface PageProps {
 
 export const revalidate = 300; // ISR every 5 minutes
 
-// Generate static params for popular products
+// Generate static params for most important products at build time
 export async function generateStaticParams() {
   try {
-    const { sqlGetAllProducts } = await import("@/lib/sql");
-    const products = await sqlGetAllProducts();
+    const { prisma } = await import("@/lib/prisma");
     
-    // Generate static pages for all products (or limit to top N)
-    return products.slice(0, 50).map((product: { id: number }) => ({
-      id: String(product.id),
+    // Get top products: limited edition, top sale, and recent (total ~50-100)
+    const [limitedEdition, topSale, recent] = await Promise.all([
+      prisma.product.findMany({
+        where: { limitedEdition: true },
+        select: { id: true },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
+      prisma.product.findMany({
+        where: { topSale: true },
+        select: { id: true },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
+      prisma.product.findMany({
+        select: { id: true },
+        orderBy: { createdAt: "desc" },
+        take: 30, // Most recent products
+      }),
+    ]);
+    
+    // Combine and deduplicate IDs
+    const allIds = new Set([
+      ...limitedEdition.map(p => p.id),
+      ...topSale.map(p => p.id),
+      ...recent.map(p => p.id),
+    ]);
+    
+    return Array.from(allIds).map(id => ({
+      id: String(id),
     }));
   } catch (error) {
     console.error("Error generating static params:", error);

@@ -26,12 +26,18 @@ const nextConfig: NextConfig = {
   },
   // Enable compression
   compress: true,
-  // Power page optimization
+  // Remove X-Powered-By header
   poweredByHeader: false,
-  // Enable static exports for better performance
+  // Optimize trailing slash
   trailingSlash: false,
   // External packages for server components
   serverExternalPackages: ["pg"],
+  // Optimize JS/CSS output
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "100mb", // for images, videos
@@ -45,10 +51,11 @@ const nextConfig: NextConfig = {
       "react-apexcharts",
       "web-vitals"
     ],
-    // Enable modern bundling
+    // Modern bundling
     esmExternals: true,
+    // Note: optimizeCss requires 'critters' package - disabled for now
+    // optimizeCss: true,
   },
-  // Turbopack configuration removed to avoid SVG loader issues
   // Production optimizations
   productionBrowserSourceMaps: false,
   // Advanced Webpack optimizations

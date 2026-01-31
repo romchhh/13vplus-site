@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { unlink } from "fs/promises";
 import path from "path";
+import { unstable_cache } from "next/cache";
 
 // Keep sql template literal for backward compatibility (used in migrate route)
 // This will be deprecated but kept for now
@@ -38,7 +39,7 @@ export const sql = Object.assign(
 // =====================
 
 // Get all products - optimized for catalog list (only first photo)
-export async function sqlGetAllProducts() {
+async function _sqlGetAllProducts() {
   const products = await prisma.product.findMany({
     orderBy: { id: "desc" },
     include: {
@@ -78,8 +79,18 @@ export async function sqlGetAllProducts() {
   }));
 }
 
+// Cached version with 5 minute revalidation
+export const sqlGetAllProducts = unstable_cache(
+  _sqlGetAllProducts,
+  ['all-products'],
+  {
+    revalidate: 300, // 5 minutes
+    tags: ['products'],
+  }
+);
+
 // Get one product by ID with sizes & media
-export async function sqlGetProduct(id: number) {
+async function _sqlGetProduct(id: number) {
   const product = await prisma.product.findUnique({
     where: { id },
     include: {
@@ -137,6 +148,16 @@ export async function sqlGetProduct(id: number) {
     colors: product.colors.map((c) => ({ label: c.label, hex: c.hex })),
   };
 }
+
+// Cached version with 5 minute revalidation
+export const sqlGetProduct = unstable_cache(
+  _sqlGetProduct,
+  ['product'],
+  {
+    revalidate: 300,
+    tags: ['products'],
+  }
+);
 
 // Get related color variants by product name
 export async function sqlGetRelatedColorsByName(name: string) {
@@ -293,7 +314,7 @@ export async function sqlGetProductsBySeason(season: string) {
 }
 
 // Get only top sale products
-export async function sqlGetTopSaleProducts() {
+async function _sqlGetTopSaleProducts() {
   const products = await prisma.product.findMany({
     where: { topSale: true },
     orderBy: { id: "desc" },
@@ -321,8 +342,18 @@ export async function sqlGetTopSaleProducts() {
   }));
 }
 
+// Cached version
+export const sqlGetTopSaleProducts = unstable_cache(
+  _sqlGetTopSaleProducts,
+  ['top-sale-products'],
+  {
+    revalidate: 300,
+    tags: ['products'],
+  }
+);
+
 // Get only limited edition products
-export async function sqlGetLimitedEditionProducts() {
+async function _sqlGetLimitedEditionProducts() {
   const products = await prisma.product.findMany({
     where: { limitedEdition: true },
     orderBy: { id: "desc" },
@@ -338,11 +369,6 @@ export async function sqlGetLimitedEditionProducts() {
     },
   });
 
-  console.log(`[sqlGetLimitedEditionProducts] Found ${products.length} limited edition products`);
-  products.forEach((p) => {
-    console.log(`  - Product ID: ${p.id}, Name: ${p.name}, limitedEdition: ${p.limitedEdition}, hasMedia: ${p.media.length > 0}`);
-  });
-
   return products.map((p) => ({
     id: p.id,
     name: p.name,
@@ -354,6 +380,16 @@ export async function sqlGetLimitedEditionProducts() {
     first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
   }));
 }
+
+// Cached version
+export const sqlGetLimitedEditionProducts = unstable_cache(
+  _sqlGetLimitedEditionProducts,
+  ['limited-edition-products'],
+  {
+    revalidate: 300,
+    tags: ['products'],
+  }
+);
 
 // Fetch all distinct colors from the database
 export async function sqlGetAllColors() {
@@ -915,7 +951,7 @@ export async function sqlGetOrderByInvoiceId(invoiceId: string) {
 // =====================
 
 // Get all categories
-export async function sqlGetAllCategories() {
+async function _sqlGetAllCategories() {
   const categories = await prisma.category.findMany({
     orderBy: { priority: "desc" },
   });
@@ -928,6 +964,16 @@ export async function sqlGetAllCategories() {
     mediaUrl: c.mediaUrl || null,
   }));
 }
+
+// Cached version with 5 minute revalidation
+export const sqlGetAllCategories = unstable_cache(
+  _sqlGetAllCategories,
+  ['all-categories'],
+  {
+    revalidate: 300,
+    tags: ['categories'],
+  }
+);
 
 // Get a single category by ID
 export async function sqlGetCategory(id: number) {

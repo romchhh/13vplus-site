@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
+import Script from "next/script";
 import "./critical.css";
 import "./globals.css";
 import "./mobile-optimizations.css";
@@ -105,9 +106,12 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/images/browser-open.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        
-        {/* Meta Pixel Code */}
-        <script
+      </head>
+      <body>
+        {/* Meta Pixel - loaded asynchronously after page interactive */}
+        <Script
+          id="meta-pixel"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               !function(f,b,e,v,n,t,s)
@@ -133,9 +137,7 @@ export default function RootLayout({
             alt=""
           />
         </noscript>
-        {/* End Meta Pixel Code */}
-      </head>
-      <body>
+        
         <a href="#main-content" className="skip-link">
           Перейти до основного контенту
         </a>
@@ -152,11 +154,16 @@ export default function RootLayout({
             </BasketProvider>
           </AppProvider>
         </ErrorBoundary>
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            (${registerServiceWorker.toString()})();
-          `
-        }} />
+        
+        {/* Service Worker registration - loaded after interactive */}
+        <Script
+          id="service-worker"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(${registerServiceWorker.toString()})();`
+          }}
+        />
+        
         <WebVitals />
       </body>
     </html>

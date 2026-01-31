@@ -5,6 +5,7 @@ import { sqlGetAllProducts, sqlPostProduct } from "@/lib/sql";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
+import { apiLogger } from "@/lib/logger";
 
 // Helper function to determine file type
 function getFileType(mimeType: string, filename: string): "photo" | "video" {
@@ -43,7 +44,6 @@ export async function GET(request: Request) {
     const offset = searchParams.get("offset");
 
     let products = await sqlGetAllProducts();
-    console.log("api", products[0])
 
     // Mobile pagination for better performance
     if (limit) {
@@ -55,12 +55,11 @@ export async function GET(request: Request) {
     return NextResponse.json(products, {
       headers: {
         "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
-        // "Content-Encoding": "gzip", // Enable compression
         "Content-Type": "application/json",
       },
     });
   } catch (error) {
-    console.error("[GET /products]", error);
+    apiLogger.error("GET", "/api/products", error);
     return NextResponse.json(
       { error: "Failed to fetch products" },
       { status: 500 }
@@ -196,14 +195,12 @@ export async function POST(req: Request) {
       await writeFile(filePath, buffer);
 
       const fileType = getFileType(image.type, image.name);
-      console.log(
-        `📁 Product file: ${image.name}, MIME: ${image.type}, Type: ${fileType}, URL: ${uniqueName}`
-      );
+      apiLogger.info("POST", `/api/products`, `File: ${image.name}, MIME: ${image.type}, Type: ${fileType}`);
 
       savedMedia.push({ type: fileType, url: uniqueName });
     }
 
-    console.log("📦 Product media to save:", savedMedia);
+    apiLogger.info("POST", `/api/products`, `Media to save: ${savedMedia.length} files`);
 
     const parsedSizes = JSON.parse(sizesRaw); // ["S", "M", "L"]
 
@@ -232,7 +229,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(product, { status: 201 });
   } catch (error) {
-    console.error("[POST /products]", error);
+    apiLogger.error("POST", "/api/products", error);
     return NextResponse.json(
       { error: "Failed to create product" },
       { status: 500 }
