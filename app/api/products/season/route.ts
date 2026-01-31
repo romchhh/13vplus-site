@@ -1,5 +1,9 @@
 import { sqlGetAllProducts, sqlGetProductsBySeason } from "@/lib/sql";
 import { NextResponse } from "next/server";
+import { apiLogger } from "@/lib/logger";
+
+// Enable ISR for this route
+export const revalidate = 300; // 5 minutes
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -19,13 +23,11 @@ export async function GET(request: Request) {
         "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
       },
     });
-  } catch {
+  } catch (error) {
+    apiLogger.error("GET", "/api/products/season", error);
     return NextResponse.json(
       { error: "Failed to fetch products" },
       { status: 500 }
     );
   }
 }
-
-// Enable revalidation every 5 minutes
-export const revalidate = 300;

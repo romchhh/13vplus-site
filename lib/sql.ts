@@ -191,7 +191,8 @@ export async function sqlGetRelatedColorsByName(name: string) {
   });
 }
 
-export async function sqlGetProductsByCategory(categoryName: string) {
+// Get products by category name
+async function _sqlGetProductsByCategory(categoryName: string) {
   const products = await prisma.product.findMany({
     where: {
       category: {
@@ -229,7 +230,18 @@ export async function sqlGetProductsByCategory(categoryName: string) {
   }));
 }
 
-export async function sqlGetProductsBySubcategoryName(name: string) {
+// Cached version
+export const sqlGetProductsByCategory = unstable_cache(
+  _sqlGetProductsByCategory,
+  ['products-by-category'],
+  {
+    revalidate: 300,
+    tags: ['products'],
+  }
+);
+
+// Get products by subcategory name
+async function _sqlGetProductsBySubcategoryName(name: string) {
   const products = await prisma.product.findMany({
     where: {
       subcategory: {
@@ -275,7 +287,18 @@ export async function sqlGetProductsBySubcategoryName(name: string) {
   }));
 }
 
-export async function sqlGetProductsBySeason(season: string) {
+// Cached version
+export const sqlGetProductsBySubcategoryName = unstable_cache(
+  _sqlGetProductsBySubcategoryName,
+  ['products-by-subcategory'],
+  {
+    revalidate: 300,
+    tags: ['products'],
+  }
+);
+
+// Get products by season
+async function _sqlGetProductsBySeason(season: string) {
   const products = await prisma.product.findMany({
     where: {
       season: {
@@ -312,6 +335,16 @@ export async function sqlGetProductsBySeason(season: string) {
     first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
   }));
 }
+
+// Cached version
+export const sqlGetProductsBySeason = unstable_cache(
+  _sqlGetProductsBySeason,
+  ['products-by-season'],
+  {
+    revalidate: 300,
+    tags: ['products'],
+  }
+);
 
 // Get only top sale products
 async function _sqlGetTopSaleProducts() {
