@@ -3,71 +3,32 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useCategories } from "@/lib/CategoriesProvider";
 
 interface SidebarMenuProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-interface Category {
-  id: number;
-  name: string;
-  subcategories?: Subcategory[];
-}
-
-interface Subcategory {
-  id: number;
-  name: string;
-}
-
 export default function SidebarMenu({
   isOpen,
   setIsOpen,
 }: SidebarMenuProps) {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  // Use categories from context instead of fetching
+  const { categories, subcategories: subcategoriesMap, loading, error } = useCategories();
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
+  // Convert Map to array for selected category
+  const selectedSubcategories = selectedCategoryId 
+    ? subcategoriesMap.get(selectedCategoryId) || [] 
+    : [];
+
+  // Select first category by default when categories load
   useEffect(() => {
-    async function fetchCategories() {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/categories");
-        if (!res.ok) throw new Error("Failed to fetch categories");
-        const data: Category[] = await res.json();
-
-        // Fetch subcategories for each category
-        const categoriesWithSubcats = await Promise.all(
-          data.map(async (cat) => {
-            try {
-              const subRes = await fetch(
-                `/api/subcategories?parent_category_id=${cat.id}`
-              );
-              const subData: Subcategory[] = await subRes.json();
-              return { ...cat, subcategories: subData };
-            } catch {
-              return { ...cat, subcategories: [] };
-            }
-          })
-        );
-
-        setCategories(categoriesWithSubcats);
-        // Select first category by default if available
-        if (categoriesWithSubcats.length > 0) {
-          setSelectedCategoryId(categoriesWithSubcats[0].id);
-        }
-      } catch (err) {
-        setError((err as Error).message);
-      } finally {
-        setLoading(false);
-      }
+    if (categories.length > 0 && selectedCategoryId === null) {
+      setSelectedCategoryId(categories[0].id);
     }
-
-    if (isOpen) {
-      fetchCategories();
-    }
-  }, [isOpen]);
+  }, [categories, selectedCategoryId]);
 
   // Block scroll when menu is open
   useEffect(() => {
@@ -134,10 +95,10 @@ export default function SidebarMenu({
           {/* Subcategories */}
           {selectedCategory && (
             <div className="px-6 pt-6 pb-2">
-              {selectedCategory.subcategories && selectedCategory.subcategories.length > 0 ? (
+              {selectedSubcategories.length > 0 ? (
                 <>
                   <div className="space-y-1">
-                    {selectedCategory.subcategories.map((sub) => (
+                    {selectedSubcategories.map((sub) => (
                       <Link
                         key={sub.id}
                         href={`/catalog?subcategory=${encodeURIComponent(sub.name)}`}

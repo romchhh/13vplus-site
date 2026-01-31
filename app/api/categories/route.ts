@@ -7,7 +7,13 @@ import { sqlGetAllCategories, sqlPostCategory } from "@/lib/sql";
 export async function GET() {
   try {
     const categories = await sqlGetAllCategories();
-    return NextResponse.json(categories);
+    
+    // Add cache headers: cache for 5 minutes
+    return NextResponse.json(categories, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      },
+    });
   } catch (error) {
     console.error("[GET /api/categories]", error);
     return NextResponse.json(

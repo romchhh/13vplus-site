@@ -101,7 +101,7 @@ export default function Hero() {
               loop
               muted
               playsInline
-              preload="auto"
+              preload="metadata"
               style={{ zIndex: 1 }}
               onLoadedData={() => {
                 const video = videoRef.current;

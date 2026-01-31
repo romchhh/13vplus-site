@@ -8,6 +8,7 @@ import Footer from "@/components/layout/Footer";
 import { AppProvider } from "@/lib/GeneralProvider";
 import { BasketProvider } from "@/lib/BasketProvider";
 import { WishlistProvider } from "@/lib/WishlistProvider";
+import { CategoriesProvider } from "@/lib/CategoriesProvider";
 import { registerServiceWorker } from "@/lib/registerSW";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { WebVitals } from "@/components/shared/WebVitals";
@@ -142,9 +143,11 @@ export default function RootLayout({
           <AppProvider>
             <BasketProvider>
               <WishlistProvider>
-              <Header />
-              <MainContent id="main-content">{children}</MainContent>
-              <Footer />
+                <CategoriesProvider>
+                  <Header />
+                  <MainContent id="main-content">{children}</MainContent>
+                  <Footer />
+                </CategoriesProvider>
               </WishlistProvider>
             </BasketProvider>
           </AppProvider>

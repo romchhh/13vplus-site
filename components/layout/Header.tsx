@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAppContext } from "@/lib/GeneralProvider";
 import { useBasket } from "@/lib/BasketProvider";
+import { useCategories } from "@/lib/CategoriesProvider";
 import SidebarBasket from "./SidebarBasket";
 import SidebarSearch from "./SidebarSearch";
 import SidebarMenu from "./SidebarMenu";
@@ -35,7 +36,8 @@ export default function Header() {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const pathname = usePathname();
   
-  const [categories, setCategories] = useState<Category[]>([]);
+  // Use categories from context instead of fetching
+  const { categories } = useCategories();
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<number | null>(
     null
@@ -73,20 +75,7 @@ export default function Header() {
     };
   }, []);
 
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const res = await fetch("/api/categories");
-        const data = await res.json();
-        // Ensure data is always an array
-        setCategories(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Failed to load categories", err);
-        setCategories([]); // Set empty array on error
-      }
-    }
-    fetchCategories();
-  }, []);
+  // Categories are now loaded from context, no need to fetch
 
   useEffect(() => {
     async function fetchSubcategories(categoryId: number) {

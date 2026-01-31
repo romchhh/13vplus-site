@@ -16,7 +16,13 @@ export async function GET(req: NextRequest) {
 
   try {
     const subcategories = await sqlGetSubcategoriesByCategory(categoryId);
-    return NextResponse.json(subcategories);
+    
+    // Add cache headers: cache for 5 minutes
+    return NextResponse.json(subcategories, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      },
+    });
   } catch (error) {
     console.error("Failed to get subcategories:", error);
     return NextResponse.json(

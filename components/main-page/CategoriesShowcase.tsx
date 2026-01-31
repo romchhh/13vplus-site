@@ -3,44 +3,19 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-
-interface Category {
-  id: number;
-  name: string;
-  priority: number;
-  mediaType?: string | null;
-  mediaUrl?: string | null;
-}
+import { useCategories } from "@/lib/CategoriesProvider";
 
 export default function CategoriesShowcase() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { categories: allCategories, loading } = useCategories();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [isMobile, setIsMobile] = useState(true);
 
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const res = await fetch("/api/categories");
-        if (!res.ok) throw new Error("Failed to fetch categories");
-        const data: Category[] = await res.json();
-        // Filter categories that have media
-        const categoriesWithMedia = data.filter(
-          (cat) => cat.mediaUrl && cat.mediaType
-        );
-        setCategories(categoriesWithMedia);
-      } catch (err) {
-        console.error("Error fetching categories:", err);
-        setCategories([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchCategories();
-  }, []);
+  // Filter categories that have media
+  const categories = allCategories.filter(
+    (cat) => cat.mediaUrl && cat.mediaType
+  );
 
   const checkScrollability = () => {
     const container = scrollContainerRef.current;
@@ -167,7 +142,14 @@ export default function CategoriesShowcase() {
                       muted
                       playsInline
                       autoPlay
-                      preload="metadata"
+                      preload="none"
+                      onLoadedMetadata={(e) => {
+                        // Start playing once metadata is loaded
+                        const video = e.currentTarget;
+                        video.play().catch(() => {
+                          // Autoplay failed, will retry on user interaction
+                        });
+                      }}
                     />
                     {/* Button overlay for video */}
                     <div className="absolute inset-0 flex items-end justify-center pb-8 pointer-events-none">
@@ -183,11 +165,12 @@ export default function CategoriesShowcase() {
                       src={`/api/images/${category.mediaUrl}`}
                       alt={`Категорія ${category.name} від 13VPLUS`}
                       fill
-                      sizes="(max-width: 640px) 85vw, (max-width: 1024px) 42.5vw, 510px"
-                      loading="lazy"
-                      quality={80}
+                      sizes="(max-width: 640px) 100vw, 66vh"
+                      loading={index === 0 ? "eager" : "lazy"}
+                      quality={85}
                       placeholder="blur"
                       blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                      priority={index === 0}
                     />
                     {/* Button overlay for image */}
                     <div className="absolute inset-0 flex items-end justify-center pb-8 pointer-events-none">
