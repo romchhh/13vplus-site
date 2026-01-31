@@ -15,18 +15,31 @@ export default function SidebarMenu({
   setIsOpen,
 }: SidebarMenuProps) {
   // Use categories from context instead of fetching
-  const { categories, subcategories: subcategoriesMap, loading, error } = useCategories();
+  const { categories, subcategories: subcategoriesMap, loading, error, fetchSubcategoriesForCategory } = useCategories();
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [loadingSubcategories, setLoadingSubcategories] = useState(false);
 
   // Convert Map to array for selected category
   const selectedSubcategories = selectedCategoryId 
     ? subcategoriesMap.get(selectedCategoryId) || [] 
     : [];
 
+  // Load subcategories when category is selected
+  const handleCategorySelect = async (categoryId: number) => {
+    setSelectedCategoryId(categoryId);
+    
+    // If subcategories not loaded yet, fetch them
+    if (!subcategoriesMap.has(categoryId)) {
+      setLoadingSubcategories(true);
+      await fetchSubcategoriesForCategory(categoryId);
+      setLoadingSubcategories(false);
+    }
+  };
+
   // Select first category by default when categories load
   useEffect(() => {
     if (categories.length > 0 && selectedCategoryId === null) {
-      setSelectedCategoryId(categories[0].id);
+      handleCategorySelect(categories[0].id);
     }
   }, [categories, selectedCategoryId]);
 
@@ -75,7 +88,7 @@ export default function SidebarMenu({
                 categories.map((cat) => (
                   <button
                     key={cat.id}
-                    onClick={() => setSelectedCategoryId(cat.id)}
+                    onClick={() => handleCategorySelect(cat.id)}
                     className={`px-5 py-3 rounded-full text-base font-semibold whitespace-nowrap transition-all duration-200 ${
                       selectedCategoryId === cat.id
                         ? "bg-black text-white"
@@ -95,7 +108,11 @@ export default function SidebarMenu({
           {/* Subcategories */}
           {selectedCategory && (
             <div className="px-6 pt-6 pb-2">
-              {selectedSubcategories.length > 0 ? (
+              {loadingSubcategories ? (
+                <div className="py-4 text-center text-sm text-black/60">
+                  Завантаження...
+                </div>
+              ) : selectedSubcategories.length > 0 ? (
                 <>
                   <div className="space-y-1">
                     {selectedSubcategories.map((sub) => (

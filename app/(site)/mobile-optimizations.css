@@ -29,6 +29,25 @@
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
   }
+
+  /* Improve touch scrolling performance */
+  * {
+    -webkit-overflow-scrolling: touch;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent double-tap zoom on links */
+  a, button {
+    touch-action: manipulation;
+  }
+
+  /* GPU acceleration for smoother animations */
+  .transform {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
 }
 
 /* Critical CSS for above-the-fold content */
@@ -69,5 +88,25 @@
   video {
     will-change: auto;
     transform: translateZ(0);
+    /* Prevent video from blocking interactions */
+    pointer-events: none;
+  }
+
+  /* But allow clicks on video containers */
+  video:only-child {
+    pointer-events: auto;
+  }
+}
+
+/* Optimize scroll snap for mobile categories */
+@media (max-width: 768px) {
+  .snap-x {
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0;
+  }
+  
+  .snap-center {
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
   }
 }

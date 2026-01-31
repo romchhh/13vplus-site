@@ -9,12 +9,27 @@ interface CacheItem<T> {
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 хвилин
 
+// In-memory cache (faster than localStorage, especially on mobile)
+const memoryCache = new Map<string, CacheItem<unknown>>();
+
 /**
- * Get data from cache
+ * Get data from cache (checks memory first, then localStorage)
  */
 export function getCachedData<T>(key: string): T | null {
   if (typeof window === "undefined") return null;
 
+  // First, check in-memory cache (fastest)
+  const memCached = memoryCache.get(key) as CacheItem<T> | undefined;
+  if (memCached) {
+    const now = Date.now();
+    if (now < memCached.expiry) {
+      return memCached.data;
+    } else {
+      memoryCache.delete(key);
+    }
+  }
+
+  // Fallback to localStorage
   try {
     const cached = localStorage.getItem(key);
     if (!cached) return null;
@@ -27,6 +42,8 @@ export function getCachedData<T>(key: string): T | null {
       return null;
     }
 
+    // Restore to memory cache
+    memoryCache.set(key, item);
     return item.data;
   } catch (error) {
     console.error("Error reading from cache:", error);
@@ -35,7 +52,7 @@ export function getCachedData<T>(key: string): T | null {
 }
 
 /**
- * Set data to cache
+ * Set data to cache (stores in both memory and localStorage)
  */
 export function setCachedData<T>(
   key: string,
@@ -44,31 +61,46 @@ export function setCachedData<T>(
 ): void {
   if (typeof window === "undefined") return;
 
+  const item: CacheItem<T> = {
+    data,
+    expiry: Date.now() + duration,
+  };
+
+  // Store in memory cache (fastest access)
+  memoryCache.set(key, item);
+
+  // Also store in localStorage (persists across page reloads)
   try {
-    const item: CacheItem<T> = {
-      data,
-      expiry: Date.now() + duration,
-    };
     localStorage.setItem(key, JSON.stringify(item));
   } catch (error) {
-    console.error("Error writing to cache:", error);
+    // localStorage quota exceeded or disabled - memory cache will still work
+    console.warn("Failed to write to localStorage, using memory cache only:", error);
   }
 }
 
 /**
- * Clear specific cache key
+ * Clear specific cache key (from both memory and localStorage)
  */
 export function clearCache(key: string): void {
   if (typeof window === "undefined") return;
+  memoryCache.delete(key);
   localStorage.removeItem(key);
 }
 
 /**
- * Clear all cache with a prefix
+ * Clear all cache with a prefix (from both memory and localStorage)
  */
 export function clearCacheByPrefix(prefix: string): void {
   if (typeof window === "undefined") return;
 
+  // Clear from memory cache
+  for (const key of memoryCache.keys()) {
+    if (key.startsWith(prefix)) {
+      memoryCache.delete(key);
+    }
+  }
+
+  // Clear from localStorage
   try {
     const keys = Object.keys(localStorage);
     keys.forEach((key) => {

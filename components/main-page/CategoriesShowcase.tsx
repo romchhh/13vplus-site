@@ -98,10 +98,10 @@ export default function CategoriesShowcase() {
 
       {/* Scroll container */}
       <div className="relative h-screen">
-        {/* Navigation arrows - fixed outside scroll container */}
+        {/* Navigation arrows - hidden on mobile, visible on desktop */}
         <button
           onClick={scrollLeft}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 text-white hover:text-white/80 transition-colors duration-200 pointer-events-auto"
+          className="hidden md:block absolute left-4 top-1/2 -translate-y-1/2 z-20 text-white hover:text-white/80 transition-colors duration-200 pointer-events-auto"
           aria-label="Прокрутити вліво"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -110,20 +110,23 @@ export default function CategoriesShowcase() {
         </button>
         <button
           onClick={scrollRight}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 text-white hover:text-white/80 transition-colors duration-200 pointer-events-auto"
+          className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 z-20 text-white hover:text-white/80 transition-colors duration-200 pointer-events-auto"
           aria-label="Прокрутити вправо"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 18l6-6-6-6"/>
           </svg>
         </button>
-        <div className="h-screen overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth" ref={scrollContainerRef}>
-        <div className="flex gap-4 md:gap-4 lg:gap-6 h-full items-center">
-          {categories.map((category, index) => (
+        <div 
+          className="h-screen overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory" 
+          ref={scrollContainerRef}
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+        <div className="flex gap-4 md:gap-4 lg:gap-6 h-full items-center">{categories.map((category, index) => (
             <Link
               key={category.id}
               href={`/catalog?category=${encodeURIComponent(category.name)}`}
-              className="group relative flex-shrink-0 flex flex-col h-full"
+              className="group relative flex-shrink-0 flex flex-col h-full snap-center snap-always"
               style={{
                 width:
                   index === 0 && isMobile
@@ -131,13 +134,14 @@ export default function CategoriesShowcase() {
                     : "calc(100vh * 2 / 3)",
               }}
               aria-label={`Переглянути категорію ${category.name}`}
+              prefetch={index === 0}
             >
               <div className="h-full w-full overflow-hidden relative bg-black/5">
                 {category.mediaType === "video" ? (
                   <>
                     <video
                       src={`/api/images/${category.mediaUrl}`}
-                      className="object-cover group-hover:opacity-90 transition duration-300 w-full h-full"
+                      className="object-cover group-hover:opacity-90 transition duration-300 w-full h-full pointer-events-none"
                       loop
                       muted
                       playsInline
@@ -153,7 +157,7 @@ export default function CategoriesShowcase() {
                     />
                     {/* Button overlay for video */}
                     <div className="absolute inset-0 flex items-end justify-center pb-8 pointer-events-none">
-                      <div className="bg-transparent border-2 border-white text-white px-8 py-2.5 text-lg font-medium font-['Montserrat'] uppercase tracking-wider group-hover:bg-white group-hover:text-black transition-colors duration-300">
+                      <div className="bg-transparent border-2 border-white text-white px-8 py-2.5 text-lg font-medium font-['Montserrat'] uppercase tracking-wider group-hover:bg-white group-hover:text-black transition-colors duration-300 pointer-events-auto">
                         {category.name}
                       </div>
                     </div>
@@ -174,7 +178,7 @@ export default function CategoriesShowcase() {
                     />
                     {/* Button overlay for image */}
                     <div className="absolute inset-0 flex items-end justify-center pb-8 pointer-events-none">
-                      <div className="bg-transparent border-2 border-white text-white px-8 py-2.5 text-lg font-medium font-['Montserrat'] uppercase tracking-wider group-hover:bg-white group-hover:text-black transition-colors duration-300">
+                      <div className="bg-transparent border-2 border-white text-white px-8 py-2.5 text-lg font-medium font-['Montserrat'] uppercase tracking-wider group-hover:bg-white group-hover:text-black transition-colors duration-300 pointer-events-auto">
                         {category.name}
                       </div>
                     </div>
