@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useSearchParams } from "next/navigation"; // Next.js 13+ client hook for reading query params
+import { useSearchParams } from "next/navigation";
 import SidebarFilter from "../layout/SidebarFilter";
 import { useAppContext } from "@/lib/GeneralProvider";
 import SidebarMenu from "../layout/SidebarMenu";
 import Link from "next/link";
 import Image from "next/image";
 import { getProductImageSrc } from "@/lib/getFirstProductImage";
-import { cachedFetch, CACHE_KEYS } from "@/lib/cache";
+import { cachedFetch, getCachedData, setCachedData, CACHE_KEYS } from "@/lib/cache";
 
 // Video component with proper mobile autoplay
 function VideoWithAutoplay({ src, className }: { src: string; className?: string }) {
@@ -88,6 +88,7 @@ export default function Catalog() {
   const [colors, setColors] = useState<Color[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [initialLoad, setInitialLoad] = useState(true); // Track first render
 
   const [sortOrder, setSortOrder] = useState<"recommended" | "newest" | "asc" | "desc" | "sale">("recommended");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
@@ -161,8 +162,39 @@ export default function Catalog() {
           cacheKey = CACHE_KEYS.PRODUCTS_SEASON(season);
         }
 
-        const data = await cachedFetch<Product[]>(url, cacheKey);
-        setProducts(data);
+        // Check cache first for instant render
+        const cached = getCachedData<Product[]>(cacheKey);
+        if (cached && cached.length > 0) {
+          setProducts(cached);
+          setLoading(false);
+          setInitialLoad(false);
+          return;
+        }
+
+        // Fetch from server if no cache
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.statusText}`);
+        }
+
+        const data: Product[] = await response.json();
+        
+        // Progressive rendering: show products in batches
+        const BATCH_SIZE = 6; // Show 6 products at a time
+        
+        for (let i = 0; i < data.length; i += BATCH_SIZE) {
+          const batch = data.slice(0, i + BATCH_SIZE);
+          setProducts(batch);
+          
+          // Small delay for smooth UI updates (only on initial load)
+          if (i + BATCH_SIZE < data.length) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
+        }
+        
+        // Save full data to cache
+        setCachedData(cacheKey, data, 20 * 60 * 1000); // 20 minutes
+        setInitialLoad(false);
       } catch (err: unknown) {
         if (err instanceof Error) {
           setError(err.message);
@@ -178,7 +210,8 @@ export default function Catalog() {
       try {
         const data = await cachedFetch<Color[]>(
           "/api/colors",
-          CACHE_KEYS.COLORS
+          CACHE_KEYS.COLORS,
+          20 * 60 * 1000 // 20 minutes
         );
         setColors(data);
       } catch (err: unknown) {
@@ -242,7 +275,7 @@ export default function Catalog() {
 
         {/* Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-0.5 sm:gap-1">
-          {sortedProducts.map((product) => {
+          {sortedProducts.map((product, index) => {
             // Debug logging
             if (product.first_media) {
               console.log(`[Catalog] Product ${product.id} - first_media:`, product.first_media);
@@ -268,8 +301,9 @@ export default function Catalog() {
                     className="object-cover transition-all duration-300 group-hover:brightness-90"
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                    loading="lazy"
-                    quality={75}
+                    loading={index < 6 ? "eager" : "lazy"}
+                    priority={index < 4}
+                    quality={85}
                     placeholder="blur"
                     blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                   />
@@ -285,6 +319,14 @@ export default function Catalog() {
           );
           })}
         </div>
+        
+        {/* Loading indicator for progressive rendering */}
+        {loading && products.length > 0 && (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+            <p className="mt-2 text-sm text-gray-600">Завантаження ще {products.length} товарів...</p>
+          </div>
+        )}
       </section>
 
       <SidebarFilter
