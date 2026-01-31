@@ -190,7 +190,7 @@ export default function Header() {
                 >
                   <button
                     onClick={() =>
-                      (window.location.href = `/catalog?category=${encodeURIComponent(
+                      (window.location.href = `/catalog/${encodeURIComponent(
                         category.name
                       )}`)
                     }
@@ -218,7 +218,7 @@ export default function Header() {
                           </Link>
                         ))}
                           <Link
-                            href={`/catalog?category=${encodeURIComponent(category.name)}`}
+                            href={`/catalog/${encodeURIComponent(category.name)}`}
                             className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200 underline mt-2"
                           >
                             Переглянути всі

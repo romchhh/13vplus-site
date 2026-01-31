@@ -76,8 +76,8 @@ export default function RootLayout({
         
         {/* Preload critical resources */}
         <link rel="preload" href="/images/browser-open.png" as="image" />
-        {/* Conditional preload: image for mobile, video for desktop */}
-        <link rel="preload" href="/images/Знімок екрана 2025-10-17 о 22.25.53.png" as="image" media="(max-width: 767px)" />
+        {/* Conditional preload: fallback image for mobile/slow connections, video for desktop */}
+        <link rel="preload" href="/images/hero-fallback.png" as="image" media="(max-width: 767px)" />
         <link rel="preload" href="/images/hero-video.webm" as="video" type="video/webm" media="(min-width: 768px)" />
         <link rel="preload" href="/api/products/top-sale" as="fetch" crossOrigin="anonymous" />
         

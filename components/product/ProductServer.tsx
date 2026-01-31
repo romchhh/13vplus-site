@@ -45,7 +45,7 @@ export default async function ProductServer({ id }: ProductServerProps) {
     { name: "Головна", url: baseUrl },
     { name: "Каталог", url: `${baseUrl}/catalog` },
     ...(product.category_name
-      ? [{ name: product.category_name, url: `${baseUrl}/catalog?category=${encodeURIComponent(product.category_name)}` }]
+      ? [{ name: product.category_name, url: `${baseUrl}/catalog/${encodeURIComponent(product.category_name)}` }]
       : []),
     { name: product.name, url: `${baseUrl}/product/${id}` },
   ];

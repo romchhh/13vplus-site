@@ -125,7 +125,7 @@ export default function CategoriesShowcase() {
         <div className="flex gap-4 md:gap-4 lg:gap-6 h-full items-center">{categories.map((category, index) => (
             <Link
               key={category.id}
-              href={`/catalog?category=${encodeURIComponent(category.name)}`}
+              href={`/catalog/${encodeURIComponent(category.name)}`}
               className="group relative flex-shrink-0 flex flex-col h-full snap-center snap-always"
               style={{
                 width:

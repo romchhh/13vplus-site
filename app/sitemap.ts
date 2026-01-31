@@ -70,7 +70,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Category pages
   const categoryPages = categories.map((category) => ({
-    url: `${baseUrl}/catalog?category=${encodeURIComponent(category.name)}`,
+    url: `${baseUrl}/catalog/${encodeURIComponent(category.name)}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
     priority: 0.85,

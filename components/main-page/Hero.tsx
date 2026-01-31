@@ -90,71 +90,61 @@ export default function Hero() {
   return (
     <section id="hero" className="pt-14 lg:pt-16">
       <div className="max-w-[1920px] mx-auto w-full h-screen relative overflow-hidden">
-        {/* Show image on mobile, video on desktop */}
+        {/* Video background */}
+        <video
+          ref={videoRef}
+          className="absolute inset-0 w-full h-full object-cover object-center"
+          src="/images/hero-video.webm"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          style={{ zIndex: 1 }}
+          poster="/images/hero-fallback.png"
+          onLoadedData={() => {
+            const video = videoRef.current;
+            if (video) {
+              video.play().catch((error) => {
+                console.log("Play on loadeddata failed:", error);
+              });
+            }
+          }}
+          onCanPlay={() => {
+            const video = videoRef.current;
+            if (video) {
+              video.play().catch((error) => {
+                console.log("Play on canplay failed:", error);
+              });
+            }
+          }}
+        />
         
-          <>
-            <video
-              ref={videoRef}
-              className="absolute inset-0 w-full h-full object-cover object-center bg-black"
-              src="/images/hero-video.webm"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-              style={{ zIndex: 1 }}
-              onLoadedData={() => {
-                const video = videoRef.current;
-                if (video) {
-                  video.play().catch((error) => {
-                    console.log("Play on loadeddata failed:", error);
-                    // Don't show play button immediately, let useEffect handle it
-                  });
-                  video.style.backgroundColor = "transparent";
-                }
-              }}
-              onCanPlay={() => {
-                const video = videoRef.current;
-                if (video) {
-                  video.play().catch((error) => {
-                    console.log("Play on canplay failed:", error);
-                  });
-                }
-              }}
-              onLoadStart={() => {
-                // Hide black background once video starts loading
-                if (videoRef.current) {
-                  videoRef.current.style.backgroundColor = "transparent";
-                }
-              }}
-            />
-            
-            {/* Play button for desktop if autoplay fails */}
-            {showPlayButton && (
-              <button
-                onClick={async () => {
-                  try {
-                    await videoRef.current?.play();
-                    setShowPlayButton(false);
-                  } catch (error) {
-                    console.log("Manual play failed:", error);
-                  }
-                }}
-                className="absolute inset-0 flex items-center justify-center bg-black/30 z-10"
-                style={{ zIndex: 10 }}
-              >
-                <div className="bg-white/90 rounded-full p-4 hover:bg-white transition-colors">
-                  <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M8 5v14l11-7z"
-                      fill="currentColor"
-                      className="text-black"
-                    />
-                  </svg>
-                </div>
-              </button>
-            )}
-          </>
+        {/* Play button if autoplay fails */}
+        {showPlayButton && (
+          <button
+            onClick={async () => {
+              try {
+                await videoRef.current?.play();
+                setShowPlayButton(false);
+              } catch (error) {
+                console.log("Manual play failed:", error);
+              }
+            }}
+            className="absolute inset-0 flex items-center justify-center bg-black/30 z-10"
+            style={{ zIndex: 10 }}
+          >
+            <div className="bg-white/90 rounded-full p-4 hover:bg-white transition-colors">
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M8 5v14l11-7z"
+                  fill="currentColor"
+                  className="text-black"
+                />
+              </svg>
+            </div>
+          </button>
+        )}
         
         {/* Gradient overlay at the bottom */}
         <div 
