@@ -79,85 +79,84 @@ async function _sqlGetAllProducts() {
   }));
 }
 
-// Cached version with 5 minute revalidation
+// Cached version with 20 minute revalidation
 export const sqlGetAllProducts = unstable_cache(
   _sqlGetAllProducts,
   ['all-products'],
   {
-    revalidate: 300, // 5 minutes
+    revalidate: 1200, // 20 minutes
     tags: ['products'],
   }
 );
 
 // Get one product by ID with sizes & media
-async function _sqlGetProduct(id: number) {
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      category: {
-        select: { name: true },
-      },
-      subcategory: {
-        select: { name: true },
-      },
-      sizes: {
-        select: {
-          size: true,
-          stock: true,
+export async function sqlGetProduct(id: number) {
+  return unstable_cache(
+    async () => {
+      const product = await prisma.product.findUnique({
+        where: { id },
+        include: {
+          category: {
+            select: { name: true },
+          },
+          subcategory: {
+            select: { name: true },
+          },
+          sizes: {
+            select: {
+              size: true,
+              stock: true,
+            },
+          },
+          media: {
+            orderBy: { id: "asc" },
+            select: {
+              type: true,
+              url: true,
+            },
+          },
+          colors: {
+            select: {
+              label: true,
+              hex: true,
+            },
+          },
         },
-      },
-      media: {
-        orderBy: { id: "asc" },
-        select: {
-          type: true,
-          url: true,
-        },
-      },
-      colors: {
-        select: {
-          label: true,
-          hex: true,
-        },
-      },
+      });
+
+      if (!product) return null;
+
+      return {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: Number(product.price),
+        old_price: product.oldPrice ? Number(product.oldPrice) : null,
+        discount_percentage: product.discountPercentage,
+        priority: product.priority,
+        top_sale: product.topSale,
+        limited_edition: product.limitedEdition,
+        season: product.season,
+        color: product.color,
+        category_id: product.categoryId,
+        subcategory_id: product.subcategoryId,
+        fabric_composition: product.fabricComposition,
+        has_lining: product.hasLining,
+        lining_description: product.liningDescription,
+        category_name: product.category?.name || null,
+        subcategory_name: product.subcategory?.name || null,
+        sizes: product.sizes.map((s) => ({ size: s.size, stock: s.stock })),
+        media: product.media.map((m) => ({ type: m.type, url: m.url })),
+        colors: product.colors.map((c) => ({ label: c.label, hex: c.hex })),
+      };
     },
-  });
-
-  if (!product) return null;
-
-  return {
-    id: product.id,
-    name: product.name,
-    description: product.description,
-    price: Number(product.price),
-    old_price: product.oldPrice ? Number(product.oldPrice) : null,
-    discount_percentage: product.discountPercentage,
-    priority: product.priority,
-    top_sale: product.topSale,
-    limited_edition: product.limitedEdition,
-    season: product.season,
-    color: product.color,
-    category_id: product.categoryId,
-    subcategory_id: product.subcategoryId,
-    fabric_composition: product.fabricComposition,
-    has_lining: product.hasLining,
-    lining_description: product.liningDescription,
-    category_name: product.category?.name || null,
-    subcategory_name: product.subcategory?.name || null,
-    sizes: product.sizes.map((s) => ({ size: s.size, stock: s.stock })),
-    media: product.media.map((m) => ({ type: m.type, url: m.url })),
-    colors: product.colors.map((c) => ({ label: c.label, hex: c.hex })),
-  };
+    [`product-${id}`], // ВАЖЛИВО: унікальний ключ для кожного продукту
+    {
+      revalidate: 1200, // 20 minutes
+      tags: ['products', `product-${id}`],
+    }
+  )();
 }
-
-// Cached version with 5 minute revalidation
-export const sqlGetProduct = unstable_cache(
-  _sqlGetProduct,
-  ['product'],
-  {
-    revalidate: 300,
-    tags: ['products'],
-  }
-);
 
 // Get related color variants by product name
 export async function sqlGetRelatedColorsByName(name: string) {
@@ -192,159 +191,156 @@ export async function sqlGetRelatedColorsByName(name: string) {
 }
 
 // Get products by category name
-async function _sqlGetProductsByCategory(categoryName: string) {
-  const products = await prisma.product.findMany({
-    where: {
-      category: {
-        name: categoryName,
-      },
-    },
-    orderBy: { id: "desc" },
-    include: {
-      category: {
-        select: { name: true },
-      },
-      media: {
-        take: 1,
-        orderBy: { id: "asc" },
-        select: {
-          type: true,
-          url: true,
+export async function sqlGetProductsByCategory(categoryName: string) {
+  return unstable_cache(
+    async () => {
+      const products = await prisma.product.findMany({
+        where: {
+          category: {
+            name: categoryName,
+          },
         },
-      },
+        orderBy: { id: "desc" },
+        include: {
+          category: {
+            select: { name: true },
+          },
+          media: {
+            take: 1,
+            orderBy: { id: "asc" },
+            select: {
+              type: true,
+              url: true,
+            },
+          },
+        },
+      });
+
+      return products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: Number(p.price),
+        old_price: p.oldPrice ? Number(p.oldPrice) : null,
+        discount_percentage: p.discountPercentage,
+        top_sale: p.topSale,
+        limited_edition: p.limitedEdition,
+        season: p.season,
+        category_id: p.categoryId,
+        category_name: p.category?.name || null,
+        first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
+      }));
     },
-  });
-
-  return products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    price: Number(p.price),
-    old_price: p.oldPrice ? Number(p.oldPrice) : null,
-    discount_percentage: p.discountPercentage,
-    top_sale: p.topSale,
-    limited_edition: p.limitedEdition,
-    season: p.season,
-    category_id: p.categoryId,
-    category_name: p.category?.name || null,
-    first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
-  }));
+    [`products-by-category-${categoryName}`],
+    {
+      revalidate: 1200, // 20 minutes
+      tags: ['products', `category-${categoryName}`],
+    }
+  )();
 }
-
-// Cached version
-export const sqlGetProductsByCategory = unstable_cache(
-  _sqlGetProductsByCategory,
-  ['products-by-category'],
-  {
-    revalidate: 300,
-    tags: ['products'],
-  }
-);
 
 // Get products by subcategory name
-async function _sqlGetProductsBySubcategoryName(name: string) {
-  const products = await prisma.product.findMany({
-    where: {
-      subcategory: {
-        name: {
-          equals: name,
-          mode: "insensitive",
+export async function sqlGetProductsBySubcategoryName(name: string) {
+  return unstable_cache(
+    async () => {
+      const products = await prisma.product.findMany({
+        where: {
+          subcategory: {
+            name: {
+              equals: name,
+              mode: "insensitive",
+            },
+          },
         },
-      },
-    },
-    orderBy: { id: "desc" },
-    include: {
-      category: {
-        select: { name: true },
-      },
-      subcategory: {
-        select: { name: true },
-      },
-      media: {
-        take: 1,
-        orderBy: { id: "asc" },
-        select: {
-          type: true,
-          url: true,
+        orderBy: { id: "desc" },
+        include: {
+          category: {
+            select: { name: true },
+          },
+          subcategory: {
+            select: { name: true },
+          },
+          media: {
+            take: 1,
+            orderBy: { id: "asc" },
+            select: {
+              type: true,
+              url: true,
+            },
+          },
         },
-      },
-    },
-  });
+      });
 
-  return products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    price: Number(p.price),
-    old_price: p.oldPrice ? Number(p.oldPrice) : null,
-    discount_percentage: p.discountPercentage,
-    top_sale: p.topSale,
-    limited_edition: p.limitedEdition,
-    season: p.season,
-    category_id: p.categoryId,
-    subcategory_id: p.subcategoryId,
-    category_name: p.category?.name || null,
-    subcategory_name: p.subcategory?.name || null,
-    first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
-  }));
+      return products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: Number(p.price),
+        old_price: p.oldPrice ? Number(p.oldPrice) : null,
+        discount_percentage: p.discountPercentage,
+        top_sale: p.topSale,
+        limited_edition: p.limitedEdition,
+        season: p.season,
+        category_id: p.categoryId,
+        subcategory_id: p.subcategoryId,
+        category_name: p.category?.name || null,
+        subcategory_name: p.subcategory?.name || null,
+        first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
+      }));
+    },
+    [`products-by-subcategory-${name}`],
+    {
+      revalidate: 1200, // 20 minutes
+      tags: ['products', `subcategory-${name}`],
+    }
+  )();
 }
-
-// Cached version
-export const sqlGetProductsBySubcategoryName = unstable_cache(
-  _sqlGetProductsBySubcategoryName,
-  ['products-by-subcategory'],
-  {
-    revalidate: 300,
-    tags: ['products'],
-  }
-);
 
 // Get products by season
-async function _sqlGetProductsBySeason(season: string) {
-  const products = await prisma.product.findMany({
-    where: {
-      season: {
-        has: season,
-      },
-    },
-    orderBy: { id: "desc" },
-    include: {
-      category: {
-        select: { name: true },
-      },
-      media: {
-        take: 1,
-        orderBy: { id: "asc" },
-        select: {
-          type: true,
-          url: true,
+export async function sqlGetProductsBySeason(season: string) {
+  return unstable_cache(
+    async () => {
+      const products = await prisma.product.findMany({
+        where: {
+          season: {
+            has: season,
+          },
         },
-      },
+        orderBy: { id: "desc" },
+        include: {
+          category: {
+            select: { name: true },
+          },
+          media: {
+            take: 1,
+            orderBy: { id: "asc" },
+            select: {
+              type: true,
+              url: true,
+            },
+          },
+        },
+      });
+
+      return products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: Number(p.price),
+        old_price: p.oldPrice ? Number(p.oldPrice) : null,
+        discount_percentage: p.discountPercentage,
+        top_sale: p.topSale,
+        limited_edition: p.limitedEdition,
+        season: p.season,
+        category_id: p.categoryId,
+        category_name: p.category?.name || null,
+        first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
+      }));
     },
-  });
-
-  return products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    price: Number(p.price),
-    old_price: p.oldPrice ? Number(p.oldPrice) : null,
-    discount_percentage: p.discountPercentage,
-    top_sale: p.topSale,
-    limited_edition: p.limitedEdition,
-    season: p.season,
-    category_id: p.categoryId,
-    category_name: p.category?.name || null,
-    first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
-  }));
+    [`products-by-season-${season}`],
+    {
+      revalidate: 1200, // 20 minutes
+      tags: ['products', `season-${season}`],
+    }
+  )();
 }
-
-// Cached version
-export const sqlGetProductsBySeason = unstable_cache(
-  _sqlGetProductsBySeason,
-  ['products-by-season'],
-  {
-    revalidate: 300,
-    tags: ['products'],
-  }
-);
 
 // Get only top sale products
 async function _sqlGetTopSaleProducts() {
@@ -375,12 +371,12 @@ async function _sqlGetTopSaleProducts() {
   }));
 }
 
-// Cached version
+// Cached version with 20 minute revalidation
 export const sqlGetTopSaleProducts = unstable_cache(
   _sqlGetTopSaleProducts,
   ['top-sale-products'],
   {
-    revalidate: 300,
+    revalidate: 1200, // 20 minutes
     tags: ['products'],
   }
 );
@@ -414,12 +410,12 @@ async function _sqlGetLimitedEditionProducts() {
   }));
 }
 
-// Cached version
+// Cached version with 20 minute revalidation
 export const sqlGetLimitedEditionProducts = unstable_cache(
   _sqlGetLimitedEditionProducts,
   ['limited-edition-products'],
   {
-    revalidate: 300,
+    revalidate: 1200, // 20 minutes
     tags: ['products'],
   }
 );
@@ -998,12 +994,12 @@ async function _sqlGetAllCategories() {
   }));
 }
 
-// Cached version with 5 minute revalidation
+// Cached version with 20 minute revalidation
 export const sqlGetAllCategories = unstable_cache(
   _sqlGetAllCategories,
   ['all-categories'],
   {
-    revalidate: 300,
+    revalidate: 1200, // 20 minutes
     tags: ['categories'],
   }
 );

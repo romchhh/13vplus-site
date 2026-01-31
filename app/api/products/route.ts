@@ -54,7 +54,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(products, {
       headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        "Cache-Control": "public, s-maxage=1200, stale-while-revalidate=2400",
         "Content-Type": "application/json",
       },
     });
@@ -67,8 +67,8 @@ export async function GET(request: Request) {
   }
 }
 
-// Enable revalidation every 5 minutes
-export const revalidate = 300;
+// Enable revalidation every 20 minutes
+export const revalidate = 1200;
 
 // =========================
 // POST /api/products

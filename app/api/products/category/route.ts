@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { apiLogger } from "@/lib/logger";
 
 // Enable ISR for this route
-export const revalidate = 300; // 5 minutes
+export const revalidate = 1200; // 20 minutes
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(products, {
       headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        "Cache-Control": "public, s-maxage=1200, stale-while-revalidate=2400",
       },
     });
   } catch (error) {

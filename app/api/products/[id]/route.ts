@@ -2,6 +2,11 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { sqlGetProduct, sqlPutProduct, sqlDeleteProduct } from "@/lib/sql";
+import { apiLogger } from "@/lib/logger";
+import { revalidateProducts } from "@/lib/revalidate";
+
+// Enable ISR for this route
+export const revalidate = 1200; // 20 minutes
 
 // =========================
 // GET /api/products/[id]
@@ -25,9 +30,13 @@ export async function GET(
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    return NextResponse.json(product);
+    return NextResponse.json(product, {
+      headers: {
+        "Cache-Control": "public, s-maxage=1200, stale-while-revalidate=2400",
+      },
+    });
   } catch (error) {
-    console.error("[GET /products/:id]", error);
+    apiLogger.error("GET", `/api/products/${(await params).id}`, error);
     return NextResponse.json(
       { error: "Failed to fetch product" },
       { status: 500 }
@@ -118,12 +127,15 @@ export async function PUT(
         : [],
       has_lining: hasLining,
       fabric_composition: body.fabric_composition,
-      lining_description: liningDescription, // Pass the lining_description here
+      lining_description: liningDescription,
     });
+
+    // Revalidate cache after updating product
+    await revalidateProducts();
 
     return NextResponse.json({ updated: true });
   } catch (error) {
-    console.error("[PUT /products/:id]", error);
+    apiLogger.error("PUT", `/api/products/${(await params).id}`, error);
     return NextResponse.json(
       { error: "Failed to update product" },
       { status: 500 }
@@ -148,9 +160,13 @@ export async function DELETE(
     }
 
     await sqlDeleteProduct(id);
+    
+    // Revalidate cache after deleting product
+    await revalidateProducts();
+    
     return NextResponse.json({ deleted: true });
   } catch (error) {
-    console.error("[DELETE /products/:id]", error);
+    apiLogger.error("DELETE", `/api/products/${(await params).id}`, error);
     return NextResponse.json(
       { error: "Failed to delete product" },
       { status: 500 }

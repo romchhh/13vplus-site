@@ -4,7 +4,7 @@ import { apiLogger } from "@/lib/logger";
 import { revalidateCategories } from "@/lib/revalidate";
 
 // Enable ISR for this route
-export const revalidate = 300; // 5 minutes
+export const revalidate = 1200; // 20 minutes
 
 // ========================
 // GET /api/categories
@@ -15,7 +15,7 @@ export async function GET() {
     
     return NextResponse.json(categories, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'Cache-Control': 'public, s-maxage=1200, stale-while-revalidate=2400',
       },
     });
   } catch (error) {

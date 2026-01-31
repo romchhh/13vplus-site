@@ -57,7 +57,7 @@ function VideoWithAutoplay({ src, className }: { src: string; className?: string
       muted
       playsInline
       autoPlay
-      preload="metadata"
+      preload="none"
     />
   );
 }
@@ -187,13 +187,16 @@ export default function LimitedEdition() {
                       </>
                     ) : (
                       <>
-                        <Image
-                          className="object-cover group-hover:opacity-90 transition duration-300"
-                          src={getProductImageSrc(product.first_media, "https://placehold.co/432x682")}
-                          alt={product.name}
-                          fill
-                          sizes="90vw"
-                        />
+                      <Image
+                        className="object-cover group-hover:opacity-90 transition duration-300"
+                        src={getProductImageSrc(product.first_media, "https://placehold.co/432x682")}
+                        alt={product.name}
+                        fill
+                        sizes="90vw"
+                        loading={i === 0 ? "eager" : "lazy"}
+                        priority={i === 0}
+                        quality={85}
+                      />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           <div className="bg-white/90 text-black px-6 py-3 text-base font-medium font-['Montserrat'] uppercase tracking-wider">
                             Переглянути

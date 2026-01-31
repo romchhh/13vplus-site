@@ -10,7 +10,7 @@ interface PageProps {
   }>;
 }
 
-export const revalidate = 300; // ISR every 5 minutes
+export const revalidate = 1200; // ISR every 20 minutes
 
 // Generate static params for most important products at build time
 export async function generateStaticParams() {
