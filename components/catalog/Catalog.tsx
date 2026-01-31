@@ -57,7 +57,7 @@ function VideoWithAutoplay({ src, className }: { src: string; className?: string
       muted
       playsInline
       autoPlay
-      preload="metadata"
+      preload="none"
     />
   );
 }

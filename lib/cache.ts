@@ -7,7 +7,7 @@ interface CacheItem<T> {
   expiry: number;
 }
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 хвилин
+const CACHE_DURATION = 20 * 60 * 1000; // 20 хвилин
 
 // In-memory cache (faster than localStorage, especially on mobile)
 const memoryCache = new Map<string, CacheItem<unknown>>();

@@ -11,7 +11,7 @@ interface PageProps {
   }>;
 }
 
-export const revalidate = 300; // ISR every 5 minutes
+export const revalidate = 1200; // ISR every 20 minutes
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const params = await searchParams;
