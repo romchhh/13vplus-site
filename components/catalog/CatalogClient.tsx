@@ -200,13 +200,7 @@ export default function CatalogClient({
               </div>
             </div>
           ) : (
-            visibleProducts.map((product, index) => {
-            // Debug logging
-            if (product.first_media) {
-              console.log(`[CatalogClient] Product ${product.id} - first_media:`, product.first_media);
-            }
-            
-            return (
+            visibleProducts.map((product, index) => (
             <Link
               href={`/product/${product.id}`}
               key={product.id}
@@ -222,7 +216,7 @@ export default function CatalogClient({
                     muted
                     playsInline
                     autoPlay
-                    preload="metadata"
+                    preload="none"
                   />
                 ) : (
                   <Image
@@ -231,7 +225,7 @@ export default function CatalogClient({
                     className="object-cover transition-all duration-300 group-hover:opacity-95"
                     fill
                     sizes="(max-width: 420px) 45vw, (max-width: 640px) 45vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-                    loading={index < 6 ? "eager" : "lazy"}
+                    loading={index < 8 ? "eager" : "lazy"}
                     priority={index < 4}
                     quality={index < 8 ? 85 : 75}
                     placeholder="blur"
@@ -270,8 +264,7 @@ export default function CatalogClient({
                 )}
               </div>
               </Link>
-            );
-          }))}
+            )))}
         </div>
         {visibleCount < sortedProducts.length && (
           <div className="mt-12 flex justify-center">

@@ -12,6 +12,25 @@ interface PageProps {
 }
 
 export const revalidate = 1200; // ISR every 20 minutes
+export const dynamic = 'force-static'; // Generate static pages at build time
+
+// Generate static pages for popular categories
+export async function generateStaticParams() {
+  const popularCategories = [
+    { category: 'Повсякденний одяг' },
+    { category: 'Домашній одяг' },
+    { category: 'Купальники' },
+    { category: 'Аксесуари' },
+    // Add more popular categories
+  ];
+
+  return [
+    {}, // Main catalog page without params
+    ...popularCategories.map(cat => ({ 
+      searchParams: cat 
+    })),
+  ];
+}
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const params = await searchParams;
