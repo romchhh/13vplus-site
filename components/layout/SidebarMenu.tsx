@@ -18,6 +18,9 @@ export default function SidebarMenu({
   const { categories, subcategories: subcategoriesMap, loading, error, fetchSubcategoriesForCategory } = useCategories();
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [loadingSubcategories, setLoadingSubcategories] = useState(false);
+  // Avoid hydration mismatch: server and initial client render show placeholder; real content after mount
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // Convert Map to array for selected category
   const selectedSubcategories = selectedCategoryId 
@@ -41,6 +44,7 @@ export default function SidebarMenu({
     if (categories.length > 0 && selectedCategoryId === null) {
       handleCategorySelect(categories[0].id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only run when categories/selectedCategoryId change
   }, [categories, selectedCategoryId]);
 
   // Block scroll when menu is open
@@ -80,7 +84,9 @@ export default function SidebarMenu({
         <div className="border-b border-black/10 bg-white">
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex flex-row gap-3 px-4 py-4 min-w-max">
-              {loading ? (
+              {!mounted ? (
+                <div className="px-4 py-2 text-sm text-black/60">Завантаження...</div>
+              ) : loading ? (
                 <div className="px-4 py-2 text-sm text-black/60">Завантаження...</div>
               ) : error ? (
                 <div className="px-4 py-2 text-sm text-red-500">Помилка: {error}</div>

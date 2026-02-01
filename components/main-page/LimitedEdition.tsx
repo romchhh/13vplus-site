@@ -74,8 +74,8 @@ const templateProduct = {
 export default function LimitedEdition() {
   const { products: limitedEditionProducts, loading } = useProducts({ limitedEdition: true });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [, setCanScrollLeft] = useState(false);
+  const [, setCanScrollRight] = useState(true);
 
   // Fill with template products if there are not enough
   const products = useMemo(() => {

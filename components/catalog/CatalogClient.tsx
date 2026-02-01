@@ -9,6 +9,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { getProductImageSrc } from "@/lib/getFirstProductImage";
 import ProductSkeleton from "./ProductSkeleton";
+import { useWishlist } from "@/lib/WishlistProvider";
+import { useSession } from "next-auth/react";
 
 interface Product {
   id: number;
@@ -44,6 +46,8 @@ export default function CatalogClient({
 }: CatalogClientProps) {
   const { isSidebarOpen, setIsSidebarOpen } = useAppContext();
   const searchParams = useSearchParams();
+  const { isInWishlist, toggleWishlist, setWishlist } = useWishlist();
+  const { data: session } = useSession();
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -208,6 +212,54 @@ export default function CatalogClient({
             >
               {/* Image or Video - Smaller with padding */}
               <div className="relative w-full aspect-[3/4] bg-white overflow-hidden">
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const inList = isInWishlist(product.id);
+                    toggleWishlist(product.id);
+                    if (session?.user) {
+                      try {
+                        if (inList) {
+                          await fetch(`/api/users/wishlist/${product.id}`, { method: "DELETE" });
+                        } else {
+                          const res = await fetch("/api/users/wishlist", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ productId: product.id }),
+                          });
+                          if (!res.ok) throw new Error("Failed to add");
+                        }
+                        const listRes = await fetch("/api/users/wishlist");
+                        if (listRes.ok) {
+                          const data = await listRes.json();
+                          const ids = Array.isArray(data?.productIds) ? data.productIds : [];
+                          setWishlist(ids);
+                        }
+                      } catch {
+                        toggleWishlist(product.id);
+                      }
+                    }
+                  }}
+                  className="absolute top-2 right-2 z-10 p-1.5 rounded-md bg-white/80 hover:bg-white shadow-sm transition-colors"
+                  title={isInWishlist(product.id) ? "Прибрати з вішлиста" : "Додати у вішлист"}
+                  aria-label={isInWishlist(product.id) ? "Прибрати з вішлиста" : "Додати у вішлист"}
+                >
+                  <svg
+                    className={`w-4 h-4 ${isInWishlist(product.id) ? "text-amber-600 fill-amber-600" : "text-gray-600"}`}
+                    fill={isInWishlist(product.id) ? "currentColor" : "none"}
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                    />
+                  </svg>
+                </button>
                 {product.first_media?.type === "video" ? (
                   <video
                     src={`/api/images/${product.first_media.url}`}

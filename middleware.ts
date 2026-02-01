@@ -53,6 +53,13 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
+  // POST to /success (e.g. WayForPay redirect): redirect to GET to avoid Next.js Invalid URL when origin/url is null
+  if (pathname === "/success" && request.method === "POST") {
+    const base = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
+    const successUrl = `${base.replace(/\/$/, "")}${pathname}${request.nextUrl.search}`;
+    return NextResponse.redirect(successUrl, 303);
+  }
+
   const response = NextResponse.next();
 
   // Security headers

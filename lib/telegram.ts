@@ -31,7 +31,7 @@ interface OrderData {
 function formatOrderMessage(order: OrderData, isPaid: boolean = false): string {
   const paymentTypeMap: Record<string, string> = {
     full: "Повна оплата",
-    prepay: "Передоплата 50%",
+    prepay: "Передоплата 200 грн",
     installment: "Розстрочка",
     crypto: "Криптовалюта",
   };

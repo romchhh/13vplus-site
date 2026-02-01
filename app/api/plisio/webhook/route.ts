@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
                 payment_status: "paid",
                 status: order.status,
                 items: order.items.map((item) => ({
-                  product_name: item.product.name,
+                  product_name: item.product?.name ?? "Товар",
                   size: item.size,
                   quantity: item.quantity,
                   price: Number(item.price),

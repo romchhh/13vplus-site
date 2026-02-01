@@ -3,6 +3,8 @@
 import { useAppContext } from "@/lib/GeneralProvider";
 import { useState, useEffect, useRef } from "react";
 import { useBasket } from "@/lib/BasketProvider";
+import { useWishlist } from "@/lib/WishlistProvider";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Alert from "@/components/shared/Alert";
 import CartAlert from "@/components/shared/CartAlert";
@@ -55,6 +57,8 @@ export default function ProductClient({ product: initialProduct }: ProductClient
   // Use basket hook - component is client-side only with 'use client'
   const { addItem } = useBasket();
   const { setIsBasketOpen } = useAppContext();
+  const { isInWishlist, toggleWishlist, setWishlist } = useWishlist();
+  const { data: session } = useSession();
 
   const [showCartAlert, setShowCartAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
@@ -287,10 +291,58 @@ export default function ProductClient({ product: initialProduct }: ProductClient
 
         {/* Info Section - Right Side */}
         <div className="flex flex-col gap-6 w-full lg:w-1/2 px-4 md:px-0">
-          {/* Product Name */}
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-normal font-['Montserrat'] uppercase tracking-wider leading-tight mb-4">
-            {product.name}
-          </h1>
+          {/* Product Name + Save */}
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-normal font-['Montserrat'] uppercase tracking-wider leading-tight mb-4 flex-1">
+              {product.name}
+            </h1>
+            <button
+              type="button"
+              onClick={async () => {
+                const inList = isInWishlist(product.id);
+                toggleWishlist(product.id);
+                if (session?.user) {
+                  try {
+                    if (inList) {
+                      await fetch(`/api/users/wishlist/${product.id}`, { method: "DELETE" });
+                    } else {
+                      const res = await fetch("/api/users/wishlist", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ productId: product.id }),
+                      });
+                      if (!res.ok) throw new Error("Failed to add");
+                    }
+                    const listRes = await fetch("/api/users/wishlist");
+                    if (listRes.ok) {
+                      const data = await listRes.json();
+                      const ids = Array.isArray(data?.productIds) ? data.productIds : [];
+                      setWishlist(ids);
+                    }
+                  } catch {
+                    toggleWishlist(product.id);
+                  }
+                }
+              }}
+              className="flex-shrink-0 p-1 bg-transparent hover:opacity-80 transition-opacity border-0"
+              title={isInWishlist(product.id) ? "Прибрати з вішлиста" : "Додати у вішлист"}
+              aria-label={isInWishlist(product.id) ? "Прибрати з вішлиста" : "Додати у вішлист"}
+            >
+              <svg
+                className={`w-5 h-5 ${isInWishlist(product.id) ? "text-amber-600 fill-amber-600" : "text-gray-600"}`}
+                fill={isInWishlist(product.id) ? "currentColor" : "none"}
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={1}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                />
+              </svg>
+            </button>
+          </div>
 
           {/* Price */}
           <div className="text-2xl md:text-3xl font-bold font-['Montserrat'] tracking-tight">

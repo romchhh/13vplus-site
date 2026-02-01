@@ -14,10 +14,10 @@ export const metadata: Metadata = {
     description: "Перегляньте весь каталог жіночого одягу від 13VPLUS. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.",
     type: "website",
     locale: "uk_UA",
-    url: `${process.env.PUBLIC_URL}/catalog`,
+    url: `${process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000"}/catalog`,
     images: [
       {
-        url: `${process.env.PUBLIC_URL}/images/13VPLUS BLACK PNG 2.png`,
+        url: `${process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000"}/images/13VPLUS BLACK PNG 2.png`,
         width: 1200,
         height: 630,
         alt: "13VPLUS - Каталог товарів",
@@ -29,10 +29,10 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Каталог товарів | 13VPLUS",
     description: "Перегляньте весь каталог жіночого одягу від 13VPLUS.",
-    images: [`${process.env.PUBLIC_URL}/images/13VPLUS BLACK PNG 2.png`],
+    images: [`${process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000"}/images/13VPLUS BLACK PNG 2.png`],
   },
   alternates: {
-    canonical: `${process.env.PUBLIC_URL}/catalog`,
+    canonical: `${process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000"}/catalog`,
   },
 };
 

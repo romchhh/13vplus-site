@@ -46,6 +46,20 @@ function getStockCacheKey(productId: number, size: string): string {
   return `stock_${productId}_${size}`;
 }
 
+// Normalize color for comparison (undefined, "", null → same)
+function normColor(c: string | undefined): string | undefined {
+  if (c == null || typeof c !== "string") return undefined;
+  const t = c.trim();
+  return t === "" ? undefined : t;
+}
+
+function sameBasketKey(
+  a: { id: number; size: string; color?: string },
+  b: { id: number; size: string; color?: string }
+): boolean {
+  return a.id === b.id && a.size === b.size && normColor(a.color) === normColor(b.color);
+}
+
 // Get cached stock or null if expired/missing
 function getCachedStock(productId: number, size: string): number | null {
   const key = getStockCacheKey(productId, size);
@@ -98,14 +112,9 @@ export function BasketProvider({ children }: { children: ReactNode }) {
   async function addItem(newItem: BasketItem): Promise<void> {
     // Get current items state to calculate total quantity
     const currentItems = items;
-    
-    // Calculate total quantity including items already in basket
-    const existingItem = currentItems.find(
-      (i) =>
-        i.id === newItem.id &&
-        i.size === newItem.size &&
-        i.color === newItem.color
-    );
+
+    // Calculate total quantity including items already in basket (match by id, size, normalized color)
+    const existingItem = currentItems.find((i) => sameBasketKey(i, newItem));
     const totalQuantity = existingItem
       ? existingItem.quantity + newItem.quantity
       : newItem.quantity;
@@ -133,12 +142,7 @@ export function BasketProvider({ children }: { children: ReactNode }) {
       };
 
       setItems((prevItems) => {
-        const existingIndex = prevItems.findIndex(
-          (i) =>
-            i.id === newItem.id &&
-            i.size === newItem.size &&
-            i.color === newItem.color
-        );
+        const existingIndex = prevItems.findIndex((i) => sameBasketKey(i, newItem));
         if (existingIndex !== -1) {
           const updated = [...prevItems];
           updated[existingIndex].quantity += newItem.quantity;
@@ -148,7 +152,7 @@ export function BasketProvider({ children }: { children: ReactNode }) {
         trackAddToCart();
         return [...prevItems, newItem];
       });
-      
+
       // Verify in background (non-blocking)
       checkStockInBackground(newItem.id, newItem.size, totalQuantity);
       return;
@@ -213,12 +217,7 @@ export function BasketProvider({ children }: { children: ReactNode }) {
 
       // Use functional update to ensure we work with latest state
       setItems((prevItems) => {
-        const existingIndex = prevItems.findIndex(
-          (i) =>
-            i.id === newItem.id &&
-            i.size === newItem.size &&
-            i.color === newItem.color
-        );
+        const existingIndex = prevItems.findIndex((i) => sameBasketKey(i, newItem));
         if (existingIndex !== -1) {
           const updated = [...prevItems];
           updated[existingIndex].quantity += newItem.quantity;

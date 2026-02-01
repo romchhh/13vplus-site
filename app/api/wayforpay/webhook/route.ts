@@ -195,6 +195,7 @@ export async function POST(req: NextRequest) {
 
             // Decrement stock for each item
             for (const item of order.items) {
+              if (item.productId == null) continue;
               const productSize = await tx.productSize.findFirst({
                 where: {
                   productId: item.productId,
@@ -236,7 +237,7 @@ export async function POST(req: NextRequest) {
                 payment_status: "paid",
                 status: order.status,
                 items: order.items.map((item) => ({
-                  product_name: item.product.name,
+                  product_name: item.product?.name ?? "Товар",
                   size: item.size,
                   quantity: item.quantity,
                   price: Number(item.price),

@@ -3,19 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useAppContext } from "@/lib/GeneralProvider";
 import { useBasket } from "@/lib/BasketProvider";
+import { useWishlist } from "@/lib/WishlistProvider";
 import { useCategories } from "@/lib/CategoriesProvider";
 import SidebarBasket from "./SidebarBasket";
 import SidebarSearch from "./SidebarSearch";
 import SidebarMenu from "./SidebarMenu";
-
-interface Category {
-  id: number;
-  name: string;
-  priority: number;
-}
+import LoginModal from "@/components/auth/LoginModal";
 
 interface Subcategory {
   id: number;
@@ -32,9 +28,47 @@ export default function Header() {
     setIsSearchOpen,
   } = useAppContext();
 
+  const { data: session } = useSession();
   const { items } = useBasket();
+  const { wishlist, setWishlist } = useWishlist();
+  const wishlistRef = useRef(wishlist);
+  wishlistRef.current = wishlist;
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const pathname = usePathname();
+
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!session?.user?.email) return;
+    const localIds = wishlistRef.current;
+    fetch("/api/users/wishlist")
+      .then((res) => (res.ok ? res.json() : { productIds: [] }))
+      .then(async (data) => {
+        const serverIds = Array.isArray(data?.productIds) ? data.productIds : [];
+        const toAdd = localIds.filter((id: number) => !serverIds.includes(id));
+        for (const productId of toAdd) {
+          try {
+            await fetch("/api/users/wishlist", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ productId }),
+            });
+          } catch {
+            // ignore
+          }
+        }
+        if (toAdd.length > 0) {
+          const res2 = await fetch("/api/users/wishlist");
+          const data2 = res2.ok ? await res2.json() : { productIds: serverIds };
+          const ids = Array.isArray(data2?.productIds) ? data2.productIds : serverIds;
+          setWishlist(ids);
+        } else {
+          setWishlist(serverIds);
+        }
+      })
+      .catch(() => {});
+    // Тільки при зміні сесії (вхід/вихід), не при кожному рендері
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.email]);
   
   // Use categories from context instead of fetching
   const { categories } = useCategories();
@@ -294,28 +328,122 @@ export default function Header() {
 
             {/* Right Icons */}
             <div className="flex items-center gap-4">
-              <button onClick={() => setIsSearchOpen(true)} className="flex items-center">
+              <button 
+                onClick={() => setIsSearchOpen(true)} 
+                className="flex items-center bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded-full px-4 py-2 transition-colors"
+              >
                 <Image
-                  className="cursor-pointer brightness-0 invert"
-                  height="24"
-                  width="24"
+                  className="cursor-pointer brightness-0 invert h-5 w-5 mr-2"
+                  height="20"
+                  width="20"
                   alt="search icon"
                   src="/images/dark-theme/search.svg"
                 />
+                <span className="text-white text-sm font-['Montserrat']">Пошук</span>
               </button>
+
+              {session ? (
+                <Link href="/profile?tab=wishlist" className="relative flex items-center" title="Вішлист">
+                  <svg
+                    className="w-5 h-5 text-white cursor-pointer"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                    />
+                  </svg>
+                  {wishlist.length > 0 && (
+                    <span className="absolute -bottom-0.5 -right-0.5 text-white text-xs font-['Montserrat'] font-medium">
+                      {wishlist.length > 99 ? "99+" : wishlist.length}
+                    </span>
+                  )}
+                </Link>
+              ) : (
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="relative flex items-center"
+                  title="Вішлист (увійдіть)"
+                >
+                  <svg
+                    className="w-5 h-5 text-white cursor-pointer"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                    />
+                  </svg>
+                  {wishlist.length > 0 && (
+                    <span className="absolute -bottom-0.5 -right-0.5 text-white text-xs font-['Montserrat'] font-medium">
+                      {wishlist.length > 99 ? "99+" : wishlist.length}
+                    </span>
+                  )}
+                </button>
+              )}
+              
+              {/* Profile Icon */}
+              {session ? (
+                <Link href="/profile" className="flex items-center relative">
+                  <div className="relative">
+                    <svg
+                      className="w-5 h-5 text-white cursor-pointer"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border-2 border-black rounded-full"></span>
+                  </div>
+                </Link>
+              ) : (
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="flex items-center"
+                >
+                  <svg
+                    className="w-5 h-5 text-white cursor-pointer"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </button>
+              )}
+              
               <button
                 className="cursor-pointer relative flex items-center"
                 onClick={() => setIsBasketOpen(!isBasketOpen)}
               >
                 <Image
-                  className="brightness-0 invert"
-                  height="30"
-                  width="30"
+                  className="brightness-0 invert h-5 w-5"
+                  height="20"
+                  width="20"
                   alt="shopping basket"
                   src="/images/light-theme/cart.svg"
                 />
                 {totalItems > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -bottom-0.5 -right-0.5 text-white text-xs font-['Montserrat'] font-medium">
                     {totalItems > 99 ? "99+" : totalItems}
                   </span>
                 )}
@@ -329,11 +457,11 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="relative w-8 h-8 flex items-center justify-center text-white"
+              className="relative w-7 h-7 flex items-center justify-center text-white"
             >
               {isSidebarOpen ? (
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -347,7 +475,7 @@ export default function Header() {
                 </svg>
               ) : (
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -389,28 +517,121 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-3 ml-auto">
-            <button onClick={() => setIsSearchOpen(true)} className="flex items-center">
+            <button 
+              onClick={() => setIsSearchOpen(true)} 
+              className="flex items-center bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded-full px-3 py-1.5 transition-colors"
+            >
               <Image
-                height="22"
-                width="22"
+                height="18"
+                width="18"
                 alt="search icon"
                 src="/images/dark-theme/search.svg"
-                className="brightness-0 invert"
+                className="brightness-0 invert h-[18px] w-[18px] mr-1.5"
               />
+              <span className="text-white text-xs font-['Montserrat']">Пошук</span>
             </button>
+            {session ? (
+              <Link href="/profile?tab=wishlist" className="relative flex items-center" title="Вішлист">
+                <svg
+                  className="w-5 h-5 text-white cursor-pointer"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                  />
+                </svg>
+                {wishlist.length > 0 && (
+                  <span className="absolute -bottom-0.5 -right-0.5 text-white text-xs font-['Montserrat'] font-medium">
+                    {wishlist.length > 99 ? "99+" : wishlist.length}
+                  </span>
+                )}
+              </Link>
+            ) : (
+              <button
+                onClick={() => setIsLoginModalOpen(true)}
+                className="relative flex items-center"
+                title="Вішлист (увійдіть)"
+              >
+                <svg
+                  className="w-5 h-5 text-white cursor-pointer"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                  />
+                </svg>
+                {wishlist.length > 0 && (
+                  <span className="absolute -bottom-0.5 -right-0.5 text-white text-xs font-['Montserrat'] font-medium">
+                    {wishlist.length > 99 ? "99+" : wishlist.length}
+                  </span>
+                )}
+              </button>
+            )}
+            
+            {/* Profile Icon Mobile */}
+            {session ? (
+              <Link href="/profile" className="flex items-center relative">
+                <div className="relative">
+                  <svg
+                    className="w-5 h-5 text-white cursor-pointer"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                  <span className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 bg-green-500 border-2 border-black rounded-full"></span>
+                </div>
+              </Link>
+            ) : (
+              <button
+                onClick={() => setIsLoginModalOpen(true)}
+                className="flex items-center"
+              >
+                <svg
+                  className="w-5 h-5 text-white cursor-pointer"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+              </button>
+            )}
+            
             <button
               onClick={() => setIsBasketOpen(!isBasketOpen)}
               className="relative flex items-center"
             >
               <Image
-                height="28"
-                width="28"
+                height="20"
+                width="20"
                 alt="shopping basket"
                 src="/images/light-theme/cart.svg"
-                className="brightness-0 invert"
+                className="brightness-0 invert h-5 w-5"
               />
               {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -bottom-0.5 -right-0.5 text-white text-xs font-['Montserrat'] font-medium">
                   {totalItems > 99 ? "99+" : totalItems}
                 </span>
               )}
@@ -431,6 +652,11 @@ export default function Header() {
       <SidebarSearch
         isOpen={isSearchOpen}
         setIsOpen={setIsSearchOpen}
+      />
+      
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
       />
     </>
   );

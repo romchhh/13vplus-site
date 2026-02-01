@@ -8,8 +8,8 @@ import { useCategories } from "@/lib/CategoriesProvider";
 export default function CategoriesShowcase() {
   const { categories: allCategories, loading } = useCategories();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [, setCanScrollLeft] = useState(false);
+  const [, setCanScrollRight] = useState(true);
   const [isMobile, setIsMobile] = useState(true);
 
   // Filter categories that have media

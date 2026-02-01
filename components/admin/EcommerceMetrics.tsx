@@ -46,8 +46,8 @@ export const EcommerceMetrics = () => {
 
         // Розрахунок передоплати та залишку
         if (orderDetails.payment_type === "prepay") {
-          prepaid += 300;
-          remaining += Math.max(0, orderTotal - 300);
+          prepaid += 200;
+          remaining += Math.max(0, orderTotal - 200);
         } else if (orderDetails.payment_type === "full") {
           prepaid += orderTotal;
           // remaining залишається 0

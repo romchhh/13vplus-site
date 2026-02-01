@@ -65,8 +65,8 @@ function VideoWithAutoplay({ src, className }: { src: string; className?: string
 export default function YouMightLike() {
   const { products: allProducts, loading } = useProducts();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [, setCanScrollLeft] = useState(false);
+  const [, setCanScrollRight] = useState(true);
 
   // Shuffle and pick 4 random products
   const products = useMemo(() => {

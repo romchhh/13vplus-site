@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Montserrat } from "next/font/google";
 import Script from "next/script";
 import "./critical.css";
@@ -10,6 +11,7 @@ import { AppProvider } from "@/lib/GeneralProvider";
 import { BasketProvider } from "@/lib/BasketProvider";
 import { WishlistProvider } from "@/lib/WishlistProvider";
 import { CategoriesProvider } from "@/lib/CategoriesProvider";
+import AuthProvider from "@/lib/AuthProvider";
 import { registerServiceWorker } from "@/lib/registerSW";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { WebVitals } from "@/components/shared/WebVitals";
@@ -56,7 +58,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const baseUrl = process.env.PUBLIC_URL;
+  const baseUrl = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
 
   return (
     <html lang="uk" className={montserrat.className}>
@@ -142,17 +144,21 @@ export default function RootLayout({
           Перейти до основного контенту
         </a>
         <ErrorBoundary>
-          <AppProvider>
-            <BasketProvider>
-              <WishlistProvider>
-                <CategoriesProvider>
-                  <Header />
-                  <MainContent id="main-content">{children}</MainContent>
-                  <Footer />
-                </CategoriesProvider>
-              </WishlistProvider>
-            </BasketProvider>
-          </AppProvider>
+          <AuthProvider>
+            <AppProvider>
+              <BasketProvider>
+                <WishlistProvider>
+                  <CategoriesProvider>
+                    <Header />
+                    <Suspense fallback={<main id="main-content" className="bg-white mt-16 lg:mt-20 min-h-screen" />}>
+                      <MainContent id="main-content">{children}</MainContent>
+                    </Suspense>
+                    <Footer />
+                  </CategoriesProvider>
+                </WishlistProvider>
+              </BasketProvider>
+            </AppProvider>
+          </AuthProvider>
         </ErrorBoundary>
         
         {/* Service Worker registration - loaded after interactive */}

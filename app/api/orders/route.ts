@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
     console.log("[POST /api/orders] Received body:", JSON.stringify(body, null, 2));
 
     const {
+      user_id,
       customer_name,
       phone_number,
       email,
@@ -58,8 +59,11 @@ export async function POST(req: NextRequest) {
       post_office,
       comment,
       payment_type, // "full" або "prepay"
+      bonus_points_to_spend: bonusPointsToSpendRaw,
       items,
     } = body;
+
+    const bonusPointsToSpend = Math.max(0, Math.floor(Number(bonusPointsToSpendRaw) || 0));
 
     console.log("[POST /api/orders] Extracted data:", {
       customer_name,
@@ -185,7 +189,7 @@ export async function POST(req: NextRequest) {
     // Calculate amount to pay based on payment type
     let amountToPay = fullAmount;
     if (payment_type === "prepay") {
-      amountToPay = Math.round(fullAmount * 0.5 * 100) / 100; // 50% передоплата
+      amountToPay = 200; // передоплата 200 грн
     } else if (payment_type === "installment") {
       // For installment, MUST use full amount - banks don't allow installment on partial payments
       amountToPay = fullAmount;
@@ -193,18 +197,40 @@ export async function POST(req: NextRequest) {
       // For crypto, full amount
       amountToPay = fullAmount;
     }
-    
+
+    // Apply bonus points discount (only for logged-in users)
+    let effectiveBonusDeduction = 0;
+    if (bonusPointsToSpend > 0 && user_id) {
+      const user = await prisma.user.findUnique({
+        where: { id: user_id },
+        select: { bonusPoints: true },
+      });
+      if (user) {
+        const maxBonus = Math.min(
+          bonusPointsToSpend,
+          user.bonusPoints,
+          Math.floor(amountToPay)
+        );
+        effectiveBonusDeduction = maxBonus;
+        amountToPay = Math.max(0, amountToPay - maxBonus);
+      }
+    }
+
     console.log("[POST /api/orders] Amount calculation:", {
       fullAmount,
       amountToPay,
       payment_type,
+      bonusPointsToSpend,
+      effectiveBonusDeduction,
     });
 
     // ✅ Зберігання замовлення у БД
     console.log("[POST /api/orders] Saving order to database...");
     const orderId = crypto.randomUUID();
-    
+    const isFullyPaidByBonuses = amountToPay <= 0;
+
     await sqlPostOrder({
+      user_id: user_id || null,
       customer_name,
       phone_number,
       email,
@@ -214,7 +240,7 @@ export async function POST(req: NextRequest) {
       comment,
       payment_type,
       invoice_id: orderId,
-      payment_status: "pending",
+      payment_status: isFullyPaidByBonuses ? "paid" : "pending",
       items: normalizedItems.map(
         ({ product_id, size, quantity, price, color }) => ({
           product_id,
@@ -226,6 +252,27 @@ export async function POST(req: NextRequest) {
       ),
     });
     console.log("[POST /api/orders] Order saved to database successfully");
+
+    // Deduct bonus points from user if any were used
+    if (effectiveBonusDeduction > 0 && user_id) {
+      await prisma.user.update({
+        where: { id: user_id },
+        data: {
+          bonusPoints: { decrement: effectiveBonusDeduction },
+        },
+      });
+      console.log("[POST /api/orders] Deducted", effectiveBonusDeduction, "bonus points from user");
+    }
+
+    // When fully paid by bonuses - redirect to success (no payment gateway needed)
+    if (isFullyPaidByBonuses) {
+      const PUBLIC_URL_FULL = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
+      return NextResponse.json({
+        success: true,
+        orderId,
+        invoiceUrl: `${PUBLIC_URL_FULL}/success?orderReference=${orderId}`,
+      });
+    }
 
     // ✅ Створення платежу через WayForPay (якщо не крипта)
     if (payment_type !== "crypto") {
@@ -243,7 +290,10 @@ export async function POST(req: NextRequest) {
 
         const merchantAccount = process.env.MERCHANT_ACCOUNT || process.env.WAYFORPAY_MERCHANT_ACCOUNT;
         const merchantSecret = process.env.MERCHANT_SECRET || process.env.WAYFORPAY_MERCHANT_SECRET;
-        const merchantDomainName = process.env.MERCHANT_DOMAIN || process.env.WAYFORPAY_MERCHANT_DOMAIN || "13vplus.com";
+        // Use localhost for local development, production domain otherwise
+        const merchantDomainName = PUBLIC_URL_FULL.includes("localhost") 
+          ? "localhost" 
+          : (process.env.MERCHANT_DOMAIN || process.env.WAYFORPAY_MERCHANT_DOMAIN || "13vplus.com");
 
         if (!merchantAccount || !merchantSecret) {
           console.error("[POST /api/orders] Missing WayForPay credentials");
@@ -379,6 +429,7 @@ export async function POST(req: NextRequest) {
         }
 
         // For full payment and prepay, use the working method
+        console.log(`[POST /api/orders] Creating payment for type: ${payment_type}`);
         // Import WayForPay utilities
         const { generatePurchaseSignature } = await import("@/lib/wayforpay");
 
@@ -397,8 +448,9 @@ export async function POST(req: NextRequest) {
         });
 
         // Prepare payment data
-        const paymentData: Record<string, string | number> = {
+        const paymentData: Record<string, string | number | string[] | number[]> = {
           merchantAccount,
+          merchantAuthType: "SimpleSignature",
           merchantDomainName,
           merchantTransactionType: "AUTO",
           merchantTransactionSecureType: "AUTO",
@@ -409,14 +461,10 @@ export async function POST(req: NextRequest) {
           orderDate,
           amount: amountToPay.toFixed(2),
           currency: "UAH",
+          productName: productNames,
+          productCount: productCounts,
+          productPrice: productPrices.map((p: number) => p.toFixed(2)),
         };
-
-        // Add product arrays
-        productNames.forEach((name: string, index: number) => {
-          paymentData[`productName[${index}]`] = name;
-          paymentData[`productCount[${index}]`] = productCounts[index];
-          paymentData[`productPrice[${index}]`] = productPrices[index].toFixed(2);
-        });
 
         // Add customer info
         if (customer_name) {
@@ -443,6 +491,7 @@ export async function POST(req: NextRequest) {
         console.log(
           "[POST /api/orders] WayForPay payment data created successfully"
         );
+        console.log("[POST /api/orders] Payment data:", JSON.stringify(paymentData, null, 2));
 
         console.log("[POST /api/orders] Returning response with payment data");
         console.log("[POST /api/orders] Successfully completed order creation");
@@ -474,7 +523,7 @@ export async function POST(req: NextRequest) {
     // ✅ Створення платежу через Plisio для криптоплатежів
     if (payment_type === "crypto") {
       try {
-        const PUBLIC_URL = process.env.PUBLIC_URL;
+        const PUBLIC_URL = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
 
         // Create Plisio invoice
         const plisioResponse = await fetch(

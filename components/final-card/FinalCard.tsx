@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useBasket } from "@/lib/BasketProvider";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -9,23 +10,52 @@ import "swiper/css";
 import "swiper/css/navigation";
 import { Mousewheel } from "swiper/modules";
 import "swiper/css/scrollbar";
+import LoginModal from "@/components/auth/LoginModal";
 
-// interface Product {
-//   id: number;
-//   name: string;
-//   description: string;
-//   price: number;
-//   created_at: Date;
-//   sizes: { size: string }[];
-//   top_sale?: boolean;
-//   limited_edition?: boolean;
-//   season?: string;
-//   category_name?: string;
-// }
+/** Calculate order subtotal from basket items */
+function getSubtotal(items: { price: number | string; quantity: number; discount_percentage?: number | string }[]) {
+  return items.reduce((total, item) => {
+    const itemPrice = typeof item.price === "string" ? parseFloat(item.price) : item.price;
+    const discount = item.discount_percentage
+      ? typeof item.discount_percentage === "string"
+        ? parseFloat(item.discount_percentage)
+        : item.discount_percentage
+      : 0;
+    const price = discount > 0 ? itemPrice * (1 - discount / 100) : itemPrice;
+    return total + price * item.quantity;
+  }, 0);
+}
 
 export default function FinalCard() {
   // GENERAL
   const { items, updateQuantity, removeItem, clearBasket } = useBasket();
+  const { data: session, status } = useSession();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch by only rendering after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Fetch bonus points when user is logged in
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetch("/api/users/profile")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data?.bonusPoints != null) {
+            const bp = Number(data.bonusPoints);
+            setBonusPoints(bp);
+            setBonusPointsToSpend((prev) => Math.min(prev, bp));
+          }
+        })
+        .catch(() => {});
+    } else {
+      setBonusPoints(0);
+      setBonusPointsToSpend(0);
+    }
+  }, [session?.user?.email]);
 
   // CUSTOMER
   const [customerName, setCustomerName] = useState("");
@@ -70,6 +100,8 @@ export default function FinalCard() {
 
   const [comment, setComment] = useState("");
   const [paymentType, setPaymentType] = useState("");
+  const [bonusPoints, setBonusPoints] = useState(0);
+  const [bonusPointsToSpend, setBonusPointsToSpend] = useState(0);
   
   // Form validation states
   const [fieldErrors, setFieldErrors] = useState<{
@@ -245,7 +277,8 @@ export default function FinalCard() {
       !phoneNumber ||
       !deliveryMethod ||
       !city ||
-      !postOffice
+      !postOffice ||
+      !paymentType
     ) {
       setError("Будь ласка, заповніть усі обов’язкові поля.");
       setLoading(false);
@@ -322,21 +355,22 @@ export default function FinalCard() {
     });
 
     // Підрахунок суми до оплати (з урахуванням знижки)
-    const fullAmount = items.reduce((total, item) => {
-      // Перетворюємо ціну в число
-      const itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
-      const discount = item.discount_percentage 
-        ? (typeof item.discount_percentage === 'string' ? parseFloat(item.discount_percentage) : item.discount_percentage)
-        : 0;
-      
-      const price = discount > 0
-        ? itemPrice * (1 - discount / 100)
-        : itemPrice;
-      return total + price * item.quantity;
-    }, 0);
+    const subtotal = getSubtotal(items);
+    const effectiveBonus = Math.min(
+      bonusPointsToSpend,
+      bonusPoints,
+      Math.floor(subtotal)
+    );
+    const fullAmount = subtotal - effectiveBonus;
 
     try {
+      const profileData = session?.user?.email
+        ? await fetch("/api/users/profile").then((r) => (r.ok ? r.json() : null))
+        : null;
+      const userId = profileData?.id ?? null;
+
       const requestBody = {
+        user_id: userId,
         customer_name: customerName,
         phone_number: phoneNumber,
         email: email || null,
@@ -346,6 +380,7 @@ export default function FinalCard() {
         comment,
         payment_type: paymentType,
         total_amount: fullAmount.toFixed(2),
+        bonus_points_to_spend: effectiveBonus,
         items: apiItems,
       };
       
@@ -357,9 +392,6 @@ export default function FinalCard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
-
-      console.log("[FinalCard] Response status:", response.status);
-      console.log("[FinalCard] Response ok:", response.ok);
 
       if (!response.ok) {
         const data = await response.json();
@@ -379,14 +411,8 @@ export default function FinalCard() {
         return;
       } else {
         const data = await response.json();
-        console.log("[FinalCard] Success response:", data);
         
         const { orderId, invoiceUrl, paymentUrl, paymentData } = data;
-        
-        console.log("[FinalCard] Order ID:", orderId);
-        console.log("[FinalCard] Invoice URL:", invoiceUrl);
-        console.log("[FinalCard] Payment URL:", paymentUrl);
-        console.log("[FinalCard] Payment Data:", paymentData);
 
         if (!orderId) {
           console.error("[FinalCard] No order ID received!");
@@ -501,11 +527,23 @@ export default function FinalCard() {
                 form.acceptCharset = "utf-8";
                 
                 Object.entries(paymentData).forEach(([key, value]) => {
-                  const input = document.createElement("input");
-                  input.type = "hidden";
-                  input.name = key;
-                  input.value = String(value);
-                  form.appendChild(input);
+                  if (Array.isArray(value)) {
+                    // For arrays (productName, productCount, productPrice)
+                    value.forEach((item, index) => {
+                      const input = document.createElement("input");
+                      input.type = "hidden";
+                      input.name = `${key}[${index}]`;
+                      input.value = String(item);
+                      form.appendChild(input);
+                    });
+                  } else {
+                    // For regular fields
+                    const input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = key;
+                    input.value = String(value);
+                    form.appendChild(input);
+                  }
                 });
                 
                 document.body.appendChild(form);
@@ -536,14 +574,15 @@ export default function FinalCard() {
           // Should not happen, but just in case
           setSuccess("Замовлення успішно оформлено! Ми зв'яжемося з вами найближчим часом.");
           clearBasket();
+          setLoading(false);
         }
       }
     } catch (error) {
       console.error("[FinalCard] Network error:", error);
       setError("Помилка мережі. Спробуйте пізніше.");
-    } finally {
       setLoading(false);
     }
+    // Note: Don't set loading to false in finally block, as it would interfere with payment redirect
   };
 
   useEffect(() => {
@@ -654,6 +693,29 @@ export default function FinalCard() {
       setLoadingPostOffices(false);
     }
   }, [district]);
+
+  // Автозаповнення полів з профілю користувача
+  useEffect(() => {
+    if (session?.user?.email && status === "authenticated") {
+      fetch("/api/users/profile")
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          if (data) {
+            if (data.name) setCustomerName(data.name);
+            if (data.email) setEmail(data.email);
+            if (data.phone) setPhoneNumber(data.phone);
+            if (data.address) {
+              const commaIdx = data.address.indexOf(", ");
+              if (commaIdx > 0) {
+                setCity(data.address.slice(0, commaIdx));
+                setPostOffice(data.address.slice(commaIdx + 2));
+              }
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [session, status]);
 
   useEffect(() => {
     // Fetch available cities when delivery method changes to Nova Poshta
@@ -1004,7 +1066,11 @@ export default function FinalCard() {
 
   return (
     <section className="max-w-[1922px] w-full mx-auto relative overflow-hidden px-4 sm:px-6 lg:px-8">
-      {items.length == 0 ? (
+      {!mounted ? (
+        <div className="py-12 px-4 sm:py-20 flex items-center justify-center w-full min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        </div>
+      ) : items.length == 0 ? (
         <div className="py-12 px-4 sm:py-20 flex flex-col items-center gap-10 sm:gap-14 w-full max-w-2xl mx-auto">
           <Image
             src="/images/light-theme/order.svg"
@@ -1031,6 +1097,24 @@ export default function FinalCard() {
 
             <div className="w-full sm:w-1/4"></div>
           </div>
+
+          {!session && (
+            <div className="flex flex-col sm:flex-row justify-center gap-10 sm:gap-50 mb-6">
+              <div className="w-full sm:w-1/3 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm font-['Montserrat'] text-gray-700 mb-3">
+                  Маєте акаунт? Увійдіть, щоб автоматично заповнити дані та відстежувати замовлення.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="w-full bg-black text-white px-4 py-2.5 rounded-md font-medium text-sm hover:bg-gray-800 transition-colors"
+                >
+                  Увійти або зареєструватися
+                </button>
+              </div>
+              <div className="w-full sm:w-1/4"></div>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row justify-center gap-10 sm:gap-50">
             <form
@@ -1368,7 +1452,7 @@ export default function FinalCard() {
                 >
                   <option value="">Оберіть спосіб оплати</option>
                   <option value="full">Повна оплата</option>
-                  <option value="prepay">Передоплата 50%</option>
+                  <option value="prepay">Передоплата 200 грн</option>
                   <option value="installment">В розсрочку</option>
                   <option value="crypto">Крипта (USDT, BTC та інші)</option>
                 </select>
@@ -1376,6 +1460,33 @@ export default function FinalCard() {
                   <p className="text-red-500 text-xs mt-1">{fieldErrors.paymentType}</p>
                 )}
               </div>
+
+              {/* Bonus points - only for logged-in users with bonuses (списати можна тільки всі) */}
+              {session && bonusPoints > 0 && items.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700 flex items-center gap-2">
+                    Бонусні бали
+                  </label>
+                  <div className="border border-gray-300 rounded-md px-3 py-2.5 bg-gray-50">
+                    <p className="text-sm text-gray-600 mb-2">
+                      У вас: <span className="font-semibold text-gray-900">{bonusPoints}</span> бонусів (1 бонус = 1 ₴)
+                    </p>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={bonusPointsToSpend > 0}
+                        onChange={(e) => {
+                          const useAll = e.target.checked;
+                          const maxSpendable = Math.min(bonusPoints, Math.floor(getSubtotal(items)));
+                          setBonusPointsToSpend(useAll ? maxSpendable : 0);
+                        }}
+                        className="rounded border-gray-300 text-black focus:ring-black"
+                      />
+                      <span className="text-sm text-gray-700">Використати всі бонуси</span>
+                    </label>
+                  </div>
+                </div>
+              )}
 
               <button
                 className="bg-black text-white px-4 py-3 rounded-md mt-2 mb-6 font-medium text-sm sm:text-base hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1496,29 +1607,21 @@ export default function FinalCard() {
               )}
 
               {/* Total price container */}
-              <div className="pt-2 mt-2 mb-6 md:mb-0">
-                <div className="flex justify-between items-center text-lg font-semibold whitespace-nowrap gap-4">
+              <div className="pt-2 mt-2 mb-6 md:mb-0 space-y-1">
+                <div className="flex justify-between items-center text-base text-gray-600">
+                  <span>Сума товарів:</span>
+                  <span>{getSubtotal(items).toFixed(2)} ₴</span>
+                </div>
+                {session && bonusPointsToSpend > 0 && (
+                  <div className="flex justify-between items-center text-base text-green-600">
+                    <span>Списано бонусів:</span>
+                    <span>-{bonusPointsToSpend} ₴</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-lg font-semibold whitespace-nowrap gap-4 pt-2">
                   <span>До сплати:</span>
                   <span className="text-[#8C7461]">
-                    {items
-                      .reduce((total, item) => {
-                        const itemPrice =
-                          typeof item.price === "string"
-                            ? parseFloat(item.price)
-                            : item.price;
-                        const discount = item.discount_percentage
-                          ? typeof item.discount_percentage === "string"
-                            ? parseFloat(item.discount_percentage)
-                            : item.discount_percentage
-                          : 0;
-                        const price =
-                          discount > 0
-                            ? itemPrice * (1 - discount / 100)
-                            : itemPrice;
-                        return total + price * item.quantity;
-                      }, 0)
-                      .toFixed(2)}{" "}
-                    ₴
+                    {(getSubtotal(items) - Math.min(bonusPointsToSpend, bonusPoints, Math.floor(getSubtotal(items)))).toFixed(2)} ₴
                   </span>
                 </div>
               </div>
@@ -1526,6 +1629,7 @@ export default function FinalCard() {
           </div>
         </>
       )}
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} redirectAfterLogin="/final" />
     </section>
   );
 }

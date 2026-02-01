@@ -29,7 +29,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { category } = await params;
   const decodedCategory = decodeURIComponent(category);
-  const baseUrl = process.env.PUBLIC_URL;
+  const baseUrl = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
   
   const title = `${decodedCategory} | Каталог | 13VPLUS`;
   const description = `Каталог товарів категорії "${decodedCategory}" від 13VPLUS. Якісний жіночий одяг з індивідуальним пошивом.`;

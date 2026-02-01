@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { unlink } from "fs/promises";
 import path from "path";
@@ -744,7 +745,7 @@ export async function sqlGetOrder(id: number) {
       id: item.id,
       order_id: item.orderId,
       product_id: item.productId,
-      product_name: item.product.name,
+      product_name: item.product?.name || `Product #${item.productId}`,
       size: item.size,
       quantity: item.quantity,
       price: Number(item.price),
@@ -754,6 +755,7 @@ export async function sqlGetOrder(id: number) {
 }
 
 type OrderInput = {
+  user_id?: string | null;
   customer_name: string;
   phone_number: string;
   email?: string;
@@ -776,29 +778,31 @@ type OrderInput = {
 export async function sqlPostOrder(order: OrderInput) {
   // Transaction: create order and insert items (stock will be decremented after payment confirmation)
   return await prisma.$transaction(async (tx) => {
-    // Create order
-    const created = await tx.order.create({
-      data: {
-        customerName: order.customer_name,
-        phoneNumber: order.phone_number,
-        email: order.email || null,
-        deliveryMethod: order.delivery_method,
-        city: order.city,
-        postOffice: order.post_office,
-        comment: order.comment || null,
-        paymentType: order.payment_type,
-        invoiceId: order.invoice_id,
-        paymentStatus: order.payment_status,
-        items: {
-          create: order.items.map((item) => ({
-            productId: item.product_id,
-            size: item.size,
-            quantity: item.quantity,
-            price: item.price,
-            color: item.color || null,
-          })),
-        },
+    const orderData: Prisma.OrderCreateInput = {
+      customerName: order.customer_name,
+      phoneNumber: order.phone_number,
+      email: order.email || null,
+      deliveryMethod: order.delivery_method,
+      city: order.city,
+      postOffice: order.post_office,
+      comment: order.comment || null,
+      paymentType: order.payment_type,
+      invoiceId: order.invoice_id,
+      paymentStatus: order.payment_status,
+      ...(order.user_id ? { user: { connect: { id: order.user_id } } } : {}),
+      items: {
+        create: order.items.map((item) => ({
+          productId: item.product_id,
+          size: item.size,
+          quantity: item.quantity,
+          price: item.price,
+          color: item.color || null,
+        })),
       },
+    };
+
+    const created = await tx.order.create({
+      data: orderData,
     });
 
     return { orderId: created.id };
@@ -838,7 +842,7 @@ export async function sqlGetOrderItems(orderId: number) {
     id: item.id,
     order_id: item.orderId,
     product_id: item.productId,
-    product_name: item.product.name,
+    product_name: item.product?.name || `Product #${item.productId}`,
     size: item.size,
     quantity: item.quantity,
     price: Number(item.price),
@@ -873,7 +877,7 @@ export async function sqlPostOrderItem(item: {
     id: created.id,
     order_id: created.orderId,
     product_id: created.productId,
-    product_name: created.product.name,
+    product_name: created.product?.name || `Product #${created.productId}`,
     size: created.size,
     quantity: created.quantity,
     price: Number(created.price),
@@ -910,7 +914,7 @@ export async function sqlPutOrderItem(
     id: updated.id,
     order_id: updated.orderId,
     product_id: updated.productId,
-    product_name: updated.product.name,
+    product_name: updated.product?.name || `Product #${updated.productId}`,
     size: updated.size,
     quantity: updated.quantity,
     price: Number(updated.price),
@@ -936,7 +940,7 @@ export async function sqlUpdatePaymentStatus(
   });
 }
 
-// Get order by invoice ID for webhook processing
+// Get order by invoice ID for webhook processing (same imageUrl shape as basket/FinalCard)
 export async function sqlGetOrderByInvoiceId(invoiceId: string) {
   const order = await prisma.order.findUnique({
     where: { invoiceId },
@@ -944,7 +948,14 @@ export async function sqlGetOrderByInvoiceId(invoiceId: string) {
       items: {
         include: {
           product: {
-            select: { name: true },
+            select: {
+              name: true,
+              media: {
+                orderBy: { id: "asc" },
+                take: 5,
+                select: { url: true, type: true },
+              },
+            },
           },
         },
       },
@@ -965,13 +976,19 @@ export async function sqlGetOrderByInvoiceId(invoiceId: string) {
     payment_type: order.paymentType,
     payment_status: order.paymentStatus,
     created_at: order.createdAt,
-    items: order.items.map((item) => ({
-      product_name: item.product.name,
-      size: item.size,
-      quantity: item.quantity,
-      price: Number(item.price),
-      color: item.color,
-    })),
+    items: order.items.map((item) => {
+      const product = item.product as { name: string; media?: { url: string; type: string }[] } | null;
+      const firstPhoto = product?.media?.find((m) => m.type === "photo");
+      const imageUrl = firstPhoto?.url ?? product?.media?.[0]?.url ?? null;
+      return {
+        product_name: product?.name || `Product #${item.productId}`,
+        size: item.size,
+        quantity: item.quantity,
+        price: Number(item.price),
+        color: item.color,
+        imageUrl,
+      };
+    }),
   };
 }
 
