@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack && npm run compress && npm run optimize",
+    "build": "prisma generate && next build --turbopack && npm run compress && npm run optimize",
     "build:analyze": "ANALYZE=true npm run build",
     "build:fast": "next build --turbopack",
     "compress": "gzip -k -f .next/static/**/*.js .next/static/**/*.css || true",
