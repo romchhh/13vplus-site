@@ -6,7 +6,7 @@ import { revalidateTag } from 'next/cache';
  */
 export async function revalidateProducts() {
   'use server';
-  revalidateTag('products');
+  revalidateTag('products', {});
 }
 
 /**
@@ -15,7 +15,7 @@ export async function revalidateProducts() {
  */
 export async function revalidateCategories() {
   'use server';
-  revalidateTag('categories');
+  revalidateTag('categories', {});
 }
 
 /**
@@ -23,6 +23,6 @@ export async function revalidateCategories() {
  */
 export async function revalidateAll() {
   'use server';
-  revalidateTag('products');
-  revalidateTag('categories');
+  revalidateTag('products', {});
+  revalidateTag('categories', {});
 }
