@@ -9,7 +9,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -19,15 +19,16 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid productId" }, { status: 400 });
     }
 
-    const user = await (prisma as { user: { findUnique: (args: unknown) => Promise<{ id: string } | null> } }).user.findUnique({
-      where: { email: session.user.email },
+    const userId = (session.user as { id?: string }).id;
+    const user = await prisma.user.findUnique({
+      where: userId ? { id: userId } : { email: session.user.email ?? undefined },
       select: { id: true },
     });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    await (prisma as { wishlist: { deleteMany: (args: unknown) => Promise<unknown> } }).wishlist.deleteMany({
+    await prisma.wishlist.deleteMany({
       where: { userId: user.id, productId: id },
     });
     return NextResponse.json({ removed: true });

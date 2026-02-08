@@ -763,9 +763,11 @@ type OrderInput = {
   city: string;
   post_office: string;
   comment?: string;
-  payment_type: "prepay" | "full";
+  payment_type: "prepay" | "full" | "pay_after" | "test_payment" | "installment" | "crypto";
   invoice_id: string;
   payment_status: "pending" | "paid" | "canceled";
+  bonus_points_spent?: number;
+  loyalty_discount_amount?: number;
   items: {
     product_id: number;
     size: string;
@@ -776,36 +778,62 @@ type OrderInput = {
 };
 
 export async function sqlPostOrder(order: OrderInput) {
-  // Transaction: create order and insert items (stock will be decremented after payment confirmation)
+  // Transaction: create order and insert items. Використовуємо raw INSERT, щоб не залежати від колонок
+  // bonus_points_spent та loyalty_discount_amount, яких може не бути в БД до застосування міграцій.
   return await prisma.$transaction(async (tx) => {
-    const orderData: Prisma.OrderCreateInput = {
-      customerName: order.customer_name,
-      phoneNumber: order.phone_number,
-      email: order.email || null,
-      deliveryMethod: order.delivery_method,
-      city: order.city,
-      postOffice: order.post_office,
-      comment: order.comment || null,
-      paymentType: order.payment_type,
-      invoiceId: order.invoice_id,
-      paymentStatus: order.payment_status,
-      ...(order.user_id ? { user: { connect: { id: order.user_id } } } : {}),
-      items: {
-        create: order.items.map((item) => ({
+    let rows: [{ id: number }];
+    try {
+      rows = await tx.$queryRaw<[{ id: number }]>`
+        INSERT INTO orders (customer_name, phone_number, email, delivery_method, city, post_office, comment, payment_type, invoice_id, payment_status, user_id)
+        VALUES (${order.customer_name}, ${order.phone_number}, ${order.email ?? null}, ${order.delivery_method}, ${order.city}, ${order.post_office}, ${order.comment ?? null}, ${order.payment_type}, ${order.invoice_id}, ${order.payment_status}, ${order.user_id ?? null})
+        RETURNING id
+      `;
+    } catch (err) {
+      const msg = String((err as Error).message ?? "");
+      if (msg.includes("user_id") && msg.includes("does not exist")) {
+        rows = await tx.$queryRaw<[{ id: number }]>`
+          INSERT INTO orders (customer_name, phone_number, email, delivery_method, city, post_office, comment, payment_type, invoice_id, payment_status)
+          VALUES (${order.customer_name}, ${order.phone_number}, ${order.email ?? null}, ${order.delivery_method}, ${order.city}, ${order.post_office}, ${order.comment ?? null}, ${order.payment_type}, ${order.invoice_id}, ${order.payment_status})
+          RETURNING id
+        `;
+      } else {
+        throw err;
+      }
+    }
+    const createdId = rows[0].id;
+
+    for (const item of order.items) {
+      await tx.orderItem.create({
+        data: {
+          orderId: createdId,
           productId: item.product_id,
           size: item.size,
           quantity: item.quantity,
           price: item.price,
-          color: item.color || null,
-        })),
-      },
-    };
+          color: item.color ?? null,
+        },
+      });
+    }
 
-    const created = await tx.order.create({
-      data: orderData,
-    });
+    const bonusSpent = order.bonus_points_spent ?? 0;
+    if (bonusSpent > 0) {
+      try {
+        await tx.$executeRaw`UPDATE orders SET bonus_points_spent = ${bonusSpent} WHERE id = ${createdId}`;
+      } catch {
+        // Колонка bonus_points_spent може відсутня
+      }
+    }
 
-    return { orderId: created.id };
+    const loyaltyDiscount = order.loyalty_discount_amount ?? 0;
+    if (loyaltyDiscount > 0) {
+      try {
+        await tx.$executeRaw`UPDATE orders SET loyalty_discount_amount = ${loyaltyDiscount} WHERE id = ${createdId}`;
+      } catch {
+        // Колонка loyalty_discount_amount може відсутня
+      }
+    }
+
+    return { orderId: createdId };
   });
 }
 
@@ -966,6 +994,7 @@ export async function sqlGetOrderByInvoiceId(invoiceId: string) {
 
   return {
     id: order.id,
+    invoice_id: order.invoiceId,
     customer_name: order.customerName,
     phone_number: order.phoneNumber,
     email: order.email,

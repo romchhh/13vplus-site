@@ -7,12 +7,13 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.email) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const userId = (session.user as { id?: string }).id;
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: userId ? { id: userId } : { email: session.user.email ?? undefined },
     });
 
     if (!user) {
@@ -20,7 +21,7 @@ export async function GET() {
     }
 
     const orders = await prisma.order.findMany({
-      where: { userId: user.id, paymentStatus: "paid" },
+      where: { userId: user.id },
       include: {
         items: {
           include: {

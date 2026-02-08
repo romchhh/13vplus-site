@@ -6,15 +6,16 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const full = searchParams.get("full") === "1";
 
-    const user = await (prisma as { user: { findUnique: (args: unknown) => Promise<{ id: string } | null> } }).user.findUnique({
-      where: { email: session.user.email },
+    const userId = (session.user as { id?: string }).id;
+    const user = await prisma.user.findUnique({
+      where: userId ? { id: userId } : { email: session.user.email ?? undefined },
       select: { id: true },
     });
     if (!user) {
@@ -85,15 +86,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid productId" }, { status: 400 });
     }
 
-    const user = await (prisma as { user: { findUnique: (args: unknown) => Promise<{ id: string } | null> } }).user.findUnique({
-      where: { email: session.user.email },
+    const userIdFromSession = (session.user as { id?: string }).id;
+    const user = await prisma.user.findUnique({
+      where: userIdFromSession ? { id: userIdFromSession } : { email: session.user.email ?? undefined },
       select: { id: true },
     });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    await (prisma as { wishlist: { create: (args: unknown) => Promise<unknown> } }).wishlist.create({
+    await prisma.wishlist.create({
       data: { userId: user.id, productId },
     });
     return NextResponse.json({ productId });

@@ -24,7 +24,8 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    if (order.payment_status !== "paid") {
+    // Післяоплата — замовлення вже оформлено, показуємо його без очікування оплати
+    if (order.payment_status !== "paid" && order.payment_type !== "pay_after") {
       return NextResponse.json(
         { error: "Payment not completed", payment_status: order.payment_status },
         { status: 409 }

@@ -57,11 +57,6 @@ export default function UserDetailPage() {
   const [user, setUser] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [bonusSaving, setBonusSaving] = useState(false);
-  const [addBonusValue, setAddBonusValue] = useState("");
-  const [setBonusValue, setSetBonusValue] = useState("");
-  const [bonusMessage, setBonusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
   const fetchUser = async () => {
     if (!userId) return;
     try {
@@ -87,58 +82,6 @@ export default function UserDetailPage() {
     fetchUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchUser is stable, only re-run when userId changes
   }, [userId]);
-
-  const handleAddBonus = async () => {
-    const value = parseInt(addBonusValue, 10);
-    if (isNaN(value) || value <= 0) {
-      setBonusMessage({ type: "error", text: "Введіть додатне число" });
-      return;
-    }
-    setBonusSaving(true);
-    setBonusMessage(null);
-    try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ addBonusPoints: value }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Помилка");
-      setUser((prev) => (prev ? { ...prev, bonusPoints: data.bonusPoints } : null));
-      setAddBonusValue("");
-      setBonusMessage({ type: "success", text: `Додано ${value} балів. Всього: ${data.bonusPoints}` });
-    } catch (err) {
-      setBonusMessage({ type: "error", text: err instanceof Error ? err.message : "Помилка збереження" });
-    } finally {
-      setBonusSaving(false);
-    }
-  };
-
-  const handleSetBonus = async () => {
-    const value = parseInt(setBonusValue, 10);
-    if (isNaN(value) || value < 0) {
-      setBonusMessage({ type: "error", text: "Введіть невід'ємне число" });
-      return;
-    }
-    setBonusSaving(true);
-    setBonusMessage(null);
-    try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bonusPoints: value }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Помилка");
-      setUser((prev) => (prev ? { ...prev, bonusPoints: data.bonusPoints } : null));
-      setSetBonusValue("");
-      setBonusMessage({ type: "success", text: `Встановлено: ${data.bonusPoints} балів` });
-    } catch (err) {
-      setBonusMessage({ type: "error", text: err instanceof Error ? err.message : "Помилка збереження" });
-    } finally {
-      setBonusSaving(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -229,10 +172,6 @@ export default function UserDetailPage() {
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">Бонусні бали</dt>
-              <dd className="mt-1 text-sm font-medium text-blue-600">{user.bonusPoints}</dd>
-            </div>
-            <div>
               <dt className="text-sm font-medium text-gray-500">Дата реєстрації</dt>
               <dd className="mt-1 text-sm text-gray-900">
                 {new Date(user.createdAt).toLocaleString("uk-UA")}
@@ -246,77 +185,6 @@ export default function UserDetailPage() {
                 </dd>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Керування бонусними балами */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h2 className="text-lg font-semibold text-gray-900">Бонусні бали</h2>
-          </div>
-          <div className="p-6 space-y-4">
-            <p className="text-sm text-gray-600">
-              Поточний баланс: <span className="font-semibold text-blue-600">{user.bonusPoints}</span> балів
-            </p>
-            {bonusMessage && (
-              <div
-                className={`rounded-lg px-4 py-2 text-sm ${
-                  bonusMessage.type === "success"
-                    ? "bg-green-50 text-green-800"
-                    : "bg-red-50 text-red-800"
-                }`}
-              >
-                {bonusMessage.text}
-              </div>
-            )}
-            <div className="flex flex-wrap items-end gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Додати бали
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    value={addBonusValue}
-                    onChange={(e) => setAddBonusValue(e.target.value.replace(/\D/g, ""))}
-                    placeholder="0"
-                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddBonus}
-                    disabled={bonusSaving}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {bonusSaving ? "..." : "Додати"}
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Встановити бали
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min="0"
-                    value={setBonusValue}
-                    onChange={(e) => setSetBonusValue(e.target.value.replace(/\D/g, ""))}
-                    placeholder={String(user.bonusPoints)}
-                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSetBonus}
-                    disabled={bonusSaving}
-                    className="px-4 py-2 bg-gray-700 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50"
-                  >
-                    {bonusSaving ? "..." : "Зберегти"}
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 

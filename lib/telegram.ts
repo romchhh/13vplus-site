@@ -32,6 +32,8 @@ function formatOrderMessage(order: OrderData, isPaid: boolean = false): string {
   const paymentTypeMap: Record<string, string> = {
     full: "Повна оплата",
     prepay: "Передоплата 200 грн",
+    pay_after: "Оплата після (при отриманні)",
+    test_payment: "Тест оплата (імітація)",
     installment: "Розстрочка",
     crypto: "Криптовалюта",
   };

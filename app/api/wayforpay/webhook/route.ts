@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyWebhookSignature, generateWebhookResponseSignature } from "@/lib/wayforpay";
 import { prisma } from "@/lib/prisma";
 import { sendOrderNotification } from "@/lib/telegram";
+import { creditBonusesForPaidOrder, type OrderForBonusCredit } from "@/lib/loyalty";
 
 // CRITICAL: These config options disable Server Actions for this route
 export const runtime = "nodejs";
@@ -173,6 +174,7 @@ export async function POST(req: NextRequest) {
         const order = await prisma.order.findFirst({
           where: { invoiceId: orderReference },
           include: {
+            user: { select: { birthDate: true } },
             items: {
               include: {
                 product: { select: { name: true } },
@@ -250,6 +252,13 @@ export async function POST(req: NextRequest) {
             console.log(`[WayForPay Webhook] ✓ Telegram notification sent`);
           } catch (telegramError) {
             console.error("[WayForPay Webhook] Telegram error:", telegramError);
+          }
+          // Нарахування бонусів за оплачене замовлення
+          try {
+            const { credited } = await creditBonusesForPaidOrder(prisma, order as unknown as OrderForBonusCredit);
+            if (credited > 0) console.log(`[WayForPay Webhook] ✓ Credited ${credited} bonus points`);
+          } catch (bonusErr) {
+            console.error("[WayForPay Webhook] Bonus credit error:", bonusErr);
           }
         } else {
           console.warn(`[WayForPay Webhook] Order ${orderReference} not found`);

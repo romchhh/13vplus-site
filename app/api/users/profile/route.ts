@@ -7,12 +7,13 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.email) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const userId = (session.user as { id?: string }).id;
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: userId ? { id: userId } : { email: session.user.email ?? undefined },
       select: {
         id: true,
         name: true,
@@ -44,22 +45,27 @@ export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.email) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
     const { name, email, phone, address, clothingSize, birthDate } = body;
 
+    const userId = (session.user as { id?: string }).id;
+    const where = userId ? { id: userId } : { email: session.user.email ?? undefined };
+    const existing = await prisma.user.findUnique({ where, select: { birthDate: true } });
+    const birthDateToSet =
+      existing?.birthDate != null ? undefined : birthDate ? new Date(birthDate) : null;
     const user = await prisma.user.update({
-      where: { email: session.user.email },
+      where,
       data: {
         name: name || null,
         email: email || session.user.email,
         phone: phone || null,
         address: address || null,
         clothingSize: clothingSize || null,
-        birthDate: birthDate ? new Date(birthDate) : null,
+        ...(birthDateToSet !== undefined && { birthDate: birthDateToSet }),
       },
       select: {
         id: true,

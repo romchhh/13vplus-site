@@ -280,11 +280,25 @@ function PaymentSuccessContent() {
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left">
             <p className="text-sm text-blue-800"><strong>Що далі?</strong></p>
-            <ul className="mt-2 text-sm text-blue-700 space-y-1 list-disc list-inside">
-              <li>Ми отримали ваше замовлення та платіж</li>
-              <li>Наш менеджер зв&apos;яжеться з вами найближчим часом</li>
-              <li>Ви отримаєте підтвердження на вказану електронну пошту</li>
-            </ul>
+            {order?.payment_type === "pay_after" ? (
+              <ul className="mt-2 text-sm text-blue-700 space-y-1 list-disc list-inside">
+                <li>Ми отримали ваше замовлення</li>
+                <li>Оплата при отриманні — сплатіть кур&apos;єру або у відділенні при отриманні товару</li>
+                <li>Наш менеджер зв&apos;яжеться з вами найближчим часом</li>
+                <li>Ви отримаєте підтвердження на вказану електронну пошту</li>
+              </ul>
+            ) : order?.payment_type === "test_payment" ? (
+              <ul className="mt-2 text-sm text-blue-700 space-y-1 list-disc list-inside">
+                <li>Тестова оплата — замовлення прийнято як оплачене</li>
+                <li>Наш менеджер зв&apos;яжеться з вами найближчим часом</li>
+              </ul>
+            ) : (
+              <ul className="mt-2 text-sm text-blue-700 space-y-1 list-disc list-inside">
+                <li>Ми отримали ваше замовлення та платіж</li>
+                <li>Наш менеджер зв&apos;яжеться з вами найближчим часом</li>
+                <li>Ви отримаєте підтвердження на вказану електронну пошту</li>
+              </ul>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyPlisioCallback } from "@/lib/plisio";
 import { prisma } from "@/lib/prisma";
 import { sendOrderNotification } from "@/lib/telegram";
+import { creditBonusesForPaidOrder, type OrderForBonusCredit } from "@/lib/loyalty";
 
 export async function POST(req: NextRequest) {
   try {
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
             invoiceId: orderNumberStr,
           },
           include: {
+            user: { select: { birthDate: true } },
             items: {
               include: {
                 product: {
@@ -127,6 +129,12 @@ export async function POST(req: NextRequest) {
               telegramError
             );
             // Don't fail the webhook if Telegram fails
+          }
+          try {
+            const { credited } = await creditBonusesForPaidOrder(prisma, order as unknown as OrderForBonusCredit);
+            if (credited > 0) console.log(`[Plisio Webhook] ✓ Credited ${credited} bonus points`);
+          } catch (bonusErr) {
+            console.error("[Plisio Webhook] Bonus credit error:", bonusErr);
           }
         } else {
           console.warn(

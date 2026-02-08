@@ -105,11 +105,15 @@ export default function OrderDetailPage() {
       ? "Повна оплата"
       : order.paymentType === "prepay"
         ? "Передоплата 200 грн"
-        : order.paymentType === "installment"
-          ? "В розсрочку"
-          : order.paymentType === "crypto"
-            ? "Криптовалюта"
-            : order.paymentType;
+        : order.paymentType === "pay_after"
+          ? "Оплата після (при отриманні)"
+          : order.paymentType === "test_payment"
+            ? "Тест оплата"
+            : order.paymentType === "installment"
+            ? "В розсрочку"
+            : order.paymentType === "crypto"
+              ? "Криптовалюта"
+              : order.paymentType;
 
   return (
     <div className="min-h-screen bg-white pt-20 pb-12 px-4">

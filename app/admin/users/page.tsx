@@ -86,9 +86,6 @@ export default function UsersPage() {
                       Замовлень
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Бонуси
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Дата реєстрації
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -99,7 +96,7 @@ export default function UsersPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                         {searchTerm
                           ? "Користувачів не знайдено"
                           : "Немає зареєстрованих користувачів"}
@@ -124,11 +121,6 @@ export default function UsersPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
                             {user._count.orders}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-blue-600">
-                            {user.bonusPoints}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

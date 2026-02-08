@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sqlGetAllOrders, sqlPostOrder } from "@/lib/sql";
+import { creditBonusesForPaidOrder, getBonusPercentForPurchase, type OrderForBonusCredit } from "@/lib/loyalty";
 import crypto from "crypto";
 
 type IncomingOrderItem = {
@@ -186,16 +187,40 @@ export async function POST(req: NextRequest) {
       0
     );
 
+    // Знижка по програмі лояльності (3% перша покупка, далі 5–15% за порогами) — тільки для авторизованих
+    let loyaltyDiscountAmount = 0;
+    if (user_id) {
+      const paidOrders = await prisma.order.findMany({
+        where: { userId: user_id, paymentStatus: "paid" },
+        select: {
+          id: true,
+          items: { select: { price: true, quantity: true } },
+        },
+      });
+      const totalSpent = paidOrders.reduce((sum, order) => {
+        const itemsTotal = order.items.reduce(
+          (s: number, it: { price: unknown; quantity: number }) => s + Number(it.price) * it.quantity,
+          0
+        );
+        return sum + itemsTotal;
+      }, 0);
+      const paidOrdersCount = paidOrders.length;
+      const bonusPercent = getBonusPercentForPurchase(totalSpent, paidOrdersCount);
+      loyaltyDiscountAmount = Math.round((fullAmount * bonusPercent) / 100 * 100) / 100;
+    }
+
+    const orderTotal = fullAmount - loyaltyDiscountAmount;
+
     // Calculate amount to pay based on payment type
-    let amountToPay = fullAmount;
+    let amountToPay = orderTotal;
     if (payment_type === "prepay") {
       amountToPay = 200; // передоплата 200 грн
+    } else if (payment_type === "test_payment") {
+      amountToPay = orderTotal;
     } else if (payment_type === "installment") {
-      // For installment, MUST use full amount - banks don't allow installment on partial payments
-      amountToPay = fullAmount;
+      amountToPay = orderTotal;
     } else if (payment_type === "crypto") {
-      // For crypto, full amount
-      amountToPay = fullAmount;
+      amountToPay = orderTotal;
     }
 
     // Apply bonus points discount (only for logged-in users)
@@ -218,6 +243,8 @@ export async function POST(req: NextRequest) {
 
     console.log("[POST /api/orders] Amount calculation:", {
       fullAmount,
+      orderTotal,
+      loyaltyDiscountAmount,
       amountToPay,
       payment_type,
       bonusPointsToSpend,
@@ -228,8 +255,9 @@ export async function POST(req: NextRequest) {
     console.log("[POST /api/orders] Saving order to database...");
     const orderId = crypto.randomUUID();
     const isFullyPaidByBonuses = amountToPay <= 0;
+    const isTestPayment = payment_type === "test_payment";
 
-    await sqlPostOrder({
+    const postResult = await sqlPostOrder({
       user_id: user_id || null,
       customer_name,
       phone_number,
@@ -240,7 +268,9 @@ export async function POST(req: NextRequest) {
       comment,
       payment_type,
       invoice_id: orderId,
-      payment_status: isFullyPaidByBonuses ? "paid" : "pending",
+      payment_status: isTestPayment || isFullyPaidByBonuses ? "paid" : "pending",
+      bonus_points_spent: effectiveBonusDeduction,
+      loyalty_discount_amount: loyaltyDiscountAmount,
       items: normalizedItems.map(
         ({ product_id, size, quantity, price, color }) => ({
           product_id,
@@ -251,6 +281,7 @@ export async function POST(req: NextRequest) {
         })
       ),
     });
+    const createdOrderDbId = postResult.orderId;
     console.log("[POST /api/orders] Order saved to database successfully");
 
     // Deduct bonus points from user if any were used
@@ -264,8 +295,21 @@ export async function POST(req: NextRequest) {
       console.log("[POST /api/orders] Deducted", effectiveBonusDeduction, "bonus points from user");
     }
 
-    // When fully paid by bonuses - redirect to success (no payment gateway needed)
-    if (isFullyPaidByBonuses) {
+    // Тест оплата — імітація повної оплати: замовлення зберігається як оплачене, нараховуються бонуси, редірект на успіх
+    if (isTestPayment) {
+      if (user_id) {
+        const orderForCredit = await prisma.order.findUnique({
+          where: { id: createdOrderDbId },
+          include: {
+            user: { select: { birthDate: true } },
+            items: true,
+          },
+        });
+        if (orderForCredit) {
+          const { credited } = await creditBonusesForPaidOrder(prisma, orderForCredit as unknown as OrderForBonusCredit);
+          if (credited > 0) console.log("[POST /api/orders] Test payment: credited", credited, "bonus points");
+        }
+      }
       const PUBLIC_URL_FULL = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
       return NextResponse.json({
         success: true,
@@ -274,8 +318,31 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ✅ Створення платежу через WayForPay (якщо не крипта)
-    if (payment_type !== "crypto") {
+    // When fully paid by bonuses - credit bonuses (e.g. birthday) and redirect to success
+    if (isFullyPaidByBonuses) {
+      if (user_id) {
+        const orderForCredit = await prisma.order.findUnique({
+          where: { id: createdOrderDbId },
+          include: {
+            user: { select: { birthDate: true } },
+            items: true,
+          },
+        });
+        if (orderForCredit) {
+          const { credited } = await creditBonusesForPaidOrder(prisma, orderForCredit as unknown as OrderForBonusCredit);
+          if (credited > 0) console.log("[POST /api/orders] Credited", credited, "bonus points (e.g. birthday)");
+        }
+      }
+      const PUBLIC_URL_FULL = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
+      return NextResponse.json({
+        success: true,
+        orderId,
+        invoiceUrl: `${PUBLIC_URL_FULL}/success?orderReference=${orderId}`,
+      });
+    }
+
+    // ✅ Створення платежу через WayForPay (якщо не крипта і не тест оплата)
+    if (payment_type !== "crypto" && payment_type !== "test_payment") {
       try {
         const productNames = normalizedItems.map(
           (item) =>
@@ -534,7 +601,7 @@ export async function POST(req: NextRequest) {
             body: JSON.stringify({
               orderNumber: orderId,
               orderName: `Order ${orderId}`,
-              amount: fullAmount.toFixed(2),
+              amount: amountToPay.toFixed(2),
               email: email || undefined,
               callbackUrl: `${PUBLIC_URL}/api/plisio/webhook`,
               successCallbackUrl: `${PUBLIC_URL}/success?orderReference=${orderId}`,

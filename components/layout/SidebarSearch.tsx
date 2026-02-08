@@ -348,7 +348,7 @@ export default function SearchSidebar({
                 onKeyDown={handleKeyDown}
                 onFocus={() => query.length >= 2 && setShowSuggestions(true)}
             placeholder="Введіть запит..."
-                className="pl-10 pr-10 py-3 border text-lg rounded w-full focus:outline-none focus:ring-2 focus:ring-[#8C7461] focus:border-transparent bg-white text-black border-stone-300 placeholder-stone-500 transition-all"
+                className="pl-10 pr-10 py-3 border text-lg rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#8C7461] focus:border-transparent bg-white text-black border-stone-300 placeholder-stone-500 transition-all"
           />
               
               {/* Clear Button */}
@@ -473,7 +473,7 @@ export default function SearchSidebar({
                           handleSearch(query);
                           setIsOpen(false);
                         }}
-                        className="flex items-center gap-4 p-3 rounded-lg hover:bg-stone-200 transition-all duration-200 group border border-transparent hover:border-stone-300"
+                        className="flex items-center gap-4 p-3 rounded-lg transition-all duration-200 group border border-transparent"
                     >
                         <div className="relative flex-shrink-0">
                       <Image
@@ -596,7 +596,7 @@ export default function SearchSidebar({
                           <Link
                             href={`/product/${product.id}`}
                             onClick={() => setIsOpen(false)}
-                            className="flex items-center gap-4 p-3 rounded-lg hover:bg-stone-200 transition-all duration-200 group border border-transparent hover:border-stone-300"
+                            className="flex items-center gap-4 p-3 rounded-lg transition-all duration-200 group border border-transparent"
                           >
                             <div className="relative flex-shrink-0">
                             <Image

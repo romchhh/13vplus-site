@@ -358,7 +358,7 @@ export default function Header() {
                     />
                   </svg>
                   {wishlist.length > 0 && (
-                    <span className="absolute -bottom-0.5 -right-0.5 text-white text-xs font-['Montserrat'] font-medium">
+                    <span className="absolute -bottom-0.5 -right-1 text-white text-xs font-['Montserrat'] font-medium">
                       {wishlist.length > 99 ? "99+" : wishlist.length}
                     </span>
                   )}
@@ -383,7 +383,7 @@ export default function Header() {
                     />
                   </svg>
                   {wishlist.length > 0 && (
-                    <span className="absolute -bottom-0.5 -right-0.5 text-white text-xs font-['Montserrat'] font-medium">
+                    <span className="absolute -bottom-0.5 -right-1 text-white text-xs font-['Montserrat'] font-medium">
                       {wishlist.length > 99 ? "99+" : wishlist.length}
                     </span>
                   )}
@@ -443,7 +443,7 @@ export default function Header() {
                   src="/images/light-theme/cart.svg"
                 />
                 {totalItems > 0 && (
-                  <span className="absolute -bottom-0.5 -right-0.5 text-white text-xs font-['Montserrat'] font-medium">
+                  <span className="absolute -bottom-0.5 -right-1 text-white text-xs font-['Montserrat'] font-medium">
                     {totalItems > 99 ? "99+" : totalItems}
                   </span>
                 )}
@@ -546,7 +546,7 @@ export default function Header() {
                   />
                 </svg>
                 {wishlist.length > 0 && (
-                  <span className="absolute -bottom-0.5 -right-0.5 text-white text-xs font-['Montserrat'] font-medium">
+                  <span className="absolute -bottom-0.5 -right-1 text-white text-xs font-['Montserrat'] font-medium">
                     {wishlist.length > 99 ? "99+" : wishlist.length}
                   </span>
                 )}
@@ -571,7 +571,7 @@ export default function Header() {
                   />
                 </svg>
                 {wishlist.length > 0 && (
-                  <span className="absolute -bottom-0.5 -right-0.5 text-white text-xs font-['Montserrat'] font-medium">
+                  <span className="absolute -bottom-0.5 -right-1 text-white text-xs font-['Montserrat'] font-medium">
                     {wishlist.length > 99 ? "99+" : wishlist.length}
                   </span>
                 )}
@@ -631,7 +631,7 @@ export default function Header() {
                 className="brightness-0 invert h-5 w-5"
               />
               {totalItems > 0 && (
-                <span className="absolute -bottom-0.5 -right-0.5 text-white text-xs font-['Montserrat'] font-medium">
+                <span className="absolute -bottom-0.5 -right-1 text-white text-xs font-['Montserrat'] font-medium">
                   {totalItems > 99 ? "99+" : totalItems}
                 </span>
               )}

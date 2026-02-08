@@ -89,8 +89,11 @@ export function middleware(request: NextRequest) {
     response.headers.set('Critical-CH', 'Viewport-Width, Device-Memory');
   }
 
-  // Admin authentication logic
-  if (!pathname.startsWith("/admin")) {
+  // Admin authentication logic (for /admin pages and /api/admin)
+  const isAdminPage = pathname.startsWith("/admin");
+  const isAdminApi = pathname.startsWith("/api/admin");
+
+  if (!isAdminPage && !isAdminApi) {
     return response;
   }
 
@@ -119,6 +122,17 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // API admin: require auth, return 401 if not authenticated
+  if (isAdminApi) {
+    if (!isAuthenticated) {
+      return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return response;
+  }
+
   // Redirect authenticated users away from login
   if (pathname === "/admin/login" && isAuthenticated) {
     return NextResponse.redirect(new URL("/admin", request.url));
@@ -140,6 +154,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path*",
+    "/api/admin/:path*",
     "/api/wayforpay/webhook/:path*", // Explicitly include webhook routes
     "/api/plisio/webhook/:path*",
     "/((?!_next/static|_next/image|favicon.ico).*)",

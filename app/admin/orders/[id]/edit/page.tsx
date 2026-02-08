@@ -94,6 +94,10 @@ export default function EditOrderPage() {
       return 0;
     } else if (formData.payment_type === "prepay") {
       return Math.max(0, total - 200);
+    } else if (formData.payment_type === "pay_after") {
+      return total; // оплата при отриманні — вся сума ще не сплачена
+    } else if (formData.payment_type === "test_payment") {
+      return 0; // тест оплата — вважається повністю оплаченим
     } else if (formData.payment_type === "installment") {
       // For installment, calculate remaining after first payment (30% or minimum 300)
       const firstPayment = Math.max(300, Math.round(total * 0.3));
@@ -173,8 +177,12 @@ export default function EditOrderPage() {
                 value={
                   formData.payment_type === "full"
                     ? "Повна оплата"
-                    :                     formData.payment_type === "prepay"
+                    : formData.payment_type === "prepay"
                     ? "Передоплата 200 грн"
+                    : formData.payment_type === "pay_after"
+                    ? "Оплата після (при отриманні)"
+                    : formData.payment_type === "test_payment"
+                    ? "Тест оплата (імітація)"
                     : formData.payment_type === "installment"
                     ? "В розсрочку"
                     : formData.payment_type === "crypto"

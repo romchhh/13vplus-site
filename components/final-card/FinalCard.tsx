@@ -31,6 +31,7 @@ export default function FinalCard() {
   const { items, updateQuantity, removeItem, clearBasket } = useBasket();
   const { data: session, status } = useSession();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isAccountPromoModalOpen, setIsAccountPromoModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // Prevent hydration mismatch by only rendering after mount
@@ -38,24 +39,13 @@ export default function FinalCard() {
     setMounted(true);
   }, []);
 
-  // Fetch bonus points when user is logged in
+  // При переході на сторінку оформлення — показати модалку «Маєте акаунт?» гостям з товарами в кошику
   useEffect(() => {
-    if (session?.user?.email) {
-      fetch("/api/users/profile")
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => {
-          if (data?.bonusPoints != null) {
-            const bp = Number(data.bonusPoints);
-            setBonusPoints(bp);
-            setBonusPointsToSpend((prev) => Math.min(prev, bp));
-          }
-        })
-        .catch(() => {});
-    } else {
-      setBonusPoints(0);
-      setBonusPointsToSpend(0);
+    if (!mounted || status === "loading") return;
+    if (!session && items.length > 0) {
+      setIsAccountPromoModalOpen(true);
     }
-  }, [session?.user?.email]);
+  }, [mounted, status, session, items.length]);
 
   // CUSTOMER
   const [customerName, setCustomerName] = useState("");
@@ -100,9 +90,22 @@ export default function FinalCard() {
 
   const [comment, setComment] = useState("");
   const [paymentType, setPaymentType] = useState("");
-  const [bonusPoints, setBonusPoints] = useState(0);
-  const [bonusPointsToSpend, setBonusPointsToSpend] = useState(0);
-  
+  const [bonusPercentFromLoyalty, setBonusPercentFromLoyalty] = useState(3);
+
+  // Fetch loyalty tier for bonus % when logged in
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetch("/api/users/loyalty")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data?.bonusPercent != null) setBonusPercentFromLoyalty(Number(data.bonusPercent));
+        })
+        .catch(() => {});
+    } else {
+      setBonusPercentFromLoyalty(3);
+    }
+  }, [session?.user?.email]);
+
   // Form validation states
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string;
@@ -354,14 +357,8 @@ export default function FinalCard() {
       };
     });
 
-    // Підрахунок суми до оплати (з урахуванням знижки)
     const subtotal = getSubtotal(items);
-    const effectiveBonus = Math.min(
-      bonusPointsToSpend,
-      bonusPoints,
-      Math.floor(subtotal)
-    );
-    const fullAmount = subtotal - effectiveBonus;
+    const fullAmount = subtotal;
 
     try {
       const profileData = session?.user?.email
@@ -380,7 +377,7 @@ export default function FinalCard() {
         comment,
         payment_type: paymentType,
         total_amount: fullAmount.toFixed(2),
-        bonus_points_to_spend: effectiveBonus,
+        bonus_points_to_spend: 0,
         items: apiItems,
       };
       
@@ -472,13 +469,13 @@ export default function FinalCard() {
             })
           );
           
-          setSuccess("Переходимо до оплати...");
+          setSuccess(paymentType === "test_payment" ? "Замовлення оформлено. Переходимо на сторінку підтвердження..." : "Переходимо до оплати...");
           
           if (invoiceUrl) {
-            // For WayForPay Invoice API - simple redirect to invoice URL
+            // For test_payment or WayForPay Invoice API - redirect to success page
             setTimeout(() => {
               window.location.href = invoiceUrl;
-            }, 1500);
+            }, paymentType === "test_payment" ? 800 : 1500);
           } else if (isCryptoPayment && paymentUrl) {
             // For Plisio - simple redirect to invoice URL
             setTimeout(() => {
@@ -1098,28 +1095,22 @@ export default function FinalCard() {
             <div className="w-full sm:w-1/4"></div>
           </div>
 
-          {!session && (
-            <div className="flex flex-col sm:flex-row justify-center gap-10 sm:gap-50 mb-6">
-              <div className="w-full sm:w-1/3 bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-sm font-['Montserrat'] text-gray-700 mb-3">
-                  Маєте акаунт? Увійдіть, щоб автоматично заповнити дані та відстежувати замовлення.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setIsLoginModalOpen(true)}
-                  className="w-full bg-black text-white px-4 py-2.5 rounded-md font-medium text-sm hover:bg-gray-800 transition-colors"
-                >
-                  Увійти або зареєструватися
-                </button>
-              </div>
-              <div className="w-full sm:w-1/4"></div>
-            </div>
-          )}
-
           <div className="flex flex-col sm:flex-row justify-center gap-10 sm:gap-50">
+            <div className="w-full sm:w-1/3 flex flex-col gap-4">
+              {!session && items.length > 0 && (
+                <div className="mb-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsAccountPromoModalOpen(true)}
+                    className="text-left text-sm text-amber-800 hover:text-amber-900 underline underline-offset-2 transition-colors"
+                  >
+                    Маєте акаунт? Увійдіть або зареєструйтесь — отримайте знижку 3% на першу покупку.
+                  </button>
+                </div>
+              )}
             <form
               onSubmit={handleSubmit}
-              className="flex flex-col gap-4 w-full sm:w-1/3"
+              className="flex flex-col gap-4 w-full"
               noValidate
             >
               <div className="flex flex-col gap-1.5">
@@ -1453,6 +1444,7 @@ export default function FinalCard() {
                   <option value="">Оберіть спосіб оплати</option>
                   <option value="full">Повна оплата</option>
                   <option value="prepay">Передоплата 200 грн</option>
+                  <option value="test_payment">Тест оплата (імітація повної оплати)</option>
                   <option value="installment">В розсрочку</option>
                   <option value="crypto">Крипта (USDT, BTC та інші)</option>
                 </select>
@@ -1461,32 +1453,17 @@ export default function FinalCard() {
                 )}
               </div>
 
-              {/* Bonus points - only for logged-in users with bonuses (списати можна тільки всі) */}
-              {session && bonusPoints > 0 && items.length > 0 && (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700 flex items-center gap-2">
-                    Бонусні бали
-                  </label>
-                  <div className="border border-gray-300 rounded-md px-3 py-2.5 bg-gray-50">
-                    <p className="text-sm text-gray-600 mb-2">
-                      У вас: <span className="font-semibold text-gray-900">{bonusPoints}</span> бонусів (1 бонус = 1 ₴)
-                    </p>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={bonusPointsToSpend > 0}
-                        onChange={(e) => {
-                          const useAll = e.target.checked;
-                          const maxSpendable = Math.min(bonusPoints, Math.floor(getSubtotal(items)));
-                          setBonusPointsToSpend(useAll ? maxSpendable : 0);
-                        }}
-                        className="rounded border-gray-300 text-black focus:ring-black"
-                      />
-                      <span className="text-sm text-gray-700">Використати всі бонуси</span>
-                    </label>
+              {/* Знижка зареєстрованим (для гостей — модальне вікно по кліку над формою) */}
+              {items.length > 0 && session && (() => {
+                const percent = bonusPercentFromLoyalty;
+                const bonusToEarn = Math.floor((getSubtotal(items) * percent) / 100);
+                if (bonusToEarn <= 0) return null;
+                return (
+                  <div className="rounded-lg px-4 py-3 text-sm bg-green-50 border border-green-200 text-green-800">
+                    <p>За цю покупку ви отримаєте знижку <strong>{percent}%</strong> на наступні покупки (еквівалент <strong>{bonusToEarn} ₴</strong>).</p>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               <button
                 className="bg-black text-white px-4 py-3 rounded-md mt-2 mb-6 font-medium text-sm sm:text-base hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1508,6 +1485,7 @@ export default function FinalCard() {
                 </div>
               )}
             </form>
+            </div>
 
             <div className="w-full sm:w-1/4 px-4 sm:px-0 flex flex-col gap-4">
               {items.length === 0 ? (
@@ -1607,21 +1585,33 @@ export default function FinalCard() {
               )}
 
               {/* Total price container */}
-              <div className="pt-2 mt-2 mb-6 md:mb-0 space-y-1">
+              <div className="pt-2 mt-2 mb-6 md:mb-0 space-y-2">
                 <div className="flex justify-between items-center text-base text-gray-600">
-                  <span>Сума товарів:</span>
-                  <span>{getSubtotal(items).toFixed(2)} ₴</span>
+                  <span>Сума товарів</span>
+                  <span className="font-medium text-gray-800">{getSubtotal(items).toFixed(2)} ₴</span>
                 </div>
-                {session && bonusPointsToSpend > 0 && (
-                  <div className="flex justify-between items-center text-base text-green-600">
-                    <span>Списано бонусів:</span>
-                    <span>-{bonusPointsToSpend} ₴</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center text-lg font-semibold whitespace-nowrap gap-4 pt-2">
-                  <span>До сплати:</span>
-                  <span className="text-[#8C7461]">
-                    {(getSubtotal(items) - Math.min(bonusPointsToSpend, bonusPoints, Math.floor(getSubtotal(items)))).toFixed(2)} ₴
+                {session && bonusPercentFromLoyalty > 0 && items.length > 0 && (() => {
+                  const sub = getSubtotal(items);
+                  const loyaltyDiscount = Math.round((sub * bonusPercentFromLoyalty) / 100 * 100) / 100;
+                  if (loyaltyDiscount <= 0) return null;
+                  return (
+                    <div className="flex justify-between items-center gap-2 py-1.5 text-sm">
+                      <span className="font-medium text-emerald-800">
+                        Знижка по програмі лояльності ({bonusPercentFromLoyalty}%)
+                      </span>
+                      <span className="font-semibold text-emerald-700 whitespace-nowrap">
+                        −{loyaltyDiscount.toFixed(2)} ₴
+                      </span>
+                    </div>
+                  );
+                })()}
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-base font-semibold text-gray-900">До сплати</span>
+                  <span className="text-xl font-bold text-[#8C7461] whitespace-nowrap">
+                    {session && bonusPercentFromLoyalty > 0 && items.length > 0
+                      ? (Math.round((getSubtotal(items) * (1 - bonusPercentFromLoyalty / 100)) * 100) / 100).toFixed(2)
+                      : getSubtotal(items).toFixed(2)}{" "}
+                    ₴
                   </span>
                 </div>
               </div>
@@ -1629,6 +1619,45 @@ export default function FinalCard() {
           </div>
         </>
       )}
+      {/* Модальне вікно: Маєте акаунт? + знижка 3% */}
+      {isAccountPromoModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setIsAccountPromoModalOpen(false)}>
+          <div
+            className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-5 sm:px-6 sm:py-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Маєте акаунт?</h3>
+              <p className="text-gray-600 text-sm mb-3">
+                Увійдіть, щоб автоматично заповнити дані та відстежувати замовлення.
+              </p>
+              <p className="text-gray-600 text-sm mb-5">
+                Не втратьте знижку <strong className="text-amber-700">3%</strong> за першу покупку — увійдіть або зареєструйтесь, щоб отримувати знижки.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAccountPromoModalOpen(false);
+                    setIsLoginModalOpen(true);
+                  }}
+                  className="flex-1 bg-black text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors"
+                >
+                  Увійти або зареєструватися
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAccountPromoModalOpen(false)}
+                  className="px-4 py-2.5 rounded-lg font-medium text-sm text-gray-600 hover:bg-gray-100 transition-colors"
+                >
+                  Продовжити без входу
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} redirectAfterLogin="/final" />
     </section>
   );
