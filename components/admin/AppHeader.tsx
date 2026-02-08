@@ -127,7 +127,7 @@ const AppHeader: React.FC = () => {
             <Image
               width={154}
               height={32}
-              src="/images/logo/logo.svg"
+              src="/images/13vplus-logo-favicon.png"
               alt="Logo"
             />
           </Link>
