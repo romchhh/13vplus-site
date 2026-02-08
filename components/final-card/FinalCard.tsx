@@ -1444,7 +1444,7 @@ export default function FinalCard() {
                   <option value="">Оберіть спосіб оплати</option>
                   <option value="full">Повна оплата</option>
                   <option value="prepay">Передоплата 200 грн</option>
-                  <option value="test_payment">Тест оплата (імітація повної оплати)</option>
+                  {/* <option value="test_payment">Тест оплата (імітація повної оплати)</option> */}
                   <option value="installment">В розсрочку</option>
                   <option value="crypto">Крипта (USDT, BTC та інші)</option>
                 </select>
