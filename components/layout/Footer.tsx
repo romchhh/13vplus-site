@@ -48,7 +48,7 @@ export default function Footer() {
                 Про нас
               </Link>
               <Link
-                href="/#payment-and-delivery"
+                href="/info"
                 className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap tracking-normal"
               >
                 Доставка та оплата

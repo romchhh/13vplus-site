@@ -304,19 +304,19 @@ export default function Header() {
                       Контакти
                     </Link>
                     <Link
-                      href="/#payment-and-delivery"
+                      href="/info"
                       className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
                     >
                       Доставка
                     </Link>
                     <Link
-                      href="/#payment-and-delivery"
+                      href="/info"
                       className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
                     >
                       Оплата
                     </Link>
                     <Link
-                      href="/#reviews"
+                      href="/info#obmin-povernennya"
                       className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
                     >
                       Повернення та обмін
