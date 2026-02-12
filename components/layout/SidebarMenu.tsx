@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useCategories } from "@/lib/CategoriesProvider";
 
 interface SidebarMenuProps {
@@ -14,6 +15,8 @@ export default function SidebarMenu({
   isOpen,
   setIsOpen,
 }: SidebarMenuProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   // Use categories from context instead of fetching
   const { categories, subcategories: subcategoriesMap, loading, error, fetchSubcategoriesForCategory } = useCategories();
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
@@ -21,6 +24,30 @@ export default function SidebarMenu({
   // Avoid hydration mismatch: server and initial client render show placeholder; real content after mount
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, anchor: string) => {
+    e.preventDefault();
+    setIsOpen(false);
+    if (pathname === "/") {
+      // Якщо вже на головній сторінці, просто прокручуємо до якоря
+      setTimeout(() => {
+        const element = document.getElementById(anchor.replace("#", ""));
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    } else {
+      // Якщо на іншій сторінці, переходимо на головну з якорем
+      router.push(`/${anchor}`);
+      // Після переходу прокручуємо до якоря
+      setTimeout(() => {
+        const element = document.getElementById(anchor.replace("#", ""));
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 200);
+    }
+  };
 
   // Convert Map to array for selected category
   const selectedSubcategories = selectedCategoryId 
@@ -172,14 +199,14 @@ export default function SidebarMenu({
               <Link
                 href="/#about"
                 className="block py-2 text-base text-black hover:text-black/70 transition-colors"
-                onClick={() => setIsOpen(false)}
+                onClick={(e) => handleAnchorClick(e, "#about")}
               >
                 ПРО НАС
               </Link>
               <Link
                 href="/#contacts"
                 className="block py-2 text-base text-black hover:text-black/70 transition-colors"
-                onClick={() => setIsOpen(false)}
+                onClick={(e) => handleAnchorClick(e, "#contacts")}
               >
                 КОНТАКТИ
               </Link>

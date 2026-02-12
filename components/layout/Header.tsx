@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter, usePathname } from "next/navigation";
 import { useAppContext } from "@/lib/GeneralProvider";
 import { useBasket } from "@/lib/BasketProvider";
 import { useWishlist } from "@/lib/WishlistProvider";
@@ -28,6 +29,8 @@ export default function Header() {
     setIsSearchOpen,
   } = useAppContext();
 
+  const router = useRouter();
+  const pathname = usePathname();
   const { data: session } = useSession();
   const { items } = useBasket();
   const { wishlist, setWishlist } = useWishlist();
@@ -36,6 +39,27 @@ export default function Header() {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, anchor: string) => {
+    e.preventDefault();
+    if (pathname === "/") {
+      // Якщо вже на головній сторінці, просто прокручуємо до якоря
+      const element = document.getElementById(anchor.replace("#", ""));
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } else {
+      // Якщо на іншій сторінці, переходимо на головну з якорем
+      router.push(`/${anchor}`);
+      // Після переходу прокручуємо до якоря
+      setTimeout(() => {
+        const element = document.getElementById(anchor.replace("#", ""));
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
+  };
 
   useEffect(() => {
     if (!session?.user?.email) return;
@@ -293,12 +317,14 @@ export default function Header() {
                   <div className="max-w-[1920px] mx-auto w-full flex flex-col gap-1" style={{ paddingLeft: `${infoLeftPosition}px` }}>
                     <Link
                       href="/#about"
+                      onClick={(e) => handleAnchorClick(e, "#about")}
                       className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
                     >
                       Про нас
                     </Link>
                     <Link
                       href="/#contacts"
+                      onClick={(e) => handleAnchorClick(e, "#contacts")}
                       className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
                     >
                       Контакти

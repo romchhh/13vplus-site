@@ -2,8 +2,32 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function Footer() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, anchor: string) => {
+    e.preventDefault();
+    if (pathname === "/") {
+      // Якщо вже на головній сторінці, просто прокручуємо до якоря
+      const element = document.getElementById(anchor.replace("#", ""));
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } else {
+      // Якщо на іншій сторінці, переходимо на головну з якорем
+      router.push(`/${anchor}`);
+      // Після переходу прокручуємо до якоря
+      setTimeout(() => {
+        const element = document.getElementById(anchor.replace("#", ""));
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
+  };
   return (
     <footer className="w-full bg-black text-white border-t border-white/10">
       {/* Main footer content */}
@@ -43,6 +67,7 @@ export default function Footer() {
               </Link>
               <Link
                 href="/#about"
+                onClick={(e) => handleAnchorClick(e, "#about")}
                 className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 whitespace-nowrap tracking-normal"
               >
                 Про нас
@@ -80,6 +105,7 @@ export default function Footer() {
               </Link>
               <Link
                 href="/#contacts"
+                onClick={(e) => handleAnchorClick(e, "#contacts")}
                 className="text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 tracking-normal"
               >
                 Контакти

@@ -1,61 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
-
 export default function InfoPage() {
-  const firstVideoRef = useRef<HTMLVideoElement>(null);
-  const [firstVideoStarted, setFirstVideoStarted] = useState(false);
-
-  const handleFirstVideoPlay = () => {
-    const video = firstVideoRef.current;
-    if (!video) return;
-    video.muted = false;
-    video.play().catch(() => {});
-    setFirstVideoStarted(true);
-  };
-
-  const handleFirstVideoEnded = () => {
-    const video = firstVideoRef.current;
-    if (!video) return;
-    video.muted = true;
-    video.currentTime = 0;
-    setFirstVideoStarted(false);
-  };
-
   return (
     <div className="min-h-screen bg-white">
-      {/* Перше відео — без рамки програвача, клік для перегляду зі звуком */}
-      <section className="max-w-[1920px] mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-8 flex flex-col items-center">
-        <div
-          className="relative w-full lg:max-w-4xl cursor-pointer group"
-          style={{ maxHeight: "80vh" }}
-          onClick={!firstVideoStarted ? handleFirstVideoPlay : undefined}
-        >
-          <video
-            ref={firstVideoRef}
-            src="/images/IMG_9023.webm"
-            playsInline
-            muted
-            className="w-full h-auto max-h-[80vh] object-contain block"
-            aria-label="13VPLUS"
-            onEnded={handleFirstVideoEnded}
-          />
-          {!firstVideoStarted && (
-            <div
-              className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors"
-              aria-hidden
-            >
-              <div className="w-20 h-20 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-                <svg className="w-10 h-10 text-black ml-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </div>
-            </div>
-          )}
-        </div>
-        <p className="text-center text-sm text-black/50 mt-2 font-['Montserrat']">Натисніть на відео для перегляду зі звуком</p>
-      </section>
-
       <div className="max-w-[1920px] mx-auto px-6 py-12 lg:py-20 text-center">
         {/* ДОСТАВКА ТА ОПЛАТА ПО УКРАЇНІ */}
         <section id="dostavka-ukraina" className="mb-16 lg:mb-24">

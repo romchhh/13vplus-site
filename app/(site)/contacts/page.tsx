@@ -81,7 +81,7 @@ export default function ContactsPage() {
                     </span>
                   </a>
                   <a
-                    href="mailto:support@13vplus.com.ua"
+                    href="mailto:13vplus@gmail.com"
                     className="flex items-center gap-4 group hover:opacity-80 transition-all duration-200 p-3 -m-3 rounded-lg hover:bg-black/5"
                   >
                     <div className="w-9 h-9 rounded-full bg-black/10 flex items-center justify-center flex-shrink-0 group-hover:bg-black/20 transition-colors">
@@ -90,7 +90,7 @@ export default function ContactsPage() {
                       </svg>
                     </div>
                     <span className="text-base lg:text-lg font-['Montserrat'] text-black font-semibold">
-                      support@13vplus.com.ua
+                      13vplus@gmail.com
                     </span>
                   </a>
                 </div>
