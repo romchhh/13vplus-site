@@ -25,10 +25,12 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Failed to get subcategories:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch subcategories" },
-      { status: 500 }
-    );
+    // Для фронта безпечніше повернути порожній список, ніж 500
+    return NextResponse.json([], {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+      },
+    });
   }
 }
 

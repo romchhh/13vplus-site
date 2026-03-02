@@ -2,176 +2,74 @@
 
 import SidebarMenu from "@/components/layout/SidebarMenu";
 import { useAppContext } from "@/lib/GeneralProvider";
-import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
+
+const HERO_IMAGE = "/images/hf_20260222_063745_3c9c7bbc-82d2-4f3f-8c11-4216792e4995.jpeg";
 
 export default function Hero() {
   const { isSidebarOpen, setIsSidebarOpen } = useAppContext();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [showPlayButton, setShowPlayButton] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Detect mobile device
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Ensure video plays on component mount with mobile optimization
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      // Set all required attributes for mobile autoplay
-      video.muted = true;
-      video.playsInline = true;
-      video.setAttribute('muted', '');
-      video.setAttribute('playsinline', '');
-      video.setAttribute('webkit-playsinline', '');
-      
-      // Try multiple approaches for mobile compatibility
-      const playVideo = async () => {
-        try {
-          // First try: direct play
-          await video.play();
-          setShowPlayButton(false);
-        } catch (error) {
-          console.log("Video autoplay failed, trying again:", error);
-          
-          // Second try: after a small delay (sometimes helps on mobile)
-          setTimeout(async () => {
-            try {
-              await video.play();
-              setShowPlayButton(false);
-            } catch (error2) {
-              console.log("Video autoplay failed again:", error2);
-              
-              // Third try: user interaction simulation (sometimes mobile needs this)
-              // But we'll show play button only if all attempts fail
-              if (isMobile) {
-                // On mobile, wait a bit more and try once more
-                setTimeout(async () => {
-                  try {
-                    await video.play();
-                    setShowPlayButton(false);
-                  } catch (error3) {
-                    console.log("Final autoplay attempt failed:", error3);
-                    setShowPlayButton(true);
-                  }
-                }, 500);
-              } else {
-                setShowPlayButton(true);
-              }
-            }
-          }, 100);
-        }
-      };
-      
-      // Wait for video to be ready
-      if (video.readyState >= 2) {
-        // Video is already loaded
-        playVideo();
-      } else {
-        // Wait for video to load
-        video.addEventListener('loadeddata', playVideo, { once: true });
-        video.addEventListener('canplay', playVideo, { once: true });
-        
-        // Also try when video starts loading
-        video.load();
-      }
-    }
-  }, [isMobile]);
 
   return (
-    <section id="hero" className="pt-14 lg:pt-16">
+    <section id="hero" className="relative">
       <div className="max-w-[1920px] mx-auto w-full h-screen relative overflow-hidden">
-        {/* Video background */}
-        <video
-          ref={videoRef}
-          className="absolute inset-0 w-full h-full object-cover object-center"
-          src="/images/hero-video.webm"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          style={{ zIndex: 1 }}
-          poster="/images/hero-fallback.png"
-          onLoadedData={() => {
-            const video = videoRef.current;
-            if (video) {
-              video.play().catch((error) => {
-                console.log("Play on loadeddata failed:", error);
-              });
-            }
-          }}
-          onCanPlay={() => {
-            const video = videoRef.current;
-            if (video) {
-              video.play().catch((error) => {
-                console.log("Play on canplay failed:", error);
-              });
-            }
-          }}
+        {/* Hero image */}
+        <Image
+          src={HERO_IMAGE}
+          alt="Choice — eco та wellness"
+          fill
+          className="object-cover object-right"
+          priority
+          sizes="100vw"
         />
-        
-        {/* Play button if autoplay fails */}
-        {showPlayButton && (
-          <button
-            onClick={async () => {
-              try {
-                await videoRef.current?.play();
-                setShowPlayButton(false);
-              } catch (error) {
-                console.log("Manual play failed:", error);
-              }
-            }}
-            className="absolute inset-0 flex items-center justify-center bg-black/30 z-10"
-            style={{ zIndex: 10 }}
-          >
-            <div className="bg-white/90 rounded-full p-4 hover:bg-white transition-colors">
-              <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M8 5v14l11-7z"
-                  fill="currentColor"
-                  className="text-black"
-                />
-              </svg>
-            </div>
-          </button>
-        )}
-        
+
+        {/* Blur + darkening overlay */}
+        <div
+          className="absolute inset-0 bg-black/35 backdrop-blur-[3px] pointer-events-none z-[1]"
+          aria-hidden
+        />
+
         {/* Gradient overlay at the bottom */}
-        <div 
-          className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"
-          style={{ zIndex: 1 }}
+        <div
+          className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/50 to-transparent pointer-events-none z-[1]"
+          aria-hidden
         />
-        
-        <div className="relative z-10 flex flex-col justify-center p-10 md:p-20 gap-8 md:gap-12 h-full" style={{ zIndex: 2 }}>
-          {/* Luxury text overlay */}
-          <div className="flex flex-col items-center justify-center gap-5 md:gap-7 mt-[20vh] md:-mt-0">
-            <h1 className="text-white text-4xl sm:text-6xl md:text-7xl lg:text-6xl xl:text-7xl font-bold font-['Montserrat'] uppercase text-center leading-tight" style={{ letterSpacing: '0.15em' }}>
-              Urban Stillness
+
+        <div className="relative z-10 flex flex-col justify-center items-start p-10 md:p-16 lg:p-20 gap-8 md:gap-12 h-full pt-[5.75rem] lg:pt-[7.75rem] min-h-screen max-w-[1920px] mx-auto">
+          {/* Headline & subheadline — зліва */}
+          <div className="flex flex-col items-start gap-5 md:gap-7 max-w-2xl">
+            <h1
+              className="text-white text-left drop-shadow-md"
+              style={{
+                fontFamily: "Montserrat, sans-serif",
+                fontWeight: 500,
+                fontSize: "clamp(38px, 5.5vw, 64px)",
+                lineHeight: "159%",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              Choice — eco та wellness рішення для здоров&apos;я і дому
             </h1>
-            <p className="text-white text-lg sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-bold font-['Montserrat'] uppercase text-center opacity-90" style={{ letterSpacing: '0.2em' }}>
-              Winter Collection
+            <p className="text-white text-lg sm:text-xl md:text-2xl lg:text-xl xl:text-2xl font-['Montserrat'] text-left opacity-90 max-w-xl drop-shadow-md" style={{ letterSpacing: "0.02em" }}>
+              Оригінальна продукція Choice від офіційного представника: wellness-комплекси, натуральний догляд та eco-засоби для щоденного життя.
             </p>
           </div>
 
-          {/* Catalog button */}
-          <Link
-            href="/catalog"
-            className="cursor-pointer mx-auto w-48 sm:w-56 md:w-64 lg:w-72 h-10 sm:h-12 md:h-14 lg:h-16 p-2 bg-transparent border-2 border-white text-white inline-flex justify-center items-center gap-2 hover:bg-white hover:text-black transition-all duration-300 font-['Montserrat'] group"
-          >
-            <div className="text-center justify-center text-base sm:text-lg md:text-xl lg:text-2xl font-normal uppercase tracking-wider leading-none">
-              Переглянути
-            </div>
-          </Link>
+          {/* CTA buttons — на мобільному на всю ширину з однаковими відступами */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-4 w-full sm:w-auto max-w-2xl">
+            <Link
+              href="/catalog"
+              className="cursor-pointer w-full sm:w-52 md:w-60 h-12 md:h-14 p-2 bg-[#D7D799] text-[#3D1A00] inline-flex justify-center items-center gap-2 hover:opacity-90 transition-all duration-300 font-['Montserrat'] font-semibold"
+            >
+              <span className="text-center text-sm sm:text-base md:text-lg">Підібрати програму</span>
+            </Link>
+            <Link
+              href="/info#partnership"
+              className="cursor-pointer w-full sm:w-52 md:w-60 h-12 md:h-14 p-2 bg-transparent border-2 border-white text-white inline-flex justify-center items-center gap-2 hover:bg-white hover:text-black transition-all duration-300 font-['Montserrat'] font-semibold"
+            >
+              <span className="text-center text-sm sm:text-base md:text-lg">Співпраця з CHOICE</span>
+            </Link>
+          </div>
         </div>
       </div>
 

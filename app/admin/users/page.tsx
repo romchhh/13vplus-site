@@ -9,6 +9,7 @@ interface User {
   name: string | null;
   email: string | null;
   phone: string | null;
+  address: string | null;
   bonusPoints: number;
   createdAt: string;
   _count: {
@@ -41,7 +42,8 @@ export default function UsersPage() {
     (user) =>
       user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone?.includes(searchTerm)
+      user.phone?.includes(searchTerm) ||
+      user.address?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

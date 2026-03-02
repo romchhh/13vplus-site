@@ -85,7 +85,7 @@ const AppHeader: React.FC = () => {
       <div className="flex flex-col items-center justify-between grow lg:flex-row lg:px-6">
         <div className="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4">
           <button
-            className="items-center justify-center w-10 h-10 text-gray-700 border-gray-300 rounded-lg z-99999 lg:flex lg:h-11 lg:w-11 lg:border hover:bg-gray-100 transition"
+            className="flex items-center justify-center min-w-[44px] min-h-[44px] w-10 h-10 text-gray-700 border-gray-300 rounded-lg z-99999 lg:min-w-0 lg:min-h-0 lg:h-11 lg:w-11 lg:border hover:bg-gray-100 transition touch-manipulation"
             onClick={handleToggle}
             aria-label="Toggle Sidebar"
           >
@@ -127,14 +127,14 @@ const AppHeader: React.FC = () => {
             <Image
               width={154}
               height={32}
-              src="/images/13vplus-logo-favicon.png"
+              src="/images/logos/choice-logo-dark.png"
               alt="Logo"
             />
           </Link>
 
           <button
             onClick={toggleApplicationMenu}
-            className="flex items-center justify-center w-10 h-10 text-gray-700 rounded-lg z-99999 hover:bg-gray-100 transition lg:hidden"
+            className="flex items-center justify-center min-w-[44px] min-h-[44px] w-10 h-10 text-gray-700 rounded-lg z-99999 hover:bg-gray-100 transition lg:hidden touch-manipulation"
           >
             <svg
               width="24"
@@ -214,7 +214,7 @@ const AppHeader: React.FC = () => {
             {/* <!-- Logout Button --> */}
             <button
               onClick={handleLogout}
-              className="flex items-center justify-center w-10 h-10 text-gray-700 rounded-lg hover:bg-gray-100 transition lg:h-11 lg:w-11"
+              className="flex items-center justify-center min-w-[44px] min-h-[44px] w-10 h-10 text-gray-700 rounded-lg hover:bg-gray-100 transition lg:min-w-0 lg:min-h-0 lg:h-11 lg:w-11 touch-manipulation"
               title="Вийти"
             >
               <svg

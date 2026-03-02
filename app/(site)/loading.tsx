@@ -1,6 +1,6 @@
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[var(--background-warm-yellow)]">
       {/* Hero Skeleton */}
       <div className="h-screen bg-gradient-to-b from-gray-200 to-gray-100 animate-pulse" />
       

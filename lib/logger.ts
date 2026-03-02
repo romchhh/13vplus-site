@@ -1,54 +1,28 @@
 /**
- * Production-safe logger utility
- * Only logs in development, silent in production
+ * Simple leveled logger. In production only warn/error are emitted unless LOG_LEVEL is set.
  */
 
-const isDev = process.env.NODE_ENV === 'development';
+const LOG_LEVEL = process.env.LOG_LEVEL ?? (process.env.NODE_ENV === "development" ? "debug" : "info");
+const levels = { debug: 0, info: 1, warn: 2, error: 3 };
+const currentLevel = levels[LOG_LEVEL as keyof typeof levels] ?? levels.info;
 
-export const logger = {
-  log: (...args: unknown[]) => {
-    if (isDev) console.log(...args);
-  },
-  
-  warn: (...args: unknown[]) => {
-    if (isDev) console.warn(...args);
-  },
-  
-  error: (...args: unknown[]) => {
-    // Errors should always be logged
-    console.error(...args);
-  },
-  
-  info: (...args: unknown[]) => {
-    if (isDev) console.info(...args);
-  },
-  
-  debug: (...args: unknown[]) => {
-    if (isDev) console.debug(...args);
-  },
-};
+function log(level: keyof typeof levels, prefix: string, ...args: unknown[]) {
+  if (levels[level] < currentLevel) return;
+  const fn = level === "error" ? console.error : level === "warn" ? console.warn : console.log;
+  const tag = prefix ? `[${prefix}]` : "";
+  if (args.length === 0) fn(tag);
+  else if (typeof args[0] === "string" && args.length === 1) fn(tag, args[0]);
+  else fn(tag, ...args);
+}
 
-// API specific logger with request context
-export const apiLogger = {
-  request: (method: string, path: string, data?: unknown) => {
-    if (isDev) {
-      console.log(`[API ${method}] ${path}`, data || '');
-    }
-  },
-  
-  response: (method: string, path: string, status: number, data?: unknown) => {
-    if (isDev) {
-      console.log(`[API ${method}] ${path} → ${status}`, data || '');
-    }
-  },
-  
-  info: (method: string, path: string, message: string) => {
-    if (isDev) {
-      console.info(`[API ${method}] ${path}: ${message}`);
-    }
-  },
-  
-  error: (method: string, path: string, error: unknown) => {
-    console.error(`[API ${method}] ${path} ERROR:`, error);
-  },
-};
+export function createLogger(prefix: string) {
+  return {
+    debug: (...args: unknown[]) => log("debug", prefix, ...args),
+    info: (...args: unknown[]) => log("info", prefix, ...args),
+    warn: (...args: unknown[]) => log("warn", prefix, ...args),
+    error: (...args: unknown[]) => log("error", prefix, ...args),
+  };
+}
+
+export const logger = createLogger("app");
+export const apiLogger = createLogger("api");

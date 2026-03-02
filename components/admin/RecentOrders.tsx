@@ -25,7 +25,12 @@ export default function RecentOrders() {
     const fetchOrders = async () => {
       try {
         const res = await fetch("/api/orders");
-        if (!res.ok) throw new Error("Failed to fetch orders");
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(
+            (body.details as string) || (body.error as string) || "Failed to fetch orders"
+          );
+        }
         const data = await res.json();
         setOrders(data.slice(0, 5));
       } catch (err: unknown) {

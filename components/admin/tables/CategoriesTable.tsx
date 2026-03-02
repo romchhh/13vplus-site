@@ -14,6 +14,7 @@ import Image from "next/image";
 interface Category {
   id: number;
   name: string;
+  slug?: string | null;
 }
 
 type MediaFile = {
@@ -26,7 +27,7 @@ export default function CategoriesTable() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
@@ -37,7 +38,8 @@ export default function CategoriesTable() {
 
   async function fetchCategories() {
     try {
-      const res = await fetch("/api/categories");
+      // revalidate=1 скидає кеш категорій, щоб адмінка бачила свіжі дані після add-categories
+      const res = await fetch("/api/categories?revalidate=1");
       if (!res.ok) throw new Error("Failed to fetch categories");
       const data = await res.json();
       setCategories(data);
@@ -130,14 +132,14 @@ export default function CategoriesTable() {
     }
   }
 
-  async function handleUpdateCategory(id: number, name: string) {
+  async function handleUpdateCategory(slug: string, name: string) {
     if (!name.trim()) {
       alert("Введіть назву категорії");
       return;
     }
 
     try {
-      const res = await fetch(`/api/categories/${id}`, {
+      const res = await fetch(`/api/categories/${encodeURIComponent(slug)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim() }),
@@ -147,9 +149,11 @@ export default function CategoriesTable() {
 
       const updatedCategory = await res.json();
       setCategories(
-        categories.map((cat) => (cat.id === id ? updatedCategory : cat))
+        categories.map((cat) =>
+          cat.slug === slug ? updatedCategory : cat
+        )
       );
-      setEditingId(null);
+      setEditingSlug(null);
       setEditingName("");
     } catch (error) {
       console.error("Error updating category:", error);
@@ -157,17 +161,17 @@ export default function CategoriesTable() {
     }
   }
 
-  async function handleDeleteCategory(id: number) {
+  async function handleDeleteCategory(slug: string) {
     if (!confirm("Ви впевнені, що хочете видалити цю категорію?")) return;
 
     try {
-      const res = await fetch(`/api/categories/${id}`, {
+      const res = await fetch(`/api/categories/${encodeURIComponent(slug)}`, {
         method: "DELETE",
       });
 
       if (!res.ok) throw new Error("Failed to delete category");
 
-      setCategories(categories.filter((cat) => cat.id !== id));
+      setCategories(categories.filter((cat) => cat.slug !== slug));
     } catch (error) {
       console.error("Error deleting category:", error);
       alert("Помилка при видаленні категорії");
@@ -175,7 +179,7 @@ export default function CategoriesTable() {
   }
 
   function cancelEditing() {
-    setEditingId(null);
+    setEditingSlug(null);
     setEditingName("");
   }
 
@@ -345,71 +349,74 @@ export default function CategoriesTable() {
                   </TableCell>
                 </TableRow>
               ) : (
-                categories.map((category) => (
-                  <TableRow
-                    key={category.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <TableCell className="px-5 py-4 text-sm text-gray-900 font-medium">
-                      {category.id}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-sm">
-                      {editingId === category.id ? (
-                        <input
-                          type="text"
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === "Enter")
-                              handleUpdateCategory(category.id, editingName);
-                            if (e.key === "Escape") cancelEditing();
-                          }}
-                          className="w-full px-3 py-2 border border-gray-400 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          autoFocus
-                        />
-                      ) : (
-                        <span className="text-gray-900 font-medium">
-                          {category.name}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 space-x-2">
-                      {editingId === category.id ? (
-                        <>
-                          <button
-                            onClick={() =>
-                              handleUpdateCategory(category.id, editingName)
-                            }
-                            className="inline-block rounded-md bg-blue-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-blue-600 transition shadow-sm"
-                          >
-                            Зберегти
-                          </button>
-                          <button
-                            onClick={cancelEditing}
-                            className="inline-block rounded-md bg-gray-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-gray-600 transition shadow-sm"
-                          >
-                            Скасувати
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <Link
-                            href={`/admin/categories/${category.id}`}
-                            className="inline-block rounded-md bg-blue-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-blue-600 transition shadow-sm"
-                          >
-                            Редагувати
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteCategory(category.id)}
-                            className="inline-block rounded-md bg-red-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-red-600 transition shadow-sm"
-                          >
-                            Видалити
-                          </button>
-                        </>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
+                categories.map((category) => {
+                  const slug = category.slug ?? String(category.id);
+                  return (
+                    <TableRow
+                      key={category.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <TableCell className="px-5 py-4 text-sm text-gray-900 font-medium">
+                        {category.id}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-sm">
+                        {editingSlug === slug ? (
+                          <input
+                            type="text"
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onKeyPress={(e) => {
+                              if (e.key === "Enter")
+                                handleUpdateCategory(slug, editingName);
+                              if (e.key === "Escape") cancelEditing();
+                            }}
+                            className="w-full px-3 py-2 border border-gray-400 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            autoFocus
+                          />
+                        ) : (
+                          <span className="text-gray-900 font-medium">
+                            {category.name}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 space-x-2">
+                        {editingSlug === slug ? (
+                          <>
+                            <button
+                              onClick={() =>
+                                handleUpdateCategory(slug, editingName)
+                              }
+                              className="inline-block rounded-md bg-blue-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-blue-600 transition shadow-sm"
+                            >
+                              Зберегти
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              className="inline-block rounded-md bg-gray-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-gray-600 transition shadow-sm"
+                            >
+                              Скасувати
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <Link
+                              href={`/admin/categories/${slug}`}
+                              className="inline-block rounded-md bg-blue-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-blue-600 transition shadow-sm"
+                            >
+                              Редагувати
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteCategory(slug)}
+                              className="inline-block rounded-md bg-red-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-red-600 transition shadow-sm"
+                            >
+                              Видалити
+                            </button>
+                          </>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>

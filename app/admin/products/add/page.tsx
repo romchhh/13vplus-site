@@ -1,26 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import PageBreadcrumb from "@/components/admin/PageBreadCrumb";
 import ComponentCard from "@/components/admin/ComponentCard";
 import Label from "@/components/admin/form/Label";
-import MultiSelect from "@/components/admin/form/MultiSelect";
 import DropzoneComponent from "@/components/admin/form/form-elements/DropZone";
 import Input from "@/components/admin/form/input/InputField";
 import TextArea from "@/components/admin/form/input/TextArea";
 import ToggleSwitch from "@/components/admin/form/ToggleSwitch";
 import Image from "next/image";
-
-const seasonOptions = ["Весна", "Літо", "Осінь", "Зима"];
-
-const multiOptions = [
-  { value: "ONESIZE", text: "ONESIZE", selected: false },
-  { value: "XL", text: "XL", selected: false },
-  { value: "L", text: "L", selected: false },
-  { value: "M", text: "M", selected: false },
-  { value: "S", text: "S", selected: false },
-  { value: "XS", text: "XS", selected: false },
-];
+import { parseProductPageText } from "@/lib/parseProductFile";
 
 interface Category {
   id: number;
@@ -29,32 +18,31 @@ interface Category {
 
 export default function FormElements() {
   const [name, setName] = useState("");
+  const [subtitle, setSubtitle] = useState("");
+  const [releaseForm, setReleaseForm] = useState("");
+  const [course, setCourse] = useState("");
+  const [packageWeight, setPackageWeight] = useState("");
+  const [mainInfo, setMainInfo] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
+  const [mainAction, setMainAction] = useState("");
+  const [indicationsForUse, setIndicationsForUse] = useState("");
+  const [benefits, setBenefits] = useState("");
+  const [fullComposition, setFullComposition] = useState("");
+  const [usageMethod, setUsageMethod] = useState("");
+  const [contraindications, setContraindications] = useState("");
+  const [storageConditions, setStorageConditions] = useState("");
+  const [bestseller, setBestseller] = useState(false);
+  const [inStock, setInStock] = useState(true);
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
+  const [subcategories, setSubcategories] = useState<Category[]>([]);
   const [price, setPrice] = useState("");
   const [oldPrice, setOldPrice] = useState("");
   const [discountPercentage, setDiscountPercentage] = useState("");
   const [priority, setPriority] = useState("0");
-  const [sizes, setSizes] = useState<string[]>([]);
-  const [sizeStocks, setSizeStocks] = useState<Record<string, number>>({});
-  // const [images, setImages] = useState<File[]>([]);
-
-  const [topSale, setTopSale] = useState(false);
-  const [limitedEdition, setLimitedEdition] = useState(false);
-
-  const [color, setColor] = useState("");
-  const [colors, setColors] = useState<{ label: string; hex?: string }[]>([]);
-  const [customColorLabel, setCustomColorLabel] = useState("");
-  const [customColorHex, setCustomColorHex] = useState("#000000");
-  const [availableColors, setAvailableColors] = useState<
-    { color: string; hex?: string }[]
-  >([]);
-
-  const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [season, setSeason] = useState<string[]>([]);
-  const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
-  const [subcategories, setSubcategories] = useState<Category[]>([]);
-
+  const [stock, setStock] = useState("0");
   const [fabricComposition, setFabricComposition] = useState("");
   const [hasLining, setHasLining] = useState(false);
   const [liningDescription, setLiningDescription] = useState("");
@@ -62,6 +50,9 @@ export default function FormElements() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [parseFileLoading, setParseFileLoading] = useState(false);
+  const [parseFileError, setParseFileError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -76,20 +67,6 @@ export default function FormElements() {
       }
     }
     fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    async function fetchColors() {
-      try {
-        const res = await fetch("/api/colors");
-        const data = await res.json();
-        setAvailableColors(data);
-      } catch (error) {
-        console.error("Failed to fetch colors", error);
-      }
-    }
-
-    fetchColors();
   }, []);
 
   useEffect(() => {
@@ -121,6 +98,45 @@ export default function FormElements() {
   };
 
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
+
+  const handleAddFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setParseFileError(null);
+    setParseFileLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/parse-product-file", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Помилка читання файлу");
+      const parsed = parseProductPageText(data.text);
+      if (parsed.name) setName(parsed.name);
+      if (parsed.subtitle != null) setSubtitle(parsed.subtitle);
+      if (parsed.releaseForm != null) setReleaseForm(parsed.releaseForm);
+      if (parsed.course != null) setCourse(parsed.course);
+      if (parsed.packageWeight != null) setPackageWeight(parsed.packageWeight);
+      if (parsed.mainInfo != null) setMainInfo(parsed.mainInfo);
+      if (parsed.shortDescription != null) setShortDescription(parsed.shortDescription);
+      if (parsed.description != null) setDescription(parsed.description);
+      if (parsed.mainAction != null) setMainAction(parsed.mainAction);
+      if (parsed.indicationsForUse != null) setIndicationsForUse(parsed.indicationsForUse);
+      if (parsed.benefits != null) setBenefits(parsed.benefits);
+      if (parsed.fullComposition != null) setFullComposition(parsed.fullComposition);
+      if (parsed.usageMethod != null) setUsageMethod(parsed.usageMethod);
+      if (parsed.contraindications != null) setContraindications(parsed.contraindications);
+      if (parsed.storageConditions != null) setStorageConditions(parsed.storageConditions);
+      if (parsed.price != null) setPrice(parsed.price);
+    } catch (err) {
+      setParseFileError(err instanceof Error ? err.message : "Помилка обробки файлу");
+    } finally {
+      setParseFileLoading(false);
+    }
+  };
 
   const handleDrop = (files: File[]) => {
     const newMedia = files.map((file) => {
@@ -176,25 +192,34 @@ export default function FormElements() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          description,
+          subtitle: subtitle || null,
+          release_form: releaseForm || null,
+          course: course || null,
+          package_weight: packageWeight || null,
+          main_info: mainInfo || null,
+          short_description: shortDescription || null,
+          description: description || null,
+          main_action: mainAction || null,
+          indications_for_use: indicationsForUse || null,
+          benefits: benefits || null,
+          full_composition: fullComposition || null,
+          usage_method: usageMethod || null,
+          contraindications: contraindications || null,
+          storage_conditions: storageConditions || null,
           price: Number(price),
           old_price: oldPrice ? Number(oldPrice) : null,
-          discount_percentage: discountPercentage
-            ? Number(discountPercentage)
-            : null,
+          discount_percentage: discountPercentage ? Number(discountPercentage) : null,
           priority: Number(priority || 0),
-          color,
-          colors,
-          sizes: sizes.map((s) => ({ size: s, stock: sizeStocks[s] ?? 0 })),
-          top_sale: topSale,
-          limited_edition: limitedEdition,
-          season: season.length === 0 ? null : season,
+          stock: Number(stock) || 0,
+          top_sale: bestseller,
+          in_stock: inStock,
+          limited_edition: false,
           category_id: categoryId,
           subcategory_id: subcategoryId,
           media: uploadedMedia,
-          fabric_composition: fabricComposition,
+          fabric_composition: fabricComposition || null,
           has_lining: hasLining,
-          lining_description: liningDescription,
+          lining_description: liningDescription || null,
         }),
       });
 
@@ -205,25 +230,34 @@ export default function FormElements() {
 
       setSuccess("Товар успішно створено!");
       setName("");
+      setSubtitle("");
+      setMainInfo("");
+      setShortDescription("");
       setDescription("");
+      setMainAction("");
+      setIndicationsForUse("");
+      setBenefits("");
+      setFullComposition("");
+      setUsageMethod("");
+      setContraindications("");
+      setStorageConditions("");
       setPrice("");
       setOldPrice("");
       setDiscountPercentage("");
       setPriority("0");
-      setColor("");
-      setColors([]);
-      setSizes([]);
-      setSizeStocks({});
+      setStock("0");
       setMediaFiles([]);
-      setTopSale(false);
-      setLimitedEdition(false);
-      setSeason([]);
+      setBestseller(false);
+      setInStock(true);
       setCategoryId(null);
       setFabricComposition("");
       setHasLining(false);
       setLiningDescription("");
       setSubcategoryId(null);
       setSubcategories([]);
+      setReleaseForm("");
+      setCourse("");
+      setPackageWeight("");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Помилка при створенні товару"
@@ -234,127 +268,77 @@ export default function FormElements() {
   };
 
   return (
-    <div>
+    <div className="min-w-0">
       <PageBreadcrumb pageTitle="Додати Товар" />
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".txt,.pdf,.doc,.docx,text/plain,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        className="hidden"
+        onChange={handleAddFromFile}
+      />
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 md:space-y-8">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={parseFileLoading}
+            className="min-h-[44px] sm:min-h-0 text-sm text-blue-600 hover:text-blue-800 border border-blue-400 hover:border-blue-600 rounded-lg px-4 py-2.5 sm:py-1.5 disabled:opacity-50 touch-manipulation"
+          >
+            {parseFileLoading ? "Завантаження…" : "Додати з файлу"}
+          </button>
+          <span className="text-xs text-gray-500">.doc, .docx, .pdf, .txt</span>
+        </div>
+        {parseFileError && (
+          <div className="text-sm text-red-600 mb-2">{parseFileError}</div>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {/* Left side: inputs */}
-          <div className="p-4">
-            <ComponentCard title="Дані Товару">
-              <div className="space-y-5">
+          <div className="min-w-0 p-0 sm:p-2 md:p-4">
+            <ComponentCard title="Основна інформація">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <Label>Назва Товару</Label>
-                  <Input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
+                  <Label>Назва</Label>
+                  <Input type="text" value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
                 <div>
-                  <Label>Опис</Label>
-                  <TextArea
-                    value={description}
-                    onChange={setDescription}
-                    rows={6}
-                  />
+                  <Label>Підзаголовок</Label>
+                  <Input type="text" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="Опціонально" />
                 </div>
                 <div>
-                  <Label>Ціна</Label>
-                  <Input
-                    type="number"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="Поточна ціна"
-                  />
+                  <Label>Форма випуску</Label>
+                  <Input type="text" value={releaseForm} onChange={(e) => setReleaseForm(e.target.value)} placeholder="Напр. 30 саше по 2 г" />
                 </div>
                 <div>
-                  <Label>Стара ціна (опціонально)</Label>
-                  <Input
-                    type="number"
-                    value={oldPrice}
-                    onChange={(e) => setOldPrice(e.target.value)}
-                    placeholder="Ціна до знижки"
-                  />
+                  <Label>Курс</Label>
+                  <Input type="text" value={course} onChange={(e) => setCourse(e.target.value)} placeholder="Напр. 30 днів" />
+                </div>
+                <div>
+                  <Label>Вага упаковки</Label>
+                  <Input type="text" value={packageWeight} onChange={(e) => setPackageWeight(e.target.value)} placeholder="Напр. 60 г" />
+                </div>
+                <div>
+                  <Label>Ціна (грн)</Label>
+                  <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Поточна ціна" />
+                </div>
+                <div>
+                  <Label>Ціна без знижки / стара ціна (опціонально)</Label>
+                  <Input type="number" value={oldPrice} onChange={(e) => setOldPrice(e.target.value)} placeholder="Ціна до знижки" />
                 </div>
                 <div>
                   <Label>Відсоток знижки (опціонально)</Label>
-                  <Input
-                    type="number"
-                    value={discountPercentage}
-                    onChange={(e) => setDiscountPercentage(e.target.value)}
-                    placeholder="Наприклад: 20"
-                  />
+                  <Input type="number" value={discountPercentage} onChange={(e) => setDiscountPercentage(e.target.value)} placeholder="Наприклад: 20" />
                 </div>
-                <div>
-                  <Label>Пріоритет показу</Label>
-                  <Input
-                    type="number"
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                    placeholder="0 - звичайний, 1 - високий"
-                  />
-                </div>
-                <div>
-                  <Label>Розміри</Label>
-                  <MultiSelect
-                    label="Розміри"
-                    options={multiOptions}
-                    defaultSelected={sizes}
-                    onChange={(values: string[]) => {
-                      // Update selected sizes
-                      setSizes(values);
-                      // Ensure stocks exist for any newly added size
-                      setSizeStocks((prev) => {
-                        const next = { ...prev };
-                        values.forEach((sz: string) => {
-                          if (next[sz] === undefined) next[sz] = 0;
-                        });
-                        // Remove stocks for sizes no longer selected
-                        Object.keys(next).forEach((sz) => {
-                          if (!values.includes(sz)) delete (next as Record<string, number>)[sz];
-                        });
-                        return next;
-                      });
-                    }}
-                    zIndex={51}
-                  />
-                </div>
-
-                {/* Per-size stock editor */}
-                {sizes.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    <Label>Кількість по розмірах</Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {sizes.map((sz) => (
-                        <div key={sz} className="flex items-center gap-2 border rounded px-2 py-1">
-                          <span className="min-w-10 text-sm font-medium">{sz}</span>
-                          <input
-                            type="number"
-                            min={0}
-                            value={sizeStocks[sz] ?? 0}
-                            onChange={(e) => {
-                              const val = Math.max(0, Number(e.target.value) || 0);
-                              setSizeStocks((prev) => ({ ...prev, [sz]: val }));
-                            }}
-                            className="w-20 border border-gray-300 rounded-lg px-2 py-1 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
                 <div>
                   <Label>Категорія</Label>
                   <select
                     value={categoryId ?? ""}
-                    onChange={(e) => setCategoryId(Number(e.target.value))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    onChange={(e) => setCategoryId(Number(e.target.value) || null)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 min-h-[44px] sm:min-h-0 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   >
                     <option value="">Виберіть категорію</option>
                     {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                   </select>
                 </div>
@@ -363,165 +347,91 @@ export default function FormElements() {
                     <Label>Підкатегорія</Label>
                     <select
                       value={subcategoryId ?? ""}
-                      onChange={(e) => setSubcategoryId(Number(e.target.value))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                      onChange={(e) => setSubcategoryId(Number(e.target.value) || null)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 min-h-[44px] sm:min-h-0 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     >
                       <option value="">Виберіть підкатегорію</option>
                       {subcategories.map((sub) => (
-                        <option key={sub.id} value={sub.id}>
-                          {sub.name}
-                        </option>
+                        <option key={sub.id} value={sub.id}>{sub.name}</option>
                       ))}
                     </select>
                   </div>
                 )}
-
                 <div>
-                  <MultiSelect
-                    label="Сезон"
-                    options={seasonOptions.map((s) => ({
-                      value: s,
-                      text: s,
-                      selected: season.includes(s),
-                    }))}
-                    defaultSelected={season}
-                    onChange={setSeason}
-                  />
+                  <Label>Основна інформація</Label>
+                  <TextArea value={mainInfo} onChange={setMainInfo} rows={2} placeholder="Короткий блок основної інформації" />
                 </div>
-
-                <div className="space-y-2">
-                  <Label>Кольори</Label>
-                  <div className="flex gap-2 flex-wrap">
-                    {colors.map((c, idx) => (
-                      <button
-                        type="button"
-                        key={`${c.label}-${idx}`}
-                        className="relative w-8 h-8 rounded-full border"
-                        style={{ backgroundColor: c.hex || "#fff" }}
-                        title={c.label}
-                        onClick={() =>
-                          setColors(colors.filter((_, i) => i !== idx))
-                        }
-                      >
-                        <span className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
-                          ×
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                  {/* Removed dropdown; using swatch list below */}
-                  <div className="flex flex-wrap gap-2">
-                    {availableColors.map((c) => (
-                      <button
-                        type="button"
-                        key={`pal-${c.color}`}
-                        className="flex items-center gap-2 border rounded-full px-2 py-1 text-xs hover:shadow transition"
-                        onClick={() =>
-                          setColors((prev) => [
-                            ...prev,
-                            { label: c.color, hex: c.hex },
-                          ])
-                        }
-                        title={c.color}
-                      >
-                        <span
-                          className="w-4 h-4 rounded-full border"
-                          style={{ backgroundColor: c.hex || "#fff" }}
-                        />
-                        <span>{c.color}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={customColorHex}
-                      onChange={(e) => setCustomColorHex(e.target.value)}
-                      className="w-10 h-10 p-0 border rounded"
-                    />
-                    <Input
-                      type="text"
-                      value={customColorLabel}
-                      onChange={(e) => setCustomColorLabel(e.target.value)}
-                      placeholder="Назва кольору"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!customColorLabel.trim()) return;
-                        setColors([
-                          ...colors,
-                          {
-                            label: customColorLabel.trim(),
-                            hex: customColorHex,
-                          },
-                        ]);
-                        setCustomColorLabel("");
-                        setCustomColorHex("#000000");
-                      }}
-                      className="px-3 py-2 rounded bg-blue-600 text-white text-sm"
-                    >
-                      Додати власний
-                    </button>
-                  </div>
+                <div>
+                  <Label>Короткий опис</Label>
+                  <TextArea value={shortDescription} onChange={setShortDescription} rows={3} />
                 </div>
-
-                {/* Блок: Склад тканини і Підкладка */}
-                <div className="border border-gray-300 rounded-lg p-4 space-y-4 bg-white">
-                  <div>
-                    <Label>Склад тканини</Label>
-                    <TextArea
-                      value={fabricComposition}
-                      onChange={setFabricComposition}
-                      rows={3}
-                      placeholder="Наприклад: 80% бавовна, 20% поліестер"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="mb-0">Підкладка?</Label>
-                    <ToggleSwitch
-                      enabled={hasLining}
-                      setEnabled={setHasLining}
-                      label="Has Lining"
-                    />
-                  </div>
+                <div>
+                  <Label>Повний опис</Label>
+                  <TextArea value={description} onChange={setDescription} rows={6} />
                 </div>
-                {/* Lining description input */}
-                {hasLining && (
-                  <div>
-                    <Label>Опис підкладки</Label>
-                    <TextArea
-                      value={liningDescription}
-                      onChange={setLiningDescription}
-                      rows={2}
-                      placeholder="Опис підкладки товару"
-                    />
-                  </div>
-                )}
+              </div>
+            </ComponentCard>
 
-                <div className="flex items-center justify-between pt-2">
-                  <Label className="mb-0">Топ продаж?</Label>
-                  <ToggleSwitch
-                    enabled={topSale}
-                    setEnabled={setTopSale}
-                    label="Top Sale"
-                  />
+            <ComponentCard title="Деталі товару" className="mt-4 sm:mt-6">
+              <div className="space-y-3 sm:space-y-4">
+                <div>
+                  <Label>Основна дія</Label>
+                  <TextArea value={mainAction} onChange={setMainAction} rows={2} />
+                </div>
+                <div>
+                  <Label>Показання до використання</Label>
+                  <TextArea value={indicationsForUse} onChange={setIndicationsForUse} rows={3} />
+                </div>
+                <div>
+                  <Label>Переваги</Label>
+                  <TextArea value={benefits} onChange={setBenefits} rows={3} />
+                </div>
+                <div>
+                  <Label>Повний склад</Label>
+                  <TextArea value={fullComposition} onChange={setFullComposition} rows={3} placeholder="Повний склад продукту" />
+                </div>
+                <div>
+                  <Label>Спосіб використання</Label>
+                  <TextArea value={usageMethod} onChange={setUsageMethod} rows={3} />
+                </div>
+                <div>
+                  <Label>Протипоказання</Label>
+                  <TextArea value={contraindications} onChange={setContraindications} rows={2} />
+                </div>
+                <div>
+                  <Label>Умови зберігання</Label>
+                  <TextArea value={storageConditions} onChange={setStorageConditions} rows={2} />
+                </div>
+              </div>
+            </ComponentCard>
+
+            <ComponentCard title="Налаштування та ціни" className="mt-4 sm:mt-6">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="mb-0">Бестселлер</Label>
+                  <ToggleSwitch enabled={bestseller} setEnabled={setBestseller} label="Бестселлер" />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label className="mb-0">Лімітована серія?</Label>
-                  <ToggleSwitch
-                    enabled={limitedEdition}
-                    setEnabled={setLimitedEdition}
-                    label="Limited Edition"
-                  />
+                  <Label className="mb-0">В наявності</Label>
+                  <ToggleSwitch enabled={inStock} setEnabled={setInStock} label="В наявності" />
+                </div>
+                <div>
+                  <Label>Пріоритет показу</Label>
+                  <Input type="number" value={priority} onChange={(e) => setPriority(e.target.value)} placeholder="0" />
+                </div>
+                <div>
+                  <Label>Кількість на складі</Label>
+                  <Input type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="0" />
                 </div>
               </div>
             </ComponentCard>
           </div>
 
-          {/* Right side: images and videos */}
-          <div className="p-4">
-            <DropzoneComponent onDrop={handleDrop} />
+          {/* Right side: Медіа товарів */}
+          <div className="min-w-0 p-0 sm:p-2 md:p-4">
+            <ComponentCard title="Медіа товарів">
+              <p className="text-sm text-gray-500 mb-4">Додайте фото або відео товару. Перше медіа буде головним.</p>
+              <DropzoneComponent onDrop={handleDrop} />
             {/* {images.length > 0 &&
               images.map((file, i) => {
                 const previewUrl = URL.createObjectURL(file);
@@ -659,22 +569,23 @@ export default function FormElements() {
                   </div>
                 );
               })}
+            </ComponentCard>
           </div>
         </div>
 
         {/* Submit button */}
-        <div className="flex justify-center">
+        <div className="flex justify-center pt-4">
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 transition text-white px-8 py-3 rounded-lg text-sm disabled:opacity-50"
+            className="w-full sm:w-auto min-h-[48px] sm:min-h-0 bg-blue-600 hover:bg-blue-700 transition text-white px-6 py-3 sm:px-8 rounded-lg text-sm font-medium disabled:opacity-50 touch-manipulation"
             disabled={loading}
           >
             {loading ? "Збереження..." : "Створити Товар"}
           </button>
         </div>
 
-        {success && <div className="text-green-600 text-center">{success}</div>}
-        {error && <div className="text-red-600 text-center">{error}</div>}
+        {success && <div className="text-green-600 text-center text-sm sm:text-base">{success}</div>}
+        {error && <div className="text-red-600 text-center text-sm sm:text-base">{error}</div>}
       </form>
     </div>
   );

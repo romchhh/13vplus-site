@@ -8,6 +8,7 @@ import { cachedFetch, CACHE_KEYS } from "./cache";
 interface Product {
   id: number;
   name: string;
+  slug?: string | null;
   price: number;
   discount_percentage?: number;
   media?: { url: string; type: string }[];
@@ -17,7 +18,6 @@ interface Product {
   colors?: { label: string; hex?: string | null }[];
   top_sale?: boolean;
   limited_edition?: boolean;
-  season?: string;
   category_name?: string;
   description?: string;
   has_lining?: boolean;
@@ -27,14 +27,13 @@ interface Product {
 
 interface UseProductsOptions {
   category?: string | null;
-  season?: string | null;
   subcategory?: string | null;
   topSale?: boolean;
   limitedEdition?: boolean;
 }
 
 export function useProducts(options: UseProductsOptions = {}) {
-  const { category, season, subcategory, topSale, limitedEdition } = options;
+  const { category, subcategory, topSale, limitedEdition } = options;
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,9 +61,6 @@ export function useProducts(options: UseProductsOptions = {}) {
         } else if (category) {
           url = `/api/products/category?category=${encodeURIComponent(category)}`;
           cacheKey = CACHE_KEYS.PRODUCTS_CATEGORY(category);
-        } else if (season) {
-          url = `/api/products/season?season=${encodeURIComponent(season)}`;
-          cacheKey = CACHE_KEYS.PRODUCTS_SEASON(season);
         }
 
         // Use shorter cache duration for limited edition (1 minute instead of 5)
@@ -74,7 +70,6 @@ export function useProducts(options: UseProductsOptions = {}) {
         const urlWithCache = limitedEdition ? `${url}?t=${Date.now()}` : url;
         
         const data = await cachedFetch<Product[]>(urlWithCache, cacheKey, cacheDuration);
-        console.log(`[useProducts] Fetched ${data.length} limited edition products:`, data.map(p => ({ id: p.id, name: p.name, hasMedia: !!p.first_media })));
         setProducts(data);
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -88,7 +83,7 @@ export function useProducts(options: UseProductsOptions = {}) {
     }
 
     fetchProducts();
-  }, [category, season, subcategory, topSale, limitedEdition]);
+  }, [category, subcategory, topSale, limitedEdition]);
 
   return { products, loading, error };
 }

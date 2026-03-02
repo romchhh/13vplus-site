@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import { useBasket } from "@/lib/BasketProvider";
 
 interface OrderItem {
   id?: number;
@@ -27,12 +27,31 @@ type PageState = "loading" | "paid" | "pending" | "not_found" | "invalid";
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
+  const { clearBasket } = useBasket();
   const [orderId, setOrderId] = useState<string | null>(null);
   const [order, setOrder] = useState<OrderData | null>(null);
   const [state, setState] = useState<PageState>("loading");
   const [refreshing, setRefreshing] = useState(false);
 
   const orderRef = searchParams.get("orderReference");
+
+  // Після повернення з Mono (redirectUrl без query) — беремо orderId з localStorage і редіректимо
+  useEffect(() => {
+    if (orderRef) return;
+    try {
+      const pending = localStorage.getItem("pendingPayment");
+      if (pending) {
+        const data = JSON.parse(pending) as { orderId?: string };
+        if (data?.orderId) {
+          window.location.replace(`/success?orderReference=${encodeURIComponent(data.orderId)}`);
+          return;
+        }
+      }
+      setState("invalid");
+    } catch {
+      setState("invalid");
+    }
+  }, [orderRef]);
 
   async function checkPayment() {
     if (!orderRef) {
@@ -46,6 +65,7 @@ function PaymentSuccessContent() {
         const orderData = await response.json();
         setOrder(orderData);
         setState("paid");
+        clearBasket();
         try {
           localStorage.removeItem("basket");
           localStorage.removeItem("submittedOrder");
@@ -64,10 +84,7 @@ function PaymentSuccessContent() {
   }
 
   useEffect(() => {
-    if (!orderRef) {
-      setState("invalid");
-      return;
-    }
+    if (!orderRef) return;
     let cancelled = false;
     setState("loading");
     setOrderId(orderRef);
@@ -79,6 +96,7 @@ function PaymentSuccessContent() {
             if (cancelled) return;
             setOrder(orderData);
             setState("paid");
+            clearBasket();
             try {
               localStorage.removeItem("basket");
               localStorage.removeItem("submittedOrder");
@@ -120,12 +138,12 @@ function PaymentSuccessContent() {
     );
   }
 
-  // Оплата ще не підтверджена (WayForPay/Plisio ще не надіслали webhook)
+  // Оплата ще не підтверджена (Mono webhook ще не надіслав підтвердження)
   if (state === "pending") {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[var(--background-warm-yellow)] py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="rounded-lg shadow-lg p-8 text-center">
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-amber-100 mb-6">
               <svg className="h-8 w-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -149,7 +167,7 @@ function PaymentSuccessContent() {
               </button>
               <Link
                 href="/final"
-                className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-[var(--background-warm-yellow)] hover:bg-black/5"
               >
                 Повернутися до оформлення
               </Link>
@@ -163,10 +181,10 @@ function PaymentSuccessContent() {
   // Замовлення не знайдено або невалідне посилання
   if (state === "not_found" || state === "invalid") {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[var(--background-warm-yellow)] py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gray-100 mb-6">
+          <div className="rounded-lg shadow-lg p-8 text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-black/5 mb-6">
               <svg className="h-8 w-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -191,130 +209,94 @@ function PaymentSuccessContent() {
     );
   }
 
-  // state === "paid" — показуємо сторінку успішної оплати
+  // state === "paid" — сторінка оформленого замовлення з переліком товарів
+  const total = order?.items?.reduce((sum, item) => sum + item.price * item.quantity, 0) ?? 0;
+  const imageSrc = (url: string | null | undefined) =>
+    !url ? undefined : url.startsWith("http") ? url : `/api/images/${url}`;
+
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-12">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
-            <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Оплата успішна!</h1>
-          <p className="text-lg text-gray-600 mb-6">
-            Дякуємо за ваше замовлення. Ваш платіж було успішно оброблено.
+        <nav className="mb-8" aria-label="Breadcrumb">
+          <ol className="flex items-center gap-2 text-sm font-['Montserrat'] font-normal">
+            <li>
+              <Link href="/" className="text-[#3D1A00] hover:opacity-80 transition-opacity">
+                Головна
+              </Link>
+            </li>
+            <li className="text-gray-400">|</li>
+            <li className="text-gray-400">Оформлення замовлення</li>
+          </ol>
+        </nav>
+
+        <div className="text-center py-8 sm:py-12">
+          <h1 className="font-['Montserrat'] font-bold text-3xl sm:text-4xl lg:text-5xl text-[#3D1A00] uppercase tracking-tight mb-4">
+            Дякуємо!
+          </h1>
+          <p className="font-['Montserrat'] font-bold text-2xl sm:text-3xl lg:text-4xl text-[#3D1A00] uppercase tracking-tight mb-2">
+            Ваше замовлення оформлене!
           </p>
+          {order?.invoice_id && (
+            <p className="font-['Montserrat'] text-sm text-[#3D1A00]/70 mb-10">
+              Номер замовлення: <span className="font-semibold">{order.invoice_id}</span>
+            </p>
+          )}
+        </div>
 
-          {order && order.items && order.items.length > 0 ? (
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 text-left">Товари у замовленні</h2>
-              <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-gray-100 text-gray-700">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-semibold w-16">Фото</th>
-                      <th className="px-4 py-3 text-left font-semibold">Назва продукту</th>
-                      <th className="px-4 py-3 text-left font-semibold">Розмір</th>
-                      <th className="px-4 py-3 text-left font-semibold">Колір</th>
-                      <th className="px-4 py-3 text-left font-semibold">Кількість</th>
-                      <th className="px-4 py-3 text-left font-semibold">Ціна (₴)</th>
-                      <th className="px-4 py-3 text-left font-semibold">Сума (₴)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {order.items.map((item, index) => {
-                      const itemTotal = Number(item.price) * item.quantity;
-                      return (
-                        <tr key={`order-item-${index}`} className="hover:bg-gray-50">
-                          <td className="px-4 py-3">
-                            {item.imageUrl ? (
-                              <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-gray-100 rounded overflow-hidden">
-                                <Image
-                                  src={`/api/images/${item.imageUrl}`}
-                                  alt={item.product_name}
-                                  width={64}
-                                  height={64}
-                                  className="object-cover w-full h-full"
-                                />
-                              </div>
-                            ) : (
-                              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-200 rounded flex items-center justify-center">
-                                <span className="text-gray-400 text-xs">Фото</span>
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-gray-800">{item.product_name}</td>
-                          <td className="px-4 py-3 text-gray-600">{item.size}</td>
-                          <td className="px-4 py-3 text-gray-600">{item.color || "—"}</td>
-                          <td className="px-4 py-3 text-gray-600">{item.quantity}</td>
-                          <td className="px-4 py-3 text-gray-600">{Number(item.price).toFixed(2)}</td>
-                          <td className="px-4 py-3 text-gray-600">{itemTotal.toFixed(2)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tfoot className="bg-gray-50">
-                    <tr>
-                      <td colSpan={6} className="px-4 py-3 text-right font-semibold text-gray-800">Загальна сума:</td>
-                      <td className="px-4 py-3 font-bold text-green-600">
-                        {order.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0).toFixed(2)} ₴
-                      </td>
-                    </tr>
-                    {order.payment_type === "installment" && (
-                      <tr>
-                        <td colSpan={6} className="px-4 py-3 text-right font-semibold text-gray-800">Залишок до оплати:</td>
-                        <td className="px-4 py-3 font-semibold text-gray-600">0.00 ₴</td>
-                      </tr>
-                    )}
-                  </tfoot>
-                </table>
-              </div>
-            </div>
-          ) : orderId ? (
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <p className="text-sm text-gray-500 mb-1">Номер замовлення:</p>
-              <p className="text-lg font-semibold text-gray-900">{orderId}</p>
-            </div>
-          ) : null}
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left">
-            <p className="text-sm text-blue-800"><strong>Що далі?</strong></p>
-            {order?.payment_type === "pay_after" ? (
-              <ul className="mt-2 text-sm text-blue-700 space-y-1 list-disc list-inside">
-                <li>Ми отримали ваше замовлення</li>
-                <li>Оплата при отриманні — сплатіть кур&apos;єру або у відділенні при отриманні товару</li>
-                <li>Наш менеджер зв&apos;яжеться з вами найближчим часом</li>
-                <li>Ви отримаєте підтвердження на вказану електронну пошту</li>
-              </ul>
-            ) : order?.payment_type === "test_payment" ? (
-              <ul className="mt-2 text-sm text-blue-700 space-y-1 list-disc list-inside">
-                <li>Тестова оплата — замовлення прийнято як оплачене</li>
-                <li>Наш менеджер зв&apos;яжеться з вами найближчим часом</li>
-              </ul>
-            ) : (
-              <ul className="mt-2 text-sm text-blue-700 space-y-1 list-disc list-inside">
-                <li>Ми отримали ваше замовлення та платіж</li>
-                <li>Наш менеджер зв&apos;яжеться з вами найближчим часом</li>
-                <li>Ви отримаєте підтвердження на вказану електронну пошту</li>
-              </ul>
-            )}
+        {/* Список товарів замовлення */}
+        {order?.items && order.items.length > 0 && (
+          <div className="mb-10">
+            <h2 className="font-['Montserrat'] font-semibold text-lg text-[#3D1A00] uppercase tracking-tight mb-4">
+              Товари у замовленні
+            </h2>
+            <ul className="space-y-4 border border-[#3D1A00]/10 rounded-xl overflow-hidden divide-y divide-[#3D1A00]/10">
+              {order.items.map((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                const src = imageSrc(item.imageUrl);
+                return (
+                  <li key={index} className="flex gap-4 p-4 bg-white">
+                    <div className="w-20 h-20 flex-shrink-0 rounded-lg bg-[#f5f5f0] overflow-hidden">
+                      {src ? (
+                        <img
+                          src={src}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#3D1A00]/30 text-xs font-['Montserrat']">
+                          —
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-['Montserrat'] font-medium text-[#3D1A00] text-sm sm:text-base">
+                        {item.product_name}
+                        {item.color ? ` · ${item.color}` : ""}
+                      </p>
+                      <p className="font-['Montserrat'] text-[#3D1A00]/70 text-sm mt-0.5">
+                        {item.quantity} шт.
+                      </p>
+                      <p className="font-['Montserrat'] font-semibold text-[#3D1A00] text-sm mt-1">
+                        {itemTotal.toFixed(2)} ₴
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="font-['Montserrat'] font-bold text-[#3D1A00] text-lg mt-4 text-right">
+              Разом: {total.toFixed(2)} ₴
+            </p>
           </div>
+        )}
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/catalog"
-              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800"
-            >
-              Продовжити покупки
-            </Link>
-            <Link
-              href="/contacts"
-              className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-            >
-              Зв&apos;язатися з нами
-            </Link>
-          </div>
+        <div className="text-center">
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-['Montserrat'] font-semibold text-[#3D1A00] uppercase text-base tracking-tight bg-[#9B9B5A] hover:bg-[#8a8a4e] transition-colors"
+          >
+            Повернутися на головну
+          </Link>
         </div>
       </div>
     </div>

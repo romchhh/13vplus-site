@@ -2,6 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { sqlGetAllProducts, sqlPostProduct } from "@/lib/sql";
+import { revalidateProducts } from "@/lib/revalidate";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
@@ -82,24 +83,35 @@ export async function POST(req: Request) {
       const body = await req.json();
       const {
         name,
+        subtitle,
+        release_form,
+        course,
+        package_weight,
+        main_info,
+        short_description,
         description,
+        main_action,
+        indications_for_use,
+        benefits,
+        full_composition,
+        usage_method,
+        contraindications,
+        storage_conditions,
         price,
         old_price,
         discount_percentage,
         priority = 0,
-        sizes = [],
+        stock = 0,
         media = [],
-        colors = [],
         top_sale = false,
-        limited_ition, // backward compat typo handling (ignored)
+        in_stock = true,
+        limited_ition,
         limited_edition = false,
-        season = [],
-        color,
         category_id = null,
         subcategory_id = null,
-        fabric_composition = "",
+        fabric_composition,
         has_lining = false,
-        lining_description = "",
+        lining_description,
       } = body || {};
 
       if (!name || typeof price !== "number") {
@@ -111,30 +123,38 @@ export async function POST(req: Request) {
 
       const product = await sqlPostProduct({
         name,
-        description,
+        subtitle: subtitle ?? null,
+        release_form: release_form ?? null,
+        course: course ?? null,
+        package_weight: package_weight ?? null,
+        main_info: main_info ?? null,
+        short_description: short_description ?? null,
+        description: description ?? null,
+        main_action: main_action ?? null,
+        indications_for_use: indications_for_use ?? null,
+        benefits: benefits ?? null,
+        full_composition: full_composition ?? null,
+        usage_method: usage_method ?? null,
+        contraindications: contraindications ?? null,
+        storage_conditions: storage_conditions ?? null,
         price,
         old_price,
         discount_percentage,
         priority,
-        sizes: Array.isArray(sizes)
-          ? (sizes as (string | { size: string; stock?: number | string })[]).map((s) =>
-              typeof s === "string" ? { size: s, stock: 0 } : { size: s.size, stock: Number(s.stock ?? 0) }
-            )
-          : [],
+        stock: typeof stock === "number" ? stock : Number(stock) || 0,
         media,
         top_sale,
+        in_stock: in_stock !== false,
         limited_edition:
           typeof limited_ition === "boolean" ? limited_ition : limited_edition,
-        season,
-        color,
         category_id,
         subcategory_id,
-        fabric_composition,
+        fabric_composition: fabric_composition ?? null,
         has_lining,
-        lining_description,
-        colors,
+        lining_description: lining_description ?? null,
       });
 
+      await revalidateProducts();
       return NextResponse.json(product, { status: 201 });
     }
 
@@ -153,13 +173,11 @@ export async function POST(req: Request) {
       ? Number(formData.get("priority"))
       : 0;
     const description = formData.get("description") as string;
-    const sizesRaw = formData.get("sizes") as string;
+    const stockRaw = formData.get("stock");
+    const stock = stockRaw != null ? Number(stockRaw) || 0 : 0;
     const images = formData.getAll("images") as File[];
     const topSale = formData.get("top_sale") === "true";
     const limitedEdition = formData.get("limited_edition") === "true";
-    const color = formData.get("color")?.toString();
-    const seasonsRaw = formData.get("seasons") as string | null;
-    const season = seasonsRaw ? seasonsRaw.split(",").map((s) => s.trim()) : [];
     const categoryId = formData.get("category_id")
       ? Number(formData.get("category_id"))
       : null;
@@ -202,8 +220,6 @@ export async function POST(req: Request) {
 
     apiLogger.info("POST", `/api/products`, `Media to save: ${savedMedia.length} files`);
 
-    const parsedSizes = JSON.parse(sizesRaw); // ["S", "M", "L"]
-
     const product = await sqlPostProduct({
       name,
       description,
@@ -211,22 +227,18 @@ export async function POST(req: Request) {
       old_price: oldPrice,
       discount_percentage: discountPercentage,
       priority,
+      stock,
       top_sale: topSale,
       limited_edition: limitedEdition,
-      season,
-      color,
       category_id: categoryId,
       subcategory_id: subcategoryId,
       fabric_composition: fabricComposition,
       has_lining: hasLining,
       lining_description: liningDescription,
-      sizes: parsedSizes.map((size: string) => ({
-        size,
-        stock: 5,
-      })),
       media: savedMedia,
     });
 
+    await revalidateProducts();
     return NextResponse.json(product, { status: 201 });
   } catch (error) {
     apiLogger.error("POST", "/api/products", error);

@@ -9,14 +9,12 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { AppProvider } from "@/lib/GeneralProvider";
 import { BasketProvider } from "@/lib/BasketProvider";
-import { WishlistProvider } from "@/lib/WishlistProvider";
 import { CategoriesProvider } from "@/lib/CategoriesProvider";
-import AuthProvider from "@/lib/AuthProvider";
 import { registerServiceWorker } from "@/lib/registerSW";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { WebVitals } from "@/components/shared/WebVitals";
 import MainContent from "@/components/shared/MainContent";
-import { OrganizationStructuredData } from "@/components/shared/StructuredData";
+import { OrganizationStructuredData, WebSiteStructuredData } from "@/components/shared/StructuredData";
 
 const montserrat = Montserrat({
   subsets: ["latin", "cyrillic"],
@@ -29,27 +27,34 @@ const montserrat = Montserrat({
   weight: ["300", "400", "500", "600", "700"],
 });
 
+const baseUrlForMeta = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "13VPLUS — Жіночий Одяг | Повсякденний, Домашній Одяг та Купальники",
+  metadataBase: new URL(baseUrlForMeta),
+  title: "Choice — Офіційний представник в Україні | Eco та wellness для здоров'я і дому",
   description:
-    "13VPLUS — український бренд жіночого одягу. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі. Індивідуальний пошив під ваші параметри. Для жінок від 22 до 50 років.",
+    "Офіційний представник бренду Choice в Україні. Wellness-комплекси, натуральний догляд та eco-засоби для щоденного життя. Консультація та замовлення оригінальної продукції.",
   keywords:
-    "13VPLUS, жіночий одяг, одяг для жінок, повсякденний одяг, домашній одяг, купальники, український бренд одягу, мінімалізм, лакшері стиль, індивідуальний пошив, одяг на замовлення, українська мода, стильний одяг для жінок",
+    "Choice, Choice Україна, wellness, eco, фітокомплекси, вітаміни, корекція ваги, догляд за тілом, eco-засоби для дому, офіційний представник Choice",
   icons: {
-    icon: "/images/browser-open.png",
-    shortcut: "/images/browser-open.png",
-    apple: "/images/browser-open.png",
+    icon: "/images/choice-features/open-browser.png",
+    shortcut: "/images/choice-features/open-browser.png",
+    apple: "/images/choice-features/open-browser.png",
   },
   openGraph: {
-    title: "13VPLUS — Жіночий Одяг | Повсякденний, Домашній Одяг та Купальники",
+    title: "Choice — Офіційний представник в Україні | Eco та wellness",
     description:
-      "Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі. Індивідуальний пошив під ваші параметри.",
+      "Оригінальна продукція Choice: wellness-комплекси, натуральний догляд та eco-засоби для здоров'я і дому.",
     type: "website",
     locale: "uk_UA",
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: { index: true, follow: true },
+  },
+  alternates: {
+    canonical: baseUrlForMeta,
   },
 };
 
@@ -64,28 +69,26 @@ export default function RootLayout({
     <html lang="uk" className={montserrat.className}>
       <head>
         <OrganizationStructuredData url={baseUrl} baseUrl={baseUrl} />
+        <WebSiteStructuredData baseUrl={baseUrl} />
+        <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+        <link rel="alternate" type="text/plain" href="/ai.txt" title="AI context (ai.txt)" />
         {/* Mobile viewport optimization */}
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
         <meta name="format-detection" content="telephone=no" />
         
         {/* Favicon and App Icons */}
-        <link rel="icon" type="image/png" href="/images/browser-open.png" />
-        <link rel="shortcut icon" type="image/png" href="/images/browser-open.png" />
-        <link rel="apple-touch-icon" href="/images/browser-open.png" />
+        <link rel="icon" type="image/png" href="/images/choice-features/open-browser.png" />
+        <link rel="shortcut icon" type="image/png" href="/images/choice-features/open-browser.png" />
+        <link rel="apple-touch-icon" href="/images/choice-features/open-browser.png" />
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#000000" />
         <meta name="msapplication-TileColor" content="#000000" />
         
         {/* Preload critical resources */}
         <link rel="preload" href="/images/browser-open.png" as="image" />
-        {/* Conditional preload: fallback image for mobile/slow connections, video for desktop */}
-        <link rel="preload" href="/images/hero-fallback.png" as="image" media="(max-width: 767px)" />
-        <link rel="preload" href="/images/hero-video.webm" as="video" type="video/webm" media="(min-width: 768px)" />
+        {/* Hero image preload */}
+        <link rel="preload" href="/images/hf_20260222_063745_3c9c7bbc-82d2-4f3f-8c11-4216792e4995.jpeg" as="image" />
         <link rel="preload" href="/api/products/top-sale" as="fetch" crossOrigin="anonymous" />
-        
-        {/* Conditional preload for mobile vs desktop */}
-        <link rel="preload" href="/images/IMG_0043.JPG" as="image" media="(min-width: 768px)" />
-        <link rel="preload" href="/images/IMAGE-2025-10-17_21-48-37.jpg" as="image" media="(min-width: 768px)" />
         
         {/* Mobile-specific prefetch */}
         <link rel="prefetch" href="/catalog" />
@@ -105,7 +108,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         
         {/* Apple touch icon */}
-        <link rel="apple-touch-icon" href="/images/browser-open.png" />
+        <link rel="apple-touch-icon" href="/images/choice-features/open-browser.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
@@ -144,21 +147,17 @@ export default function RootLayout({
           Перейти до основного контенту
         </a>
         <ErrorBoundary>
-          <AuthProvider>
-            <AppProvider>
-              <BasketProvider>
-                <WishlistProvider>
-                  <CategoriesProvider>
-                    <Header />
-                    <Suspense fallback={<main id="main-content" className="bg-white mt-16 lg:mt-20 min-h-screen" />}>
-                      <MainContent id="main-content">{children}</MainContent>
-                    </Suspense>
-                    <Footer />
-                  </CategoriesProvider>
-                </WishlistProvider>
-              </BasketProvider>
-            </AppProvider>
-          </AuthProvider>
+          <AppProvider>
+            <BasketProvider>
+              <CategoriesProvider>
+                <Header />
+                <Suspense fallback={<main id="main-content" className="bg-[var(--background-warm-yellow)] mt-[5.75rem] lg:mt-[7.75rem] min-h-screen" />}>
+                  <MainContent id="main-content">{children}</MainContent>
+                </Suspense>
+                <Footer />
+              </CategoriesProvider>
+            </BasketProvider>
+          </AppProvider>
         </ErrorBoundary>
         
         {/* Service Worker registration - loaded after interactive */}

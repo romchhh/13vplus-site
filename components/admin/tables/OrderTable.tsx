@@ -29,6 +29,7 @@ interface Order {
 }
 
 const options = [
+  { value: "", label: "—" },
   { value: "pending", label: "Очікується" },
   { value: "delivering", label: "Доставляємо" },
   { value: "complete", label: "Завершено" },
@@ -303,7 +304,7 @@ export default function OrdersTable() {
                     </TableCell>
                     <TableCell className="px-5 py-4 text-sm text-gray-700">
                       <select
-                        value={order.status}
+                        value={order.status ?? ""}
                         onChange={(e) => handleStatusChange(order.id, e.target.value)}
                         className="border border-gray-300 px-2 py-1 rounded text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >

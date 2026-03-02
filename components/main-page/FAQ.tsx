@@ -28,12 +28,10 @@ export default function FAQ() {
       });
     }, observerOptions);
 
-    // Observe title
     if (titleRef.current) {
       observer.observe(titleRef.current);
     }
 
-    // Observe FAQ items
     itemsRef.current.forEach((item) => {
       if (item) {
         observer.observe(item);
@@ -48,56 +46,23 @@ export default function FAQ() {
   const faqItems = [
     {
       number: "01",
-      title: "Оплата | 13VPLUS",
-      content: `Оплата товарів на нашому сайті доступна через банківські картки, Apple Pay та PayPal, оплата на Crypto-гаманець та розстрочка на 3–4 платежі.
-
-Для товарів з наших колекцій доступні варіанти оплати:
-— Передоплата 200 грн (після підтвердження наявності товару)
-— Повна оплата
-
-Усі деталі щодо оплати уточнюються після оформлення замовлення нашим менеджером.`,
+      title: "Чи це оригінальна продукція Choice?",
+      content: "Так. Всі продукти є оригінальною продукцією Choice.",
     },
     {
       number: "02",
-      title: "Відправка замовлення | 13VPLUS",
-      content: `Відправка замовлень здійснюється в робочі дні (понеділок - п'ятниця) після підтвердження замовлення та оплати.
-
-Терміни відправки:
-— Готові товари з колекції: 1-3 робочі дні після оплати
-— Індивідуальний пошив: 7-14 робочих днів після оплати (залежить від складності)
-
-Після відправки замовлення ви отримаєте SMS та email з трек-номером для відстеження посилки. Усі деталі щодо відправки уточнюються після оформлення замовлення нашим менеджером.`,
+      title: "Як обрати продукт?",
+      content: "Ви можете обрати самостійно або звернутись за консультацією.",
     },
     {
       number: "03",
-      title: "Доставка | 13VPLUS",
-      content: `Вартість доставки по Україні через службу "Нова Пошта" розраховується з урахуванням декількох параметрів - параметри та вага відправлення і наявності додаткових платних послуг і сервісів.
-Термін обробки замовлення становить 1-2 робочі дні. Формування та відправка замовлень здійснюється в понеділок, середу та пʼятницю.
-
-Якщо Ваше замовлення оформлене на подарунок, ми з радістю додамо подарункове упакування БЕЗКОШТОВНО. Лише сповістіть нас про це. Також до кожного замовлення додаємо іменну листівку. 
-Якщо Ваше замовлення було оформлено у вихідний або святковий день або в неробочий час - воно буде відправлене у найближчій відправці.
-
-Доставка товару під замовлення триває орієнтовно 15-20 робочих днів. 
-
-Замовлення оформляємо після передоплати 200 грн. У разі відмови передоплата не повертається.`,
+      title: "Як швидко відправляється замовлення?",
+      content: "Зазвичай протягом 1–2 робочих днів.",
     },
     {
       number: "04",
-      title: "Обмін та повернення | 13VPLUS",
-      content: `У разі необхідності Ви можете обміняти або повернути товар протягом 14-ти календарних днів з моменту його отримання.
-
-Обмін і повернення товару можливо у випадку, якщо збережено його товарний вигляд, фабричні ярлики, етикетки, коробку. Товар, що був у використанні НЕ підлягає поверненню та обміну.
-
-Зв'яжіться з нами в месенджері, з запитом на обмін/повернення (Viber, Telegram, Instagram).
-
-Відправте товар Новою поштою за адресою, що вкаже менеджер Вам у повідомленні. Після відправки повідомте будь ласка номер ТТН. 
-Обмін або ж повернення товару за рахунок відправника.
-
-Після схвалення повернення ми перерахуємо кошти автоматично Вам на карту в термін до 5 банківських днів.
-
-Після схвалення обміну, ми створюємо нове замовлення і формуємо відправку.
-
-Термін схвалення обміну або повернення становить до 3-ох робочих днів з моменту отримання на склад поверненого товару.`,
+      title: "Чи можна отримати консультацію?",
+      content: "Так. Ви можете звернутись через форму або месенджери.",
     },
   ];
 
@@ -108,7 +73,6 @@ export default function FAQ() {
       className="scroll-mt-20 max-w-[1920px] w-full mx-auto bg-black py-16 lg:py-24 px-6 overflow-hidden"
     >
       <div className="flex flex-col lg:flex-row justify-between gap-12 lg:gap-16">
-        {/* Left side - Title */}
         <div
           ref={titleRef}
           data-index={0}
@@ -120,45 +84,41 @@ export default function FAQ() {
         >
           <h2 className="text-4xl lg:text-6xl font-bold font-['Montserrat'] uppercase tracking-wider text-white leading-tight mb-6">
             <span className="inline-block transition-all duration-700 delay-100">
-              Ви часто
+              Часті
             </span>
             <br />
             <span className="inline-block transition-all duration-700 delay-200">
-              запитуєте
+              запитання
             </span>
           </h2>
           <p className="text-lg lg:text-xl font-normal font-['Montserrat'] text-white/70 leading-relaxed transition-all duration-1000 delay-300">
-            Зібрали найпоширеніші запитання наших відвідувачів
+            Відповіді на популярні питання про продукцію та замовлення
           </p>
         </div>
 
-        {/* Right side - Accordion */}
         <div className="flex-1 max-w-4xl">
           {faqItems.map((item, index) => {
             const itemIndex = index + 1;
             const isVisible = visibleItems.has(itemIndex);
-            
-            // Різні напрямки анімації для кожного елемента
+
             const getAnimationClass = () => {
               if (isVisible) {
                 return "opacity-100 translate-x-0 translate-y-0 scale-100 rotate-0";
               }
-              
-              // Різні напрямки для різних елементів
               switch (index % 4) {
-                case 0: // Зправа
+                case 0:
                   return "opacity-0 translate-x-32 translate-y-0 scale-95";
-                case 1: // Зліва
+                case 1:
                   return "opacity-0 -translate-x-32 translate-y-0 scale-95";
-                case 2: // Знизу
+                case 2:
                   return "opacity-0 translate-x-0 translate-y-20 scale-95";
-                case 3: // Зверху з поворотом
+                case 3:
                   return "opacity-0 translate-x-0 -translate-y-20 scale-95 rotate-2";
                 default:
                   return "opacity-0 translate-x-0 translate-y-10 scale-95";
               }
             };
-            
+
             return (
               <div
                 key={index}
@@ -188,7 +148,6 @@ export default function FAQ() {
                   </span>
                 </button>
 
-                {/* Accordion content */}
                 <div
                   className={`overflow-hidden transition-all duration-500 ease-in-out ${
                     openAccordion === itemIndex
@@ -196,7 +155,7 @@ export default function FAQ() {
                       : "max-h-0 opacity-0 -translate-y-4"
                   }`}
                 >
-                  <div className="pb-6 lg:pb-8 pl-0 lg:pl-20 text-base lg:text-lg font-normal font-['Montserrat'] text-white/70 leading-relaxed whitespace-pre-line">
+                  <div className="pb-6 lg:pb-8 pl-0 lg:pl-20 text-base lg:text-lg font-normal font-['Montserrat'] text-white/70 leading-relaxed">
                     {item.content}
                   </div>
                 </div>

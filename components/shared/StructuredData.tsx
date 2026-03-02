@@ -11,6 +11,7 @@ interface ProductStructuredDataProps {
     category_name?: string | null;
   };
   baseUrl?: string;
+  slug?: string; // ЧПУ для URL
 }
 
 interface OrganizationStructuredDataProps {
@@ -21,10 +22,57 @@ interface OrganizationStructuredDataProps {
 }
 
 const defaultBaseUrl = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
-export function ProductStructuredData({ product, baseUrl = defaultBaseUrl }: ProductStructuredDataProps) {
+
+/** Schema.org WebSite — для пошукових систем і rich results */
+export function WebSiteStructuredData({
+  name = "Choice Україна",
+  description = "Офіційний представник бренду Choice в Україні. Wellness-комплекси, натуральний догляд та eco-засоби для здоров'я і дому.",
+  baseUrl = defaultBaseUrl,
+  locale = "uk_UA",
+}: {
+  name?: string;
+  description?: string;
+  baseUrl?: string;
+  locale?: string;
+}) {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name,
+    description,
+    url: baseUrl,
+    inLanguage: locale,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${baseUrl}/catalog?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Choice Україна",
+      logo: {
+        "@type": "ImageObject",
+        url: `${baseUrl}/images/browser-open.png`,
+      },
+    },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+    />
+  );
+}
+
+export function ProductStructuredData({ product, baseUrl = defaultBaseUrl, slug }: ProductStructuredDataProps) {
   const imageUrl = product.first_media
     ? `${baseUrl}/api/images/${product.first_media.url}`
-    : `${baseUrl}/images/13VPLUS BLACK PNG 2.png`;
+    : `${baseUrl}/images/browser-open.png`;
+  const productUrl = slug ? `${baseUrl}/product/${slug}` : `${baseUrl}/product/${product.id}`;
 
   const offer = {
     "@type": "Offer",
@@ -33,22 +81,22 @@ export function ProductStructuredData({ product, baseUrl = defaultBaseUrl }: Pro
       : product.price.toFixed(2),
     priceCurrency: "UAH",
     availability: "https://schema.org/InStock",
-    url: `${baseUrl}/product/${product.id}`,
+    url: productUrl,
   };
 
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
-    description: product.description || `${product.name} від 13VPLUS`,
+    description: product.description || `${product.name} — Choice`,
     image: imageUrl,
     brand: {
       "@type": "Brand",
-      name: "13VPLUS",
+      name: "Choice",
     },
-    category: product.category_name || "Жіночий одяг",
+    category: product.category_name || "Wellness",
     offers: offer,
-    sku: `13VPLUS-${product.id}`,
+    sku: `choice-${product.id}`,
   };
 
   return (
@@ -60,7 +108,7 @@ export function ProductStructuredData({ product, baseUrl = defaultBaseUrl }: Pro
 }
 
 export function OrganizationStructuredData({
-  name = "13VPLUS",
+  name = "Choice Україна",
   url,
   logo,
   baseUrl = defaultBaseUrl,
@@ -70,9 +118,9 @@ export function OrganizationStructuredData({
     "@type": "Organization",
     name,
     url: url || baseUrl,
-    logo: logo || `${baseUrl}/images/13VPLUS BLACK PNG 2.png`,
+    logo: logo || `${baseUrl}/images/browser-open.png`,
     sameAs: [
-      "https://www.instagram.com/13vplus",
+      "https://www.instagram.com/my_choice_mari",
     ],
     contactPoint: {
       "@type": "ContactPoint",

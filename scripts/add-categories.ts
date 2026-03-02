@@ -28,63 +28,72 @@ function loadEnvUrl(): string {
 // Load DATABASE_URL before importing prisma
 loadEnvUrl();
 
-import { sqlPostCategory, sqlPostSubcategory, sqlGetAllCategories } from "../lib/sql";
+import { prisma } from "../lib/prisma";
+import { sqlPostCategory, sqlPostSubcategory } from "../lib/sql";
 
-// Categories and subcategories data
+// Фінальна структура каталогу Choice / wellness
 const categoriesData = [
   {
-    name: "КОЛЕКЦІЇ",
+    name: "Очищення і детокс",
     priority: 10,
-    subcategories: [],
-  },
-  {
-    name: "ВЕРХНІЙ ОДЯГ",
-    priority: 9,
-    subcategories: ["Пальта", "Жакети", "Пуховики", "Екошуби", "Куртки"],
-  },
-  {
-    name: "СУКНІ",
-    priority: 8,
-    subcategories: [],
-  },
-  {
-    name: "СПІДНИЦІ",
-    priority: 7,
-    subcategories: [],
-  },
-  {
-    name: "ВЕРХИ",
-    priority: 6,
     subcategories: [
-      "Жакети",
-      "Жилети",
-      "Светри",
-      "Худі",
-      "Світшоти",
-      "Лонгсліви",
-      "Сорочки",
-      "Футболки",
-      "Майки",
-      "Корсети",
-      "Топи",
+      "Детокс",
+      "Антипаразитарний захист",
+      "Протигрибковий захист",
+      "Очищення кишечника",
+      "Очищення лімфи",
+      "Підтримка печінки",
+      "Травлення",
     ],
   },
   {
-    name: "ШТАНИ ТА ШОРТИ",
-    priority: 5,
-    subcategories: ["Джинси", "Лосини", "Шорти", "Штани"],
-  },
-  {
-    name: "ПЛЯЖНИЙ ОДЯГ",
-    priority: 4,
-    subcategories: ["Купальники", "Туніки"],
-  },
-  {
-    name: "ДОМАШНІЙ ОДЯГ",
-    priority: 3,
+    name: "Імунітет і відновлення",
+    priority: 9,
     subcategories: [
-      "Піжами (жіночі / чоловічі)",
-      "Халати (жіночі / чоловічі)",
+      "Імунітет",
+      "Антиоксидантний захист",
+      "Відновлення організму",
+      "Підтримка після стресу або навантаження",
+    ],
+  },
+  {
+    name: "Енергія, мозок і щоденна підтримка",
+    priority: 8,
+    subcategories: [
+      "Енергія",
+      "Антистрес",
+      "Пам'ять і увага",
+      "Обмін речовин",
+      "Базові вітаміни",
+    ],
+  },
+  {
+    name: "Контроль ваги і метаболізм",
+    priority: 7,
+    subcategories: [
+      "Програми корекції ваги",
+      "Контроль ваги",
+      "Підтримка метаболізму",
+      "Детокс для зниження ваги",
+    ],
+  },
+  {
+    name: "Дитяче здоров'я",
+    priority: 6,
+    subcategories: [
+      "Вітаміни для дітей",
+      "Антипаразитарні програми для дітей",
+      "Дитячі комплекси",
+    ],
+  },
+  {
+    name: "Набори і програми",
+    priority: 5,
+    subcategories: [
+      "Антипаразитарна програма",
+      "Detox програми",
+      "Wellness набори",
+      "Комплексні курси",
     ],
   },
 ];
@@ -93,8 +102,10 @@ async function main() {
   console.log("🚀 Starting to add categories and subcategories...\n");
 
   try {
-    // Get existing categories to avoid duplicates
-    const existingCategories = await sqlGetAllCategories();
+    // Get existing categories to avoid duplicates (use Prisma directly — sqlGetAllCategories uses Next.js unstable_cache and fails in scripts)
+    const existingCategories = await prisma.category.findMany({
+      select: { name: true },
+    });
     const existingCategoryNames = new Set(
       existingCategories.map((cat) => cat.name.toUpperCase())
     );

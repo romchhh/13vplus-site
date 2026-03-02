@@ -70,17 +70,12 @@ export async function PUT(
     }
 
     const topSale = body.top_sale === true;
+    const inStock = body.in_stock !== false;
     const limitedEdition = body.limited_edition === true;
-    const season = Array.isArray(body.season)
-      ? body.season
-      : typeof body.season === "string"
-      ? [body.season]
-      : [];
     const categoryId = body.category_id ? Number(body.category_id) : null;
     const subcategoryId = body.subcategory_id
       ? Number(body.subcategory_id)
       : null;
-    const color = typeof body.color === "string" ? body.color : null;
     const oldPrice = body.old_price ? Number(body.old_price) : null;
     const discountPercentage = body.discount_percentage
       ? Number(body.discount_percentage)
@@ -88,45 +83,37 @@ export async function PUT(
     const priority = body.priority ? Number(body.priority) : 0;
     const hasLining = body.has_lining === true;
     const liningDescription = body.lining_description || "";
-
-    console.log("[PUT /api/products/:id] Updating product:", {
-      id,
-      limited_edition: body.limited_edition,
-      limitedEdition: limitedEdition,
-      top_sale: body.top_sale,
-      topSale,
-    });
+    const stock = typeof body.stock === "number" ? body.stock : body.stock != null ? Number(body.stock) : undefined;
 
     await sqlPutProduct(id, {
       name: body.name,
-      description: body.description,
+      subtitle: body.subtitle ?? undefined,
+      release_form: body.release_form ?? undefined,
+      course: body.course ?? undefined,
+      package_weight: body.package_weight ?? undefined,
+      main_info: body.main_info ?? undefined,
+      short_description: body.short_description ?? undefined,
+      description: body.description ?? undefined,
+      main_action: body.main_action ?? undefined,
+      indications_for_use: body.indications_for_use ?? undefined,
+      benefits: body.benefits ?? undefined,
+      full_composition: body.full_composition ?? undefined,
+      usage_method: body.usage_method ?? undefined,
+      contraindications: body.contraindications ?? undefined,
+      storage_conditions: body.storage_conditions ?? undefined,
       price: body.price,
       old_price: oldPrice,
       discount_percentage: discountPercentage,
       priority,
       top_sale: topSale,
+      in_stock: inStock,
       limited_edition: limitedEdition,
-      season,
-      color,
+      stock,
       category_id: categoryId,
       subcategory_id: subcategoryId,
-      sizes: Array.isArray(body.sizes)
-        ? body.sizes.map(
-            (s: string | { size: string; stock?: number }) =>
-              typeof s === "string"
-                ? { size: s, stock: 0 }
-                : { size: s.size, stock: Number(s.stock ?? 0) }
-          )
-        : [],
       media: Array.isArray(body.media) ? body.media : [],
-      colors: Array.isArray(body.colors)
-        ? body.colors.map((c: { label: string; hex?: string | null }) => ({
-            label: c.label,
-            hex: c.hex || null,
-          }))
-        : [],
       has_lining: hasLining,
-      fabric_composition: body.fabric_composition,
+      fabric_composition: body.fabric_composition ?? undefined,
       lining_description: liningDescription,
     });
 

@@ -6,33 +6,10 @@ import { useRouter, useParams } from "next/navigation";
 import ComponentCard from "@/components/admin/ComponentCard";
 import PageBreadcrumb from "@/components/admin/PageBreadCrumb";
 import Label from "@/components/admin/form/Label";
-import MultiSelect from "@/components/admin/form/MultiSelect";
 import Input from "@/components/admin/form/input/InputField";
 import TextArea from "@/components/admin/form/input/TextArea";
 import DropzoneComponent from "@/components/admin/form/form-elements/DropZone";
 import ToggleSwitch from "@/components/admin/form/ToggleSwitch";
-
-const multiOptions = [
-  { value: "O/S", text: "O/S", selected: false },
-  { value: "160 cm", text: "160 cm", selected: false },
-  { value: "XXS", text: "XXS", selected: false },
-  { value: "XS", text: "XS", selected: false },
-  { value: "XS/S", text: "XS/S", selected: false },
-  { value: "S", text: "S", selected: false },
-  { value: "M", text: "M", selected: false },
-  { value: "M/L", text: "M/L", selected: false },
-  { value: "L", text: "L", selected: false },
-  { value: "L/XL", text: "L/XL", selected: false },
-  { value: "XL", text: "XL", selected: false },
-  { value: "ONESIZE", text: "ONESIZE", selected: false },
-];
-
-const seasonOptions = [
-  { value: "Літо", text: "Літо", selected: false },
-  { value: "Весна", text: "Весна", selected: false },
-  { value: "Зима", text: "Зима", selected: false },
-  { value: "Осінь", text: "Осінь", selected: false },
-];
 
 type MediaFile = {
   id?: number; // for existing ones
@@ -49,22 +26,30 @@ export default function EditProductPage() {
 
   const [formData, setFormData] = useState({
     name: "",
+    subtitle: "",
+    releaseForm: "",
+    course: "",
+    packageWeight: "",
+    mainInfo: "",
+    shortDescription: "",
     description: "",
+    mainAction: "",
+    indicationsForUse: "",
+    benefits: "",
+    fullComposition: "",
+    usageMethod: "",
+    contraindications: "",
+    storageConditions: "",
     price: "",
     oldPrice: "",
     discountPercentage: "",
     priority: "0",
-    sizes: [] as string[],
+    stock: "0",
     media: [] as { type: string; url: string }[],
     topSale: false,
-    limitedEdition: false,
-    season: [] as string[],
-    color: "",
+    inStock: true,
     categoryId: null as number | null,
     subcategoryId: null as number | null,
-    fabricComposition: "",
-    hasLining: false,
-    liningDescription: "",
   });
 
   const [images, setImages] = useState<File[]>([]);
@@ -79,14 +64,6 @@ export default function EditProductPage() {
   const [subcategoryOptions, setSubcategoryOptions] = useState<
     { id: number; name: string; category_id: number }[]
   >([]);
-
-  const [availableColors, setAvailableColors] = useState<
-    { color: string; hex?: string }[]
-  >([]);
-  const [customColorLabel, setCustomColorLabel] = useState("");
-  const [customColorHex, setCustomColorHex] = useState("#000000");
-  const [colors, setColors] = useState<{ label: string; hex?: string }[]>([]);
-  const [sizeStocks, setSizeStocks] = useState<Record<string, number>>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -111,35 +88,33 @@ export default function EditProductPage() {
 
         setFormData({
           name: productData.name || "",
+          subtitle: productData.subtitle || "",
+          releaseForm: productData.release_form || "",
+          course: productData.course || "",
+          packageWeight: productData.package_weight || "",
+          mainInfo: productData.main_info || "",
+          shortDescription: productData.short_description || "",
           description: productData.description || "",
+          mainAction: productData.main_action || "",
+          indicationsForUse: productData.indications_for_use || "",
+          benefits: productData.benefits || "",
+          fullComposition: productData.full_composition || "",
+          usageMethod: productData.usage_method || "",
+          contraindications: productData.contraindications || "",
+          storageConditions: productData.storage_conditions || "",
           price: String(productData.price || ""),
           oldPrice: String(productData.old_price || ""),
           discountPercentage: String(productData.discount_percentage || ""),
           priority: String(productData.priority || 0),
-          sizes: (productData.sizes || []).map((s: { size: string }) => s.size),
+          stock: String(productData.stock ?? 0),
           media: mediaArray,
           topSale: productData.top_sale || false,
-          limitedEdition: productData.limited_edition || false,
-          season: productData.season || [],
-          color: productData.color || "",
+          inStock: productData.in_stock !== false,
           categoryId: productData.category_id || null,
           subcategoryId: productData.subcategory_id || null,
-          fabricComposition: productData.fabric_composition || "",
-          hasLining: productData.has_lining || false,
-          liningDescription: productData.lining_description || "",
         });
 
-        // Initialize sizeStocks from productData.sizes
-        const initialStocks: Record<string, number> = {};
-        (productData.sizes || []).forEach(
-          (s: { size: string; stock?: number }) => {
-            initialStocks[s.size] = typeof s.stock === "number" ? s.stock : 0;
-          }
-        );
-        setSizeStocks(initialStocks);
-
         setCategoryOptions(categoryData);
-        setColors(productData.colors || []);
       } catch (err) {
         console.error("Failed to fetch product or categories", err);
         setError("Помилка при завантаженні товару або категорій");
@@ -152,20 +127,6 @@ export default function EditProductPage() {
       fetchData();
     }
   }, [productId]);
-
-  useEffect(() => {
-    async function fetchColors() {
-      try {
-        const res = await fetch("/api/colors");
-        const data = await res.json();
-        setAvailableColors(data);
-      } catch (error) {
-        console.error("Failed to fetch colors", error);
-      }
-    }
-
-    fetchColors();
-  }, []);
 
   useEffect(() => {
     async function fetchSubcategories() {
@@ -316,25 +277,30 @@ export default function EditProductPage() {
         },
         body: JSON.stringify({
           name: formData.name,
-          description: formData.description,
+          subtitle: formData.subtitle || null,
+          release_form: formData.releaseForm || null,
+          course: formData.course || null,
+          package_weight: formData.packageWeight || null,
+          main_info: formData.mainInfo || null,
+          short_description: formData.shortDescription || null,
+          description: formData.description || null,
+          main_action: formData.mainAction || null,
+          indications_for_use: formData.indicationsForUse || null,
+          benefits: formData.benefits || null,
+          full_composition: formData.fullComposition || null,
+          usage_method: formData.usageMethod || null,
+          contraindications: formData.contraindications || null,
+          storage_conditions: formData.storageConditions || null,
           price: Number(formData.price),
           old_price: formData.oldPrice ? Number(formData.oldPrice) : null,
-          discount_percentage: formData.discountPercentage
-            ? Number(formData.discountPercentage)
-            : null,
+          discount_percentage: formData.discountPercentage ? Number(formData.discountPercentage) : null,
           priority: Number(formData.priority),
-          sizes: formData.sizes.map((s) => ({ size: s, stock: sizeStocks[s] ?? 0 })),
+          stock: Number(formData.stock) || 0,
           media: updatedMedia,
           top_sale: formData.topSale,
-          limited_edition: formData.limitedEdition,
-          season: formData.season,
-          color: formData.color,
-          colors,
+          in_stock: formData.inStock,
           category_id: formData.categoryId,
           subcategory_id: formData.subcategoryId,
-          fabric_composition: formData.fabricComposition,
-          has_lining: formData.hasLining,
-          lining_description: formData.liningDescription,
         }),
       });
 
@@ -351,119 +317,58 @@ export default function EditProductPage() {
   };
 
   return (
-    <div>
+    <div className="min-w-0">
       {loadingData ? (
-        <div className="p-4 text-center text-lg">Завантаження даних...</div>
+        <div className="p-4 text-center text-base sm:text-lg">Завантаження даних...</div>
       ) : (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <PageBreadcrumb pageTitle="Редагувати Товар" />
-          <div className="flex w-full h-auto">
-            <div className="w-1/2 p-4">
-              <ComponentCard title="Редагувати дані">
-                <Label>Назва Товару</Label>
-                <Input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                />
-
-                <Label>Опис</Label>
-                <TextArea
-                  value={formData.description}
-                  onChange={(value) => handleChange("description", value)}
-                  rows={6}
-                />
-
-                <Label>Ціна</Label>
-                <Input
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => handleChange("price", e.target.value)}
-                  placeholder="Поточна ціна"
-                />
-
-                <Label>Стара ціна (опціонально)</Label>
-                <Input
-                  type="number"
-                  value={formData.oldPrice}
-                  onChange={(e) => handleChange("oldPrice", e.target.value)}
-                  placeholder="Ціна до знижки"
-                />
-
-                <Label>Відсоток знижки (опціонально)</Label>
-                <Input
-                  type="number"
-                  value={formData.discountPercentage}
-                  onChange={(e) =>
-                    handleChange("discountPercentage", e.target.value)
-                  }
-                  placeholder="Наприклад: 20"
-                />
-
-                <Label>Пріоритет показу</Label>
-                <Input
-                  type="number"
-                  value={formData.priority}
-                  onChange={(e) => handleChange("priority", e.target.value)}
-                  placeholder="0 - звичайний, 1 - високий"
-                />
-
-                <Label>Розміри</Label>
-                <MultiSelect
-                  label="Розміри"
-                  options={multiOptions}
-                  defaultSelected={formData.sizes}
-                  onChange={(values: string[]) => {
-                    // Update selected sizes
-                    handleChange("sizes", values);
-                    // Ensure stocks exist for any newly added size
-                    setSizeStocks((prev) => {
-                      const next = { ...prev };
-                      values.forEach((sz: string) => {
-                        if (next[sz] === undefined) next[sz] = 0;
-                      });
-                      // Remove stocks for sizes no longer selected
-                      Object.keys(next).forEach((sz) => {
-                        if (!values.includes(sz)) delete (next as Record<string, number>)[sz];
-                      });
-                      return next;
-                    });
-                  }}
-                />
-
-                {/* Per-size stock editor */}
-                {formData.sizes?.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    <Label>Кількість по розмірах</Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {formData.sizes.map((sz) => (
-                        <div key={sz} className="flex items-center gap-2 border rounded px-2 py-1">
-                          <span className="min-w-10 text-sm font-medium">{sz}</span>
-                          <input
-                            type="number"
-                            min={0}
-                            value={sizeStocks[sz] ?? 0}
-                            onChange={(e) => {
-                              const val = Math.max(0, Number(e.target.value) || 0);
-                              setSizeStocks((prev) => ({ ...prev, [sz]: val }));
-                            }}
-                            className="w-20 border border-gray-300 rounded-lg px-2 py-1 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <Label>Категорія</Label>
-                <select
+          <div className="flex flex-col md:flex-row w-full gap-4 md:gap-6">
+            <div className="w-full min-w-0 md:w-1/2 p-0 sm:p-2 md:p-4">
+              <ComponentCard title="Основна інформація">
+                <div className="space-y-3 sm:space-y-4">
+                <div>
+                  <Label>Назва</Label>
+                  <Input type="text" value={formData.name} onChange={(e) => handleChange("name", e.target.value)} />
+                </div>
+                <div>
+                  <Label>Підзаголовок</Label>
+                <Input type="text" value={formData.subtitle} onChange={(e) => handleChange("subtitle", e.target.value)} placeholder="Опціонально" />
+                </div>
+                <div>
+                  <Label>Форма випуску</Label>
+                  <Input type="text" value={formData.releaseForm} onChange={(e) => handleChange("releaseForm", e.target.value)} placeholder="Напр. 30 саше по 2 г" />
+                </div>
+                <div>
+                  <Label>Курс</Label>
+                  <Input type="text" value={formData.course} onChange={(e) => handleChange("course", e.target.value)} placeholder="Напр. 30 днів" />
+                </div>
+                <div>
+                  <Label>Вага упаковки</Label>
+                  <Input type="text" value={formData.packageWeight} onChange={(e) => handleChange("packageWeight", e.target.value)} placeholder="Напр. 60 г" />
+                </div>
+                <div>
+                  <Label>Ціна (грн)</Label>
+                  <Input type="number" value={formData.price} onChange={(e) => handleChange("price", e.target.value)} placeholder="Поточна ціна" />
+                </div>
+                <div>
+                  <Label>Стара ціна / ціна без знижки (опціонально)</Label>
+                  <Input type="number" value={formData.oldPrice} onChange={(e) => handleChange("oldPrice", e.target.value)} placeholder="Ціна до знижки" />
+                </div>
+                <div>
+                  <Label>Відсоток знижки (опціонально)</Label>
+                  <Input type="number" value={formData.discountPercentage} onChange={(e) => handleChange("discountPercentage", e.target.value)} placeholder="20" />
+                </div>
+                <div>
+                  <Label>Категорія</Label>
+                  <select
                   value={formData.categoryId ?? ""}
                   onChange={(e) => {
-                    const selectedCategoryId = Number(e.target.value);
-                    handleChange("categoryId", selectedCategoryId);
-                    handleChange("subcategoryId", null); // ✅ Reset subcategory
+                    const v = e.target.value;
+                    handleChange("categoryId", v === "" ? null : Number(v));
+                    handleChange("subcategoryId", null);
                   }}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 min-h-[44px] sm:min-h-0 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
                   <option value="">Виберіть категорію</option>
                   {categoryOptions.map((cat) => (
@@ -472,16 +377,16 @@ export default function EditProductPage() {
                     </option>
                   ))}
                 </select>
-
+                </div>
                 {formData.categoryId && (
-                  <>
+                  <div>
                     <Label>Підкатегорія</Label>
                     <select
                       value={formData.subcategoryId ?? ""}
                       onChange={(e) =>
                         handleChange("subcategoryId", Number(e.target.value))
                       }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 min-h-[44px] sm:min-h-0 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     >
                       <option value="">Виберіть підкатегорію</option>
                       {subcategoryOptions
@@ -494,160 +399,55 @@ export default function EditProductPage() {
                           </option>
                         ))}
                     </select>
-                  </>
+                  </div>
                 )}
-
-                <Label>Cезон</Label>
-                <MultiSelect
-                  label="Сезон"
-                  options={seasonOptions}
-                  defaultSelected={formData.season}
-                  onChange={(values) => handleChange("season", values)}
-                />
-
-                <div className="space-y-2">
-                  <Label>Кольори</Label>
-                  <div className="flex gap-2 flex-wrap">
-                    {colors.map((c, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-2 border rounded-full px-3 py-1 text-xs"
-                      >
-                        <span
-                          className="w-4 h-4 rounded-full border"
-                          style={{ backgroundColor: c.hex || "#fff" }}
-                        />
-                        {c.label}
-                        <button
-                          type="button"
-                          className="ml-1 text-red-600"
-                          onClick={() =>
-                            setColors(colors.filter((_, i) => i !== idx))
-                          }
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  {/* Removed dropdown; using swatch list below */}
-                  <div className="flex flex-wrap gap-2">
-                    {availableColors.map((c) => (
-                      <button
-                        type="button"
-                        key={`pal-${c.color}`}
-                        className="flex items-center gap-2 border rounded-full px-2 py-1 text-xs hover:shadow transition"
-                        onClick={() =>
-                          setColors((prev) => [
-                            ...prev,
-                            { label: c.color, hex: c.hex },
-                          ])
-                        }
-                        title={c.color}
-                      >
-                        <span
-                          className="w-4 h-4 rounded-full border"
-                          style={{ backgroundColor: c.hex || "#fff" }}
-                        />
-                        <span>{c.color}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={customColorHex}
-                      onChange={(e) => setCustomColorHex(e.target.value)}
-                      className="w-10 h-10 p-0 border rounded"
-                    />
-                    <Input
-                      type="text"
-                      value={customColorLabel}
-                      onChange={(e) => setCustomColorLabel(e.target.value)}
-                      placeholder="Назва кольору"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!customColorLabel.trim()) return;
-                        setColors([
-                          ...colors,
-                          {
-                            label: customColorLabel.trim(),
-                            hex: customColorHex,
-                          },
-                        ]);
-                        setCustomColorLabel("");
-                        setCustomColorHex("#000000");
-                      }}
-                      className="px-3 py-2 rounded bg-blue-600 text-white text-sm"
-                    >
-                      Додати власний
-                    </button>
-                  </div>
+                <div>
+                  <Label>Основна інформація</Label>
+                  <TextArea value={formData.mainInfo} onChange={(v) => handleChange("mainInfo", v)} rows={2} />
                 </div>
-
-                {/* Блок: Склад тканини і Підкладка */}
-                <div className="border border-gray-300 rounded-lg p-4 space-y-4 bg-white mt-4">
-                  <div>
-                    <Label>Склад тканини</Label>
-                    <TextArea
-                      value={formData.fabricComposition}
-                      onChange={(value) =>
-                        handleChange("fabricComposition", value)
-                      }
-                      rows={3}
-                      placeholder="Наприклад: 80% бавовна, 20% поліестер"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="mb-0">Підкладка?</Label>
-                    <ToggleSwitch
-                      enabled={formData.hasLining}
-                      setEnabled={(value) => handleChange("hasLining", value)}
-                      label="Has Lining"
-                    />
-                  </div>
-                  {formData.hasLining && (
-                    <div>
-                      <Label>Опис підкладки</Label>
-                      <TextArea
-                        value={formData.liningDescription}
-                        onChange={(value) =>
-                          handleChange("liningDescription", value)
-                        }
-                        rows={2}
-                        placeholder="Опис підкладки товару"
-                      />
-                    </div>
-                  )}
+                <div>
+                  <Label>Короткий опис</Label>
+                  <TextArea value={formData.shortDescription} onChange={(v) => handleChange("shortDescription", v)} rows={3} />
                 </div>
-
-                <div className="flex items-center justify-between mt-4">
-                  <Label className="mb-0">Топ продаж?</Label>
-                  <ToggleSwitch
-                    enabled={formData.topSale}
-                    setEnabled={(value) => handleChange("topSale", value)}
-                    label="Top Sale"
-                  />
+                <div>
+                  <Label>Повний опис</Label>
+                  <TextArea value={formData.description} onChange={(v) => handleChange("description", v)} rows={6} />
                 </div>
+              </div>
+              </ComponentCard>
 
-                <div className="flex items-center justify-between mt-4">
-                  <Label className="mb-0">Лімітована серія?</Label>
-                  <ToggleSwitch
-                    enabled={formData.limitedEdition}
-                    setEnabled={(value) =>
-                      handleChange("limitedEdition", value)
-                    }
-                    label="Limited Edition"
-                  />
+              <ComponentCard title="Деталі товару" className="mt-4 sm:mt-6">
+                <div className="space-y-3 sm:space-y-4">
+                  <div><Label>Основна дія</Label><TextArea value={formData.mainAction} onChange={(v) => handleChange("mainAction", v)} rows={2} /></div>
+                  <div><Label>Показання до використання</Label><TextArea value={formData.indicationsForUse} onChange={(v) => handleChange("indicationsForUse", v)} rows={3} /></div>
+                  <div><Label>Переваги</Label><TextArea value={formData.benefits} onChange={(v) => handleChange("benefits", v)} rows={3} /></div>
+                  <div><Label>Повний склад</Label><TextArea value={formData.fullComposition} onChange={(v) => handleChange("fullComposition", v)} rows={3} /></div>
+                  <div><Label>Спосіб використання</Label><TextArea value={formData.usageMethod} onChange={(v) => handleChange("usageMethod", v)} rows={3} /></div>
+                  <div><Label>Протипоказання</Label><TextArea value={formData.contraindications} onChange={(v) => handleChange("contraindications", v)} rows={2} /></div>
+                  <div><Label>Умови зберігання</Label><TextArea value={formData.storageConditions} onChange={(v) => handleChange("storageConditions", v)} rows={2} /></div>
                 </div>
+              </ComponentCard>
+
+              <ComponentCard title="Налаштування та ціни" className="mt-4 sm:mt-6">
+                <div className="flex items-center justify-between">
+                  <Label className="mb-0">Бестселлер</Label>
+                  <ToggleSwitch enabled={formData.topSale} setEnabled={(v) => handleChange("topSale", v)} label="Бестселлер" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label className="mb-0">В наявності</Label>
+                  <ToggleSwitch enabled={formData.inStock} setEnabled={(v) => handleChange("inStock", v)} label="В наявності" />
+                </div>
+                <Label>Пріоритет показу</Label>
+                <Input type="number" value={formData.priority} onChange={(e) => handleChange("priority", e.target.value)} placeholder="0" />
+                <Label>Кількість на складі</Label>
+                <Input type="number" min="0" value={String(formData.stock)} onChange={(e) => handleChange("stock", e.target.value)} placeholder="0" />
               </ComponentCard>
             </div>
 
-            <div className="w-1/2 p-4">
-              <DropzoneComponent onDrop={handleDrop} />
-              <div className="mt-2 flex flex-wrap gap-4 text-sm">
+            <div className="w-full min-w-0 md:w-1/2 p-0 sm:p-2 md:p-4">
+              <ComponentCard title="Медіа товарів">
+                <DropzoneComponent onDrop={handleDrop} />
+                <div className="mt-4 flex flex-wrap gap-4 text-sm">
                 {formData.media.map((item, i) => (
                   <div key={`existing-${i}`} className="relative inline-block">
                     {item.type === "video" ? (
@@ -758,24 +558,25 @@ export default function EditProductPage() {
                     </div>
                   );
                 })}
-              </div>
+                </div>
+              </ComponentCard>
             </div>
           </div>
 
-          <div className="p-4">
+          <div className="pt-4 pb-2">
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded"
+              className="w-full sm:w-auto min-h-[48px] sm:min-h-0 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 sm:px-4 sm:py-2 rounded-lg font-medium disabled:opacity-50 touch-manipulation"
               disabled={loading}
             >
               {loading ? "Збереження..." : "Зберегти Зміни"}
             </button>
 
             {success && (
-              <div className="text-green-600 text-center mt-2">{success}</div>
+              <div className="text-green-600 text-center mt-2 text-sm sm:text-base">{success}</div>
             )}
             {error && (
-              <div className="text-red-600 text-center mt-2">{error}</div>
+              <div className="text-red-600 text-center mt-2 text-sm sm:text-base">{error}</div>
             )}
           </div>
         </form>

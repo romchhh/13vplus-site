@@ -1,31 +1,23 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import SidebarFilter from "../layout/SidebarFilter";
-import { useAppContext } from "@/lib/GeneralProvider";
-import SidebarMenu from "../layout/SidebarMenu";
 import Link from "next/link";
 import Image from "next/image";
+import { useAppContext } from "@/lib/GeneralProvider";
+import { useBasket } from "@/lib/BasketProvider";
+import SidebarMenu from "../layout/SidebarMenu";
 import { getProductImageSrc } from "@/lib/getFirstProductImage";
 import ProductSkeleton from "./ProductSkeleton";
-import { useWishlist } from "@/lib/WishlistProvider";
-import { useSession } from "next-auth/react";
 
 interface Product {
   id: number;
   name: string;
+  slug?: string | null;
   price: number;
+  description?: string | null;
   first_media?: { url: string; type: string } | null;
-  sizes?: { size: string; stock: string }[];
-  color?: string;
   discount_percentage?: number;
   category_id?: number | null;
-}
-
-interface Color {
-  color: string;
-  hex?: string;
 }
 
 interface Category {
@@ -35,57 +27,51 @@ interface Category {
 
 interface CatalogClientProps {
   initialProducts: Product[];
-  colors: Color[];
   categories: Category[];
 }
 
 export default function CatalogClient({
   initialProducts,
-  colors,
   categories,
 }: CatalogClientProps) {
   const { isSidebarOpen, setIsSidebarOpen } = useAppContext();
-  const searchParams = useSearchParams();
-  const { isInWishlist, toggleWishlist, setWishlist } = useWishlist();
-  const { data: session } = useSession();
+  const { addItem } = useBasket();
 
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState<"recommended" | "newest" | "asc" | "desc" | "sale">("recommended");
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [minPriceInput, setMinPriceInput] = useState("");
+  const [maxPriceInput, setMaxPriceInput] = useState("");
   const [isFiltering, setIsFiltering] = useState(false);
+  const [basketError, setBasketError] = useState<string | null>(null);
+
+  const priceRange = useMemo(() => {
+    if (initialProducts.length === 0) return { min: 0, max: 10000 };
+    const prices = initialProducts.map((p) => p.price);
+    return {
+      min: Math.floor(Math.min(...prices)),
+      max: Math.ceil(Math.max(...prices)),
+    };
+  }, [initialProducts]);
 
   const filteredProducts = useMemo(() => {
     return initialProducts.filter((product) => {
-      const matchesSize =
-        selectedSizes.length === 0 ||
-        product.sizes?.some((s) => selectedSizes.includes(s.size));
-
-      const matchesColor =
-        selectedColors.length === 0 ||
-        (product.color && selectedColors.includes(product.color));
-
       const matchesCategory =
         selectedCategories.length === 0 ||
         (product.category_id && selectedCategories.includes(product.category_id));
-
       const matchesMinPrice = minPrice === null || product.price >= minPrice;
       const matchesMaxPrice = maxPrice === null || product.price <= maxPrice;
-
-      return matchesSize && matchesMinPrice && matchesMaxPrice && matchesColor && matchesCategory;
+      return matchesCategory && matchesMinPrice && matchesMaxPrice;
     });
-  }, [initialProducts, selectedSizes, minPrice, maxPrice, selectedColors, selectedCategories]);
+  }, [initialProducts, minPrice, maxPrice, selectedCategories]);
 
-  // Show loading state when filters change
   useEffect(() => {
     setIsFiltering(true);
-    const timer = setTimeout(() => setIsFiltering(false), 300);
+    const timer = setTimeout(() => setIsFiltering(false), 200);
     return () => clearTimeout(timer);
-  }, [selectedSizes, selectedColors, selectedCategories, minPrice, maxPrice, sortOrder]);
+  }, [selectedCategories, minPrice, maxPrice, sortOrder]);
 
   const sortedProducts = useMemo(() => {
     const sorted = [...filteredProducts];
@@ -102,263 +88,428 @@ export default function CatalogClient({
           const bHasSale = b.discount_percentage ? 1 : 0;
           return bHasSale - aHasSale;
         });
-      case "recommended":
       default:
         return sorted;
     }
   }, [filteredProducts, sortOrder]);
 
-  const category = searchParams.get("category");
-  const season = searchParams.get("season");
-  const subcategory = searchParams.get("subcategory");
+  const [visibleCount, setVisibleCount] = useState(9);
+  const visibleProducts = useMemo(
+    () => sortedProducts.slice(0, visibleCount),
+    [sortedProducts, visibleCount]
+  );
 
-  const [visibleCount, setVisibleCount] = useState(12);
+  const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setBasketError(null);
+    const imageUrl = getProductImageSrc(product.first_media);
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    try {
+      await addItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        size: "—",
+        quantity: 1,
+        imageUrl: imageUrl.startsWith("http") ? imageUrl : `${origin}${imageUrl}`,
+        discount_percentage: product.discount_percentage ?? undefined,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Недостатньо товару в наявності";
+      setBasketError(message);
+      setTimeout(() => setBasketError(null), 5000);
+    }
+  };
 
-  const visibleProducts = useMemo(() => {
-    return sortedProducts.slice(0, visibleCount);
-  }, [sortedProducts, visibleCount]);
+  const handleApplyFilters = () => {
+    setMinPrice(minPriceInput ? Number(minPriceInput) : null);
+    setMaxPrice(maxPriceInput ? Number(maxPriceInput) : null);
+    setMobileFiltersOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    setSelectedCategories([]);
+    setMinPrice(null);
+    setMaxPrice(null);
+    setMinPriceInput("");
+    setMaxPriceInput("");
+  };
+
+  const toggleCategory = (id: number) => {
+    setSelectedCategories((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
+  };
 
   return (
     <>
-      <section className="max-w-[1824px] mx-auto px-4 sm:px-6 lg:px-8 pt-2 mt-2 mb-20">
-        {/* Top Controls */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="cursor-pointer text-2xl sm:text-3xl text-gray-700 hover:text-gray-900 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Відкрити меню"
-            >
-              {"<"}
-            </button>
-            <h1 className="text-base sm:text-lg font-medium font-['Montserrat'] uppercase tracking-wider text-gray-900 flex items-center">
-              {subcategory
-                ? subcategory
-                : category
-                ? category
-                : season
-                ? `Сезон ${season}`
-                : "Усі товари"}
-            </h1>
-          </div>
+      <section className="max-w-[1824px] mx-auto px-4 sm:px-6 lg:px-12 pt-4 pb-20 bg-white min-h-screen">
+        {/* Breadcrumbs */}
+        <nav className="mb-4" aria-label="Breadcrumb">
+          <ol className="flex items-center gap-2 text-sm font-['Montserrat'] text-gray-400">
+            <li>
+              <Link href="/" className="hover:text-gray-700 transition-colors">
+                Головна
+              </Link>
+            </li>
+            <li aria-hidden className="text-gray-300">|</li>
+            <li className="text-[#3D1A00]">Каталог товарів</li>
+          </ol>
+        </nav>
 
-          <button
-            className="cursor-pointer text-base sm:text-lg font-medium font-['Montserrat'] uppercase tracking-wider text-gray-700 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-900 transition-all px-2 py-1 min-w-[44px] min-h-[44px] flex items-center justify-center gap-2 relative"
-            onClick={() => setIsFilterOpen(true)}
-            aria-label="Відкрити фільтри"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-              />
-            </svg>
-            Фільтри
-            {(selectedSizes.length > 0 || selectedColors.length > 0 || selectedCategories.length > 0 || minPrice !== null || maxPrice !== null) && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                {(selectedSizes.length + selectedColors.length + selectedCategories.length + (minPrice !== null ? 1 : 0) + (maxPrice !== null ? 1 : 0))}
-              </span>
-            )}
-          </button>
-        </div>
+        {/* Великий заголовок по центру */}
+        <h1 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extrabold font-['Montserrat'] uppercase tracking-widest text-[#3D1A00] mb-10">
+          Каталог товарів
+        </h1>
 
-        {/* Product Grid - Mobile Optimized */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
-          {isFiltering ? (
-            // Show skeletons while filtering
-            Array.from({ length: 8 }).map((_, index) => (
-              <ProductSkeleton key={`skeleton-${index}`} />
-            ))
-          ) : visibleProducts.length === 0 ? (
-            // Empty state
-            <div className="col-span-full flex flex-col items-center justify-center py-20 lg:py-32 gap-6">
-              <div className="relative">
-                <svg
-                  className="w-20 h-20 lg:w-24 lg:h-24 text-black/10"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
-              <div className="flex flex-col items-center gap-3 text-center max-w-md">
-                <h3 className="text-2xl lg:text-3xl font-bold font-['Montserrat'] uppercase tracking-wider text-black">
-                  Товарів не знайдено
-                </h3>
-                <p className="text-base lg:text-lg font-light font-['Montserrat'] text-black/50 leading-relaxed tracking-wide">
-                  Спробуйте змінити параметри фільтрів або перегляньте інші категорії колекції
-                </p>
-              </div>
-            </div>
-          ) : (
-            visibleProducts.map((product, index) => (
-            <Link
-              href={`/product/${product.id}`}
-              key={product.id}
-              className="flex flex-col gap-2 group"
-            >
-              {/* Image or Video - Smaller with padding */}
-              <div className="relative w-full aspect-[3/4] bg-white overflow-hidden">
+        {/* Мобільна кнопка фільтрів — відкриває ті самі фільтри, що й на десктопі */}
+        <button
+          onClick={() => setMobileFiltersOpen(true)}
+          className="lg:hidden mb-4 flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-['Montserrat'] text-gray-700 hover:border-gray-400 transition-colors"
+        >
+          <span className="text-lg">≡</span> Фільтри
+        </button>
+
+        {/* Мобільна панель фільтрів — ті самі Ціна, Категорія, Очистити, Застосувати */}
+        {mobileFiltersOpen && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+              onClick={() => setMobileFiltersOpen(false)}
+              aria-hidden
+            />
+            <div className="fixed top-0 right-0 bottom-0 w-full max-w-sm bg-white shadow-xl z-50 flex flex-col overflow-y-auto lg:hidden">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <h2 className="text-lg font-extrabold font-['Montserrat'] uppercase tracking-widest text-[#3D1A00]">
+                  Фільтри
+                </h2>
                 <button
                   type="button"
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const inList = isInWishlist(product.id);
-                    toggleWishlist(product.id);
-                    if (session?.user) {
-                      try {
-                        if (inList) {
-                          await fetch(`/api/users/wishlist/${product.id}`, { method: "DELETE" });
-                        } else {
-                          const res = await fetch("/api/users/wishlist", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ productId: product.id }),
-                          });
-                          if (!res.ok) throw new Error("Failed to add");
-                        }
-                        const listRes = await fetch("/api/users/wishlist");
-                        if (listRes.ok) {
-                          const data = await listRes.json();
-                          const ids = Array.isArray(data?.productIds) ? data.productIds : [];
-                          setWishlist(ids);
-                        }
-                      } catch {
-                        toggleWishlist(product.id);
-                      }
-                    }
-                  }}
-                  className="absolute top-2 right-2 z-10 p-1.5 rounded-md bg-white/80 hover:bg-white shadow-sm transition-colors"
-                  title={isInWishlist(product.id) ? "Прибрати з вішлиста" : "Додати у вішлист"}
-                  aria-label={isInWishlist(product.id) ? "Прибрати з вішлиста" : "Додати у вішлист"}
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="p-2 text-gray-500 hover:text-gray-800 text-2xl leading-none"
+                  aria-label="Закрити фільтри"
                 >
-                  <svg
-                    className={`w-4 h-4 ${isInWishlist(product.id) ? "text-amber-600 fill-amber-600" : "text-gray-600"}`}
-                    fill={isInWishlist(product.id) ? "currentColor" : "none"}
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                    />
-                  </svg>
+                  ×
                 </button>
-                {product.first_media?.type === "video" ? (
-                  <video
-                    src={`/api/images/${product.first_media.url}`}
-                    className="object-cover transition-all duration-300 group-hover:opacity-95 w-full h-full"
-                    loop
-                    muted
-                    playsInline
-                    autoPlay
-                    preload="none"
-                  />
-                ) : (
-                  <Image
-                    src={getProductImageSrc(product.first_media)}
-                    alt={`${product.name} від 13VPLUS`}
-                    className="object-cover transition-all duration-300 group-hover:opacity-95"
-                    fill
-                    sizes="(max-width: 420px) 45vw, (max-width: 640px) 45vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-                    loading={index < 8 ? "eager" : "lazy"}
-                    priority={index < 4}
-                    quality={index < 8 ? 85 : 75}
-                    placeholder="blur"
-                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-                  />
-                )}
               </div>
-
-              {/* Product Title + Price - More prominent */}
-              <div className="flex flex-col gap-1">
-                <h3 className="text-sm sm:text-base font-normal font-['Montserrat'] text-gray-900 leading-snug uppercase tracking-wider">
-                  {product.name}
-                </h3>
-                {product.discount_percentage ? (
-                  <div className="flex items-baseline gap-1 flex-wrap">
-                    {/* Original (crossed-out) price */}
-                    <span className="text-gray-900 line-through text-base sm:text-lg font-normal">
-                      {product.price.toLocaleString()} ₴
-                    </span>
-
-                    {/* Discount badge */}
-                    <span className="text-gray-900 text-base sm:text-lg font-normal">
-                      -{product.discount_percentage}%
-                    </span>
-
-                    {/* Discounted price */}
-                    <span className="font-bold text-red-800 text-base sm:text-lg tracking-tight">
-                      {(
-                        product.price *
-                        (1 - product.discount_percentage / 100)
-                      ).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} ₴
-                    </span>
+              <div className="flex-1 p-4 space-y-6">
+                {/* Ціна */}
+                <div>
+                  <h3 className="text-base font-extrabold font-['Montserrat'] uppercase tracking-widest text-[#3D1A00] mb-3">
+                    Ціна
+                  </h3>
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1">
+                      <label className="block text-xs font-['Montserrat'] text-gray-500 mb-1">Від</label>
+                      <input
+                        type="number"
+                        value={minPriceInput}
+                        onChange={(e) => setMinPriceInput(e.target.value)}
+                        placeholder="Грн"
+                        className="w-full border border-gray-200 rounded px-3 py-2 text-sm font-['Montserrat'] text-gray-700 placeholder-gray-300 outline-none focus:border-gray-400 transition-colors"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs font-['Montserrat'] text-gray-500 mb-1">До</label>
+                      <input
+                        type="number"
+                        value={maxPriceInput}
+                        onChange={(e) => setMaxPriceInput(e.target.value)}
+                        placeholder="Грн"
+                        className="w-full border border-gray-200 rounded px-3 py-2 text-sm font-['Montserrat'] text-gray-700 placeholder-gray-300 outline-none focus:border-gray-400 transition-colors"
+                      />
+                    </div>
                   </div>
-                ) : (
-                  <span className="font-bold text-gray-900 text-base sm:text-lg tracking-tight">{product.price}₴</span>
-                )}
+                </div>
+                {/* Категорія товару */}
+                <div>
+                  <h3 className="text-base font-extrabold font-['Montserrat'] uppercase tracking-widest text-[#3D1A00] mb-3">
+                    Категорія товару
+                  </h3>
+                  <ul className="flex flex-col gap-2">
+                    {categories.map((cat) => (
+                      <li key={cat.id}>
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                          <span
+                            className={`w-4 h-4 flex-shrink-0 border rounded-sm transition-colors ${
+                              selectedCategories.includes(cat.id)
+                                ? "bg-[#8B9A47] border-[#8B9A47]"
+                                : "border-gray-300 group-hover:border-gray-500"
+                            }`}
+                            onClick={() => toggleCategory(cat.id)}
+                          >
+                            {selectedCategories.includes(cat.id) && (
+                              <svg viewBox="0 0 12 10" fill="none" className="w-full h-full p-0.5">
+                                <path d="M1 5l3 3 7-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                          </span>
+                          <span
+                            className="text-sm font-['Montserrat'] text-gray-700 group-hover:text-[#3D1A00] transition-colors"
+                            onClick={() => toggleCategory(cat.id)}
+                          >
+                            {cat.name}
+                          </span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                {/* Кнопки */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={handleClearFilters}
+                    className="flex-1 py-2.5 px-4 border border-gray-300 rounded text-sm font-semibold font-['Montserrat'] text-gray-700 hover:border-gray-500 hover:text-[#3D1A00] transition-colors"
+                  >
+                    Очистити
+                  </button>
+                  <button
+                    onClick={handleApplyFilters}
+                    className="flex-1 py-2.5 px-4 bg-[#8B9A47] hover:bg-[#7a8940] text-white rounded text-sm font-semibold font-['Montserrat'] transition-colors"
+                  >
+                    Застосувати
+                  </button>
+                </div>
               </div>
-              </Link>
-            )))}
-        </div>
-        {visibleCount < sortedProducts.length && (
-          <div className="mt-12 flex justify-center">
-            <button
-              onClick={() => setVisibleCount((prev) => prev + 12)}
-              className="cursor-pointer px-8 py-3 bg-black text-white font-medium font-['Montserrat'] uppercase tracking-wider hover:bg-gray-900 transition-colors duration-300 min-w-[44px] min-h-[44px]"
-              aria-label="Показати більше товарів"
-            >
-              Показати ще
-            </button>
-          </div>
+            </div>
+          </>
         )}
+
+        {/* Основний контент */}
+        <div className="flex gap-8 lg:gap-10 items-start">
+          {/* Sidebar фільтри — тільки десктоп */}
+          <aside className="hidden lg:flex flex-col gap-6 w-[260px] flex-shrink-0">
+            {/* Ціна */}
+            <div>
+              <h2 className="text-base font-extrabold font-['Montserrat'] uppercase tracking-widest text-[#3D1A00] mb-3">
+                Ціна
+              </h2>
+              <div className="flex gap-2 items-center">
+                <div className="flex-1">
+                  <label className="block text-xs font-['Montserrat'] text-gray-500 mb-1">Від</label>
+                  <input
+                    type="number"
+                    value={minPriceInput}
+                    onChange={(e) => setMinPriceInput(e.target.value)}
+                    placeholder="Грн"
+                    className="w-full border border-gray-200 rounded px-3 py-2 text-sm font-['Montserrat'] text-gray-700 placeholder-gray-300 outline-none focus:border-gray-400 transition-colors"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-['Montserrat'] text-gray-500 mb-1">До</label>
+                  <input
+                    type="number"
+                    value={maxPriceInput}
+                    onChange={(e) => setMaxPriceInput(e.target.value)}
+                    placeholder="Грн"
+                    className="w-full border border-gray-200 rounded px-3 py-2 text-sm font-['Montserrat'] text-gray-700 placeholder-gray-300 outline-none focus:border-gray-400 transition-colors"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Категорії */}
+            <div>
+              <h2 className="text-base font-extrabold font-['Montserrat'] uppercase tracking-widest text-[#3D1A00] mb-3">
+                Категорія товару
+              </h2>
+              <ul className="flex flex-col gap-2">
+                {categories.map((cat) => (
+                  <li key={cat.id}>
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <span
+                        className={`w-4 h-4 flex-shrink-0 border rounded-sm transition-colors ${
+                          selectedCategories.includes(cat.id)
+                            ? "bg-[#8B9A47] border-[#8B9A47]"
+                            : "border-gray-300 group-hover:border-gray-500"
+                        }`}
+                        onClick={() => toggleCategory(cat.id)}
+                      >
+                        {selectedCategories.includes(cat.id) && (
+                          <svg viewBox="0 0 12 10" fill="none" className="w-full h-full p-0.5">
+                            <path d="M1 5l3 3 7-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </span>
+                      <span
+                        className="text-sm font-['Montserrat'] text-gray-700 group-hover:text-[#3D1A00] transition-colors"
+                        onClick={() => toggleCategory(cat.id)}
+                      >
+                        {cat.name}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Кнопки фільтрів */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleClearFilters}
+                className="flex-1 py-2.5 px-4 border border-gray-300 rounded text-sm font-semibold font-['Montserrat'] text-gray-700 hover:border-gray-500 hover:text-[#3D1A00] transition-colors"
+              >
+                Очистити
+              </button>
+              <button
+                onClick={handleApplyFilters}
+                className="flex-1 py-2.5 px-4 bg-[#8B9A47] hover:bg-[#7a8940] text-white rounded text-sm font-semibold font-['Montserrat'] transition-colors"
+              >
+                Застосувати
+              </button>
+            </div>
+          </aside>
+
+          {/* Сітка товарів */}
+          <div className="flex-1 min-w-0">
+            {/* Сортування та лічильник */}
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
+              <p className="text-sm font-['Montserrat'] text-gray-500">
+                Знайдено:{" "}
+                <span className="font-semibold text-[#3D1A00]">{filteredProducts.length}</span>{" "}
+                {filteredProducts.length === 1 ? "товар" : "товарів"}
+              </p>
+              <label className="flex items-center gap-2">
+                <span className="text-sm font-['Montserrat'] text-gray-500">Сортування:</span>
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+                  className="text-sm font-['Montserrat'] border border-gray-200 rounded px-3 py-2 bg-white text-[#3D1A00] focus:ring-2 focus:ring-[#8B9A47]/30 focus:border-[#8B9A47] outline-none"
+                >
+                  <option value="recommended">Рекомендовані</option>
+                  <option value="newest">За новизною</option>
+                  <option value="asc">Ціна: за зростанням</option>
+                  <option value="desc">Ціна: за спаданням</option>
+                  <option value="sale">Спочатку акційні</option>
+                </select>
+              </label>
+            </div>
+
+            {basketError && (
+              <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm font-['Montserrat'] text-red-700">
+                {basketError}
+              </div>
+            )}
+
+            {/* Картки товарів */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 sm:gap-x-5 sm:gap-y-3">
+              {isFiltering ? (
+                Array.from({ length: 9 }).map((_, i) => (
+                  <ProductSkeleton key={`skeleton-${i}`} />
+                ))
+              ) : visibleProducts.length === 0 ? (
+                <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
+                  <h3 className="text-xl font-bold font-['Montserrat'] uppercase tracking-wider text-[#3D1A00]">
+                    Товарів не знайдено
+                  </h3>
+                  <p className="text-sm font-['Montserrat'] text-gray-400 text-center max-w-md">
+                    Спробуйте змінити параметри фільтрів або перегляньте інші категорії
+                  </p>
+                </div>
+              ) : (
+                visibleProducts.map((product, index) => {
+                  const displayPrice = product.discount_percentage
+                    ? Math.round(product.price * (1 - product.discount_percentage / 100))
+                    : product.price;
+                  const rawDesc = product.description
+                    ? product.description.replace(/<[^>]*>/g, "").trim()
+                    : "";
+                  const shortDesc =
+                    rawDesc.length > 60 ? rawDesc.slice(0, 60).trim() + "…" : rawDesc || null;
+
+                  return (
+                    <Link
+                      href={`/product/${(product.slug && String(product.slug).trim()) ? product.slug : product.id}`}
+                      key={product.id}
+                      className="group flex flex-col bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+                    >
+                      {/* Зображення 3:4 */}
+                      <div className="relative w-full aspect-[3/4] bg-gray-50 overflow-hidden">
+                        {product.first_media?.type === "video" ? (
+                          <video
+                            src={`/api/images/${product.first_media.url}`}
+                            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-[1.03]"
+                            loop
+                            muted
+                            playsInline
+                            autoPlay
+                            preload="none"
+                          />
+                        ) : (
+                          <Image
+                            src={getProductImageSrc(product.first_media)}
+                            alt={`${product.name} від Choice`}
+                            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                            fill
+                            sizes="(max-width: 640px) 45vw, (max-width: 1024px) 33vw, 25vw"
+                            loading={index < 9 ? "eager" : "lazy"}
+                            priority={index < 3}
+                            quality={index < 9 ? 85 : 75}
+                            placeholder="blur"
+                            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                          />
+                        )}
+                        {/* Бейдж знижки */}
+                        {product.discount_percentage && (
+                          <span className="absolute top-2 left-2 text-[10px] font-semibold font-['Montserrat'] text-amber-800/95 bg-amber-100/90 px-1.5 py-0.5 rounded">
+                            −{product.discount_percentage}%
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Інфо */}
+                      <div className="p-4 flex flex-col gap-1 flex-1">
+                        <h3 className="font-['Montserrat'] font-light text-[32px] leading-[97%] tracking-[-0.02em] text-[#3D1A00] align-middle">
+                          {product.name}
+                        </h3>
+                        {shortDesc && (
+                          <p className="font-['Montserrat'] font-light text-[11px] leading-[194%] tracking-[-0.02em] text-[#3D1A00] align-middle line-clamp-2">
+                            {shortDesc}
+                          </p>
+                        )}
+                        <div className="mt-auto pt-3 flex items-center justify-between gap-2">
+                          <div className="flex flex-col">
+                            {product.discount_percentage && (
+                              <span className="font-['Montserrat'] font-normal text-[20px] leading-[159%] tracking-[-0.02em] text-[#3D1A00]/70 line-through">
+                                {product.price.toLocaleString("uk-UA")} грн
+                              </span>
+                            )}
+                            <span className="font-['Montserrat'] font-normal text-[20px] leading-[159%] tracking-[-0.02em] text-[#3D1A00] align-middle">
+                              {displayPrice.toLocaleString("uk-UA")} грн
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => handleAddToCart(e, product)}
+                            className="py-2 px-4 text-xs sm:text-sm font-semibold font-['Montserrat'] bg-[#8B9A47] hover:bg-[#7a8940] text-white rounded-full transition-colors whitespace-nowrap"
+                          >
+                            В кошик
+                          </button>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Пагінація / показати ще */}
+            {visibleCount < sortedProducts.length && (
+              <div className="mt-10 flex justify-center">
+                <button
+                  onClick={() => setVisibleCount((prev) => prev + 9)}
+                  className="px-8 py-3 bg-[#3D1A00] text-white font-semibold font-['Montserrat'] uppercase tracking-wider hover:bg-[#3D1A00]/90 transition-colors rounded-lg min-h-[44px]"
+                >
+                  Показати ще
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </section>
 
-      <SidebarFilter
-        isOpen={isFilterOpen}
-        setIsOpen={setIsFilterOpen}
-        openAccordion={null}
-        setOpenAccordion={() => {}}
-        sortOrder={sortOrder}
-        setSortOrder={setSortOrder}
-        selectedSizes={selectedSizes}
-        setSelectedSizes={setSelectedSizes}
-        minPrice={minPrice}
-        maxPrice={maxPrice}
-        setMinPrice={setMinPrice}
-        setMaxPrice={setMaxPrice}
-        selectedColors={selectedColors}
-        setSelectedColors={setSelectedColors}
-        selectedCategories={selectedCategories}
-        setSelectedCategories={setSelectedCategories}
-        colors={colors}
-        categories={categories}
-        products={initialProducts}
-        filteredCount={filteredProducts.length}
-      />
-
-      {/* Menu Sidebar */}
-      <SidebarMenu
-        isOpen={isSidebarOpen}
-        setIsOpen={setIsSidebarOpen}
-      />
+      <SidebarMenu isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
     </>
   );
 }

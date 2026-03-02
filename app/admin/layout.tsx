@@ -11,11 +11,11 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "13VPLUS — Admin Panel",
+  title: "Choice — Admin Panel",
   icons: {
-    icon: "/images/13vplus-logo-favicon.png",
-    shortcut: "/images/13vplus-logo-favicon.png",
-    apple: "/images/13vplus-logo-favicon.png",
+    icon: "/images/choice-features/open-browser.png",
+    shortcut: "/images/choice-features/open-browser.png",
+    apple: "/images/choice-features/open-browser.png",
   },
 };
 
@@ -28,9 +28,9 @@ export default function RootLayout({
     <html lang="uk">
       <head>
         {/* Additional favicon for compatibility */}
-        <link rel="icon" type="image/png" href="/images/13vplus-logo-favicon.png" />
-        <link rel="shortcut icon" type="image/png" href="/images/13vplus-logo-favicon.png" />
-        <link rel="apple-touch-icon" href="/images/13vplus-logo-favicon.png" />
+        <link rel="icon" type="image/png" href="/images/choice-features/open-browser.png" />
+        <link rel="shortcut icon" type="image/png" href="/images/choice-features/open-browser.png" />
+        <link rel="apple-touch-icon" href="/images/choice-features/open-browser.png" />
       </head>
       <body className={montserrat.className}>
           <SidebarProvider>

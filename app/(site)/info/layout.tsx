@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Доставка та оплата | 13VPLUS",
-  description: "Доставка по Україні та в інші країни, оплата, обмін та повернення товару. 13VPLUS — український бренд жіночого одягу.",
+  title: "Про бренд, партнерство, доставка та оплата | Choice",
+  description: "Офіційний представник Choice в Україні. Про бренд, партнерство, доставка Нова Пошта та Укрпошта, оплата карткою та при отриманні.",
 };
 
 export default function InfoLayout({

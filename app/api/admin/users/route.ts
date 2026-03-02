@@ -4,17 +4,22 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { email: { not: null } },
+          { phone: { not: null } },
+        ],
+      },
       select: {
         id: true,
         name: true,
         email: true,
         phone: true,
+        address: true,
         bonusPoints: true,
         createdAt: true,
         _count: {
-          select: {
-            orders: { where: { paymentStatus: "paid" } },
-          },
+          select: { orders: true },
         },
       },
       orderBy: {

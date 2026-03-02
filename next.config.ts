@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 // Bundle analyzer
 import bundleAnalyzer from "@next/bundle-analyzer";  // Use import statement
@@ -46,8 +47,10 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "100mb", // for images, videos
       // Allow external origins for webhooks
-      allowedOrigins: ["secure.wayforpay.com", "plisio.net"],
+      allowedOrigins: ["api.monobank.ua"],
     },
+    // Allow large uploads to API routes (e.g. POST /api/images)
+    proxyClientMaxBodySize: "50mb",
     // Enable optimized package imports with tree shaking
     optimizePackageImports: [
       "@react-jvectormap/core", 
@@ -64,6 +67,19 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   // Advanced Webpack optimizations
   webpack: (config, { dev, isServer }) => {
+    // Ensure modules resolve from project root, not parent directories
+    const projectRoot = path.resolve(process.cwd());
+    config.resolve = config.resolve ?? {};
+    config.resolve.modules = [
+      path.join(projectRoot, "node_modules"),
+      ...(Array.isArray(config.resolve.modules) ? config.resolve.modules : ["node_modules"]),
+    ];
+    config.resolveLoader = config.resolveLoader ?? {};
+    config.resolveLoader.modules = [
+      path.join(projectRoot, "node_modules"),
+      ...(Array.isArray(config.resolveLoader.modules) ? config.resolveLoader.modules : ["node_modules"]),
+    ];
+
     // Tree shaking optimization
     config.optimization.usedExports = true;
     config.optimization.sideEffects = false;

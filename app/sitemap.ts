@@ -1,7 +1,10 @@
 import { MetadataRoute } from 'next'
 import { sqlGetAllProducts, sqlGetAllCategories } from '@/lib/sql'
 
-async function getProducts() {
+type CategoryItem = { id: number; name: string; slug?: string | null }
+type ProductItem = { id: number; name: string; slug?: string | null }
+
+async function getProducts(): Promise<ProductItem[]> {
   try {
     const products = await sqlGetAllProducts();
     return products;
@@ -11,7 +14,7 @@ async function getProducts() {
   }
 }
 
-async function getCategories() {
+async function getCategories(): Promise<CategoryItem[]> {
   try {
     const categories = await sqlGetAllCategories();
     return categories;
@@ -55,6 +58,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     },
     {
+      url: `${baseUrl}/info`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    },
+    {
       url: `${baseUrl}/terms-of-service`,
       lastModified: new Date(),
       changeFrequency: 'monthly' as const,
@@ -68,17 +77,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Category pages
-  const categoryPages = categories.map((category) => ({
-    url: `${baseUrl}/catalog/${encodeURIComponent(category.name)}`,
+  // Category pages (ЧПУ)
+  const categoryPages = categories.map((category: CategoryItem) => ({
+    url: `${baseUrl}/catalog/${category.slug ?? encodeURIComponent(category.name)}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
     priority: 0.85,
   }));
 
-  // Product pages
-  const productPages = products.map((product) => ({
-    url: `${baseUrl}/product/${product.id}`,
+  // Product pages (ЧПУ)
+  const productPages = products.map((product: ProductItem) => ({
+    url: `${baseUrl}/product/${product.slug ?? product.id}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
     priority: 0.8,

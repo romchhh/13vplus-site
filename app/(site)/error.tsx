@@ -16,7 +16,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-6">
+    <div className="min-h-screen bg-[var(--background-warm-yellow)] flex items-center justify-center px-6">
       <div className="max-w-md w-full text-center space-y-6">
         <div className="space-y-2">
           <h2 className="text-3xl font-bold text-black">

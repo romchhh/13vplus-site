@@ -1,70 +1,38 @@
 import ProductClientWrapper from "./ProductClientWrapper";
-import { notFound } from "next/navigation";
-import { sqlGetProduct } from "@/lib/sql";
 import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/shared/StructuredData";
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  old_price?: number | null;
-  discount_percentage?: number | null;
-  description?: string | null;
-  media?: { url: string; type: string }[];
-  sizes?: { size: string; stock: number }[];
-  colors?: { label: string; hex?: string | null }[];
-  fabric_composition?: string | null;
-  has_lining?: boolean;
-  lining_description?: string | null;
-  category_name?: string | null;
-}
-
-async function getProduct(id: string): Promise<Product | null> {
-  try {
-    const product = await sqlGetProduct(Number(id));
-    return product || null;
-  } catch (error) {
-    console.error("Error fetching product:", error);
-    return null;
-  }
-}
+import type { Product } from "@/lib/types/product";
 
 interface ProductServerProps {
-  id: string;
+  product: Product;
 }
 
-export default async function ProductServer({ id }: ProductServerProps) {
-  const product = await getProduct(id);
+export default async function ProductServer({ product }: ProductServerProps) {
 
-  if (!product) {
-    notFound();
-  }
-
-  const baseUrl = process.env.PUBLIC_URL || 'http://localhost:3000';
+  const baseUrl = process.env.PUBLIC_URL || "http://localhost:3000";
+  const productSlug = product.slug || String(product.id);
+  const categorySlug = product.category_slug ?? (product.category_name ? encodeURIComponent(product.category_name) : null);
   const breadcrumbs = [
     { name: "Головна", url: baseUrl },
     { name: "Каталог", url: `${baseUrl}/catalog` },
     ...(product.category_name
-      ? [{ name: product.category_name, url: `${baseUrl}/catalog/${encodeURIComponent(product.category_name)}` }]
+      ? [{ name: product.category_name, url: `${baseUrl}/catalog/${categorySlug || encodeURIComponent(product.category_name)}` }]
       : []),
-    { name: product.name, url: `${baseUrl}/product/${id}` },
+    { name: product.name, url: `${baseUrl}/product/${productSlug}` },
   ];
 
-  // Prepare product data for structured data
   const productForStructuredData = {
     id: product.id,
     name: product.name,
     description: product.description,
     price: product.price,
     discount_percentage: product.discount_percentage,
-    first_media: product.media && product.media.length > 0 ? product.media[0] : null,
+    first_media: product.media?.length ? product.media[0] : null,
     category_name: product.category_name,
   };
 
-  // Wrap ProductClient to ensure it only renders client-side after hydration
   return (
     <>
-      <ProductStructuredData product={productForStructuredData} baseUrl={baseUrl} />
+      <ProductStructuredData product={productForStructuredData} baseUrl={baseUrl} slug={productSlug} />
       <BreadcrumbStructuredData items={breadcrumbs} />
       <ProductClientWrapper product={product} />
     </>

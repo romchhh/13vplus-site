@@ -16,13 +16,7 @@ export async function GET(
       );
     }
 
-    // Return stock information for all sizes
-    const stockInfo = product.sizes.map((s) => ({
-      size: s.size,
-      stock: s.stock,
-    }));
-
-    return NextResponse.json({ stock: stockInfo });
+    return NextResponse.json({ stock: product.stock ?? 0 });
   } catch (error) {
     console.error("Error fetching product stock:", error);
     return NextResponse.json(
@@ -31,4 +25,3 @@ export async function GET(
     );
   }
 }
-

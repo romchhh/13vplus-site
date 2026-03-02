@@ -2,22 +2,10 @@
 
 import { useEffect, useState } from "react";
 import ProductClient from "./ProductClient";
+import type { Product } from "@/lib/types/product";
 
 interface ProductClientWrapperProps {
-  product: {
-    id: number;
-    name: string;
-    price: number;
-    old_price?: number | null;
-    discount_percentage?: number | null;
-    description?: string | null;
-    media?: { url: string; type: string }[];
-    sizes?: { size: string; stock: number }[];
-    colors?: { label: string; hex?: string | null }[];
-    fabric_composition?: string | null;
-    has_lining?: boolean;
-    lining_description?: string | null;
-  };
+  product: Product;
 }
 
 export default function ProductClientWrapper({ product }: ProductClientWrapperProps) {

@@ -1,6 +1,6 @@
 export default function CatalogLoading() {
   return (
-    <div className="min-h-screen bg-white pt-20 px-6">
+    <div className="min-h-screen bg-[var(--background-warm-yellow)] pt-20 px-6">
       <div className="max-w-[1920px] mx-auto">
         {/* Header Skeleton */}
         <div className="mb-8">

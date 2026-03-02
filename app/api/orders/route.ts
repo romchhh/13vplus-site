@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sqlGetAllOrders, sqlPostOrder } from "@/lib/sql";
-import { creditBonusesForPaidOrder, getBonusPercentForPurchase, type OrderForBonusCredit } from "@/lib/loyalty";
+import { getOrCreateOrderCustomer } from "@/lib/orderCustomer";
+import { sendOrderConfirmationEmail } from "@/lib/orderConfirmationEmail";
+import { createLogger } from "@/lib/logger";
 import crypto from "crypto";
+import { prisma } from "@/lib/prisma";
+
+const log = createLogger("POST /api/orders");
 
 type IncomingOrderItem = {
   product_id?: number | string;
@@ -31,9 +36,13 @@ export async function GET() {
     const orders = await sqlGetAllOrders();
     return NextResponse.json(orders);
   } catch (error) {
-    console.error("[GET /orders]", error);
+    log.error(error);
+    const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: "Failed to fetch orders" },
+      {
+        error: "Failed to fetch orders",
+        ...(process.env.NODE_ENV === "development" && { details: message }),
+      },
       { status: 500 }
     );
   }
@@ -44,11 +53,9 @@ export async function GET() {
 // ==========================
 export async function POST(req: NextRequest) {
   try {
-    console.log("=".repeat(50));
-    console.log("[POST /api/orders] Starting order creation...");
-    
+    log.debug("Starting order creation");
     const body = await req.json();
-    console.log("[POST /api/orders] Received body:", JSON.stringify(body, null, 2));
+    log.debug("Received body:", JSON.stringify(body, null, 2));
 
     const {
       user_id,
@@ -60,13 +67,12 @@ export async function POST(req: NextRequest) {
       post_office,
       comment,
       payment_type, // "full" або "prepay"
-      bonus_points_to_spend: bonusPointsToSpendRaw,
       items,
+      promo_code: promoCodeFromBody,
+      delivery_cost: deliveryCostFromBody,
     } = body;
 
-    const bonusPointsToSpend = Math.max(0, Math.floor(Number(bonusPointsToSpendRaw) || 0));
-
-    console.log("[POST /api/orders] Extracted data:", {
+    log.debug("Extracted data:", {
       customer_name,
       phone_number,
       email,
@@ -86,7 +92,7 @@ export async function POST(req: NextRequest) {
       !post_office ||
       !items?.length
     ) {
-      console.error("[POST /api/orders] Validation failed:", {
+      log.warn("Validation failed:", {
         hasCustomerName: !!customer_name,
         hasPhoneNumber: !!phone_number,
         hasDeliveryMethod: !!delivery_method,
@@ -99,7 +105,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    console.log("[POST /api/orders] Validation passed");
+    log.debug("Validation passed");
 
     const normalizedItems: NormalizedOrderItem[] = (items || []).map(
       (item: IncomingOrderItem, index: number) => {
@@ -143,18 +149,15 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    // Check stock availability before creating order
+    // Check stock availability before creating order (product.stock)
     const { prisma } = await import("@/lib/prisma");
     const stockChecks = await Promise.all(
       normalizedItems.map(async (item) => {
-        const productSize = await prisma.productSize.findFirst({
-          where: {
-            productId: item.product_id,
-            size: item.size,
-          },
+        const product = await prisma.product.findUnique({
+          where: { id: item.product_id },
+          select: { stock: true },
         });
-
-        const availableStock = productSize?.stock ?? 0;
+        const availableStock = product?.stock ?? 0;
         return {
           product_id: item.product_id,
           product_name: item.product_name,
@@ -170,7 +173,7 @@ export async function POST(req: NextRequest) {
     if (insufficientItems.length > 0) {
       const errorMessages = insufficientItems.map(
         (item) =>
-          `${item.product_name} (розмір ${item.size}): доступно ${item.available} шт., запитано ${item.requested} шт.`
+          `${item.product_name}: доступно ${item.available} шт., запитано ${item.requested} шт.`
       );
       return NextResponse.json(
         {
@@ -182,36 +185,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const fullAmount = normalizedItems.reduce(
+    const subtotal = normalizedItems.reduce(
       (total: number, item) => total + item.price * item.quantity,
       0
     );
+    const deliveryCost = Number(deliveryCostFromBody) || 0;
+    const fullAmount = subtotal + deliveryCost;
 
-    // Знижка по програмі лояльності (3% перша покупка, далі 5–15% за порогами) — тільки для авторизованих
-    let loyaltyDiscountAmount = 0;
-    if (user_id) {
-      const paidOrders = await prisma.order.findMany({
-        where: { userId: user_id, paymentStatus: "paid" },
-        select: {
-          id: true,
-          items: { select: { price: true, quantity: true } },
-        },
-      });
-      const totalSpent = paidOrders.reduce((sum, order) => {
-        const itemsTotal = order.items.reduce(
-          (s: number, it: { price: unknown; quantity: number }) => s + Number(it.price) * it.quantity,
-          0
-        );
-        return sum + itemsTotal;
-      }, 0);
-      const paidOrdersCount = paidOrders.length;
-      const bonusPercent = getBonusPercentForPurchase(totalSpent, paidOrdersCount);
-      loyaltyDiscountAmount = Math.round((fullAmount * bonusPercent) / 100 * 100) / 100;
+    let promoCodeId: number | null = null;
+    let promoDiscountAmount = 0;
+    const promoCode = typeof promoCodeFromBody === "string" ? promoCodeFromBody.trim().toUpperCase() : "";
+    if (promoCode) {
+      const { prisma } = await import("@/lib/prisma");
+      const promo = await prisma.promoCode.findUnique({ where: { code: promoCode } });
+      if (promo) {
+        const now = new Date();
+        const validByDate = (!promo.validFrom || now >= promo.validFrom) && (!promo.validUntil || now <= promo.validUntil);
+        const underLimit = promo.maxUses == null || promo.usedCount < promo.maxUses;
+        if (validByDate && underLimit) {
+          const value = Number(promo.value);
+          if (promo.type === "percent") {
+            promoDiscountAmount = Math.round((fullAmount * value) / 100);
+          } else {
+            promoDiscountAmount = Math.min(value, fullAmount);
+          }
+          if (promoDiscountAmount > 0) {
+            promoCodeId = promo.id;
+          }
+        }
+      }
     }
 
-    const orderTotal = fullAmount - loyaltyDiscountAmount;
+    const orderTotal = Math.max(0, fullAmount - promoDiscountAmount);
 
-    // Calculate amount to pay based on payment type
     let amountToPay = orderTotal;
     if (payment_type === "prepay") {
       amountToPay = 200; // передоплата 200 грн
@@ -219,46 +225,36 @@ export async function POST(req: NextRequest) {
       amountToPay = orderTotal;
     } else if (payment_type === "installment") {
       amountToPay = orderTotal;
-    } else if (payment_type === "crypto") {
-      amountToPay = orderTotal;
     }
 
-    // Apply bonus points discount (only for logged-in users)
-    let effectiveBonusDeduction = 0;
-    if (bonusPointsToSpend > 0 && user_id) {
-      const user = await prisma.user.findUnique({
-        where: { id: user_id },
-        select: { bonusPoints: true },
-      });
-      if (user) {
-        const maxBonus = Math.min(
-          bonusPointsToSpend,
-          user.bonusPoints,
-          Math.floor(amountToPay)
-        );
-        effectiveBonusDeduction = maxBonus;
-        amountToPay = Math.max(0, amountToPay - maxBonus);
-      }
-    }
-
-    console.log("[POST /api/orders] Amount calculation:", {
+    log.debug(" Amount calculation:", {
       fullAmount,
       orderTotal,
-      loyaltyDiscountAmount,
       amountToPay,
       payment_type,
-      bonusPointsToSpend,
-      effectiveBonusDeduction,
     });
 
-    // ✅ Зберігання замовлення у БД
-    console.log("[POST /api/orders] Saving order to database...");
-    const orderId = crypto.randomUUID();
-    const isFullyPaidByBonuses = amountToPay <= 0;
-    const isTestPayment = payment_type === "test_payment";
+    // Зберігаємо клієнта в таблиці users для адмінки та майбутніх розсилок
+    let customerUserId: string | null = user_id || null;
+    try {
+      const createdOrExistingId = await getOrCreateOrderCustomer({
+        customer_name,
+        email: email || null,
+        phone: phone_number,
+        city,
+        post_office,
+      });
+      customerUserId = createdOrExistingId;
+    } catch (err) {
+      log.warn("Failed to get/create order customer, order will have no user_id:", err);
+    }
 
-    const postResult = await sqlPostOrder({
-      user_id: user_id || null,
+    const orderId = crypto.randomUUID();
+    const isTestPayment = payment_type === "test_payment";
+    const PUBLIC_URL_FULL = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
+
+    const orderPayload = {
+      user_id: customerUserId,
       customer_name,
       phone_number,
       email,
@@ -267,407 +263,168 @@ export async function POST(req: NextRequest) {
       post_office,
       comment,
       payment_type,
-      invoice_id: orderId,
-      payment_status: isTestPayment || isFullyPaidByBonuses ? "paid" : "pending",
-      bonus_points_spent: effectiveBonusDeduction,
-      loyalty_discount_amount: loyaltyDiscountAmount,
+      bonus_points_spent: 0,
+      loyalty_discount_amount: 0,
+      promo_code_id: promoCodeId ?? undefined,
+      promo_discount_amount: promoDiscountAmount > 0 ? promoDiscountAmount : undefined,
       items: normalizedItems.map(
-        ({ product_id, size, quantity, price, color }) => ({
+        ({ product_id, product_name, size, quantity, price, color }) => ({
           product_id,
+          product_name,
           size,
           quantity,
           price,
           color,
         })
       ),
-    });
-    const createdOrderDbId = postResult.orderId;
-    console.log("[POST /api/orders] Order saved to database successfully");
+    };
 
-    // Deduct bonus points from user if any were used
-    if (effectiveBonusDeduction > 0 && user_id) {
-      await prisma.user.update({
-        where: { id: user_id },
-        data: {
-          bonusPoints: { decrement: effectiveBonusDeduction },
-        },
-      });
-      console.log("[POST /api/orders] Deducted", effectiveBonusDeduction, "bonus points from user");
-    }
-
-    // Тест оплата — імітація повної оплати: замовлення зберігається як оплачене, нараховуються бонуси, редірект на успіх
+    // Тест оплата — зберігаємо з orderId і редірект на успіх
     if (isTestPayment) {
-      if (user_id) {
-        const orderForCredit = await prisma.order.findUnique({
-          where: { id: createdOrderDbId },
-          include: {
-            user: { select: { birthDate: true } },
-            items: true,
-          },
-        });
-        if (orderForCredit) {
-          const { credited } = await creditBonusesForPaidOrder(prisma, orderForCredit as unknown as OrderForBonusCredit);
-          if (credited > 0) console.log("[POST /api/orders] Test payment: credited", credited, "bonus points");
-        }
-      }
-      const PUBLIC_URL_FULL = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
-      return NextResponse.json({
-        success: true,
-        orderId,
-        invoiceUrl: `${PUBLIC_URL_FULL}/success?orderReference=${orderId}`,
+      log.debug(" Saving order (test_payment)...");
+      await sqlPostOrder({
+        ...orderPayload,
+        invoice_id: orderId,
+        payment_status: "paid",
       });
-    }
-
-    // When fully paid by bonuses - credit bonuses (e.g. birthday) and redirect to success
-    if (isFullyPaidByBonuses) {
-      if (user_id) {
-        const orderForCredit = await prisma.order.findUnique({
-          where: { id: createdOrderDbId },
-          include: {
-            user: { select: { birthDate: true } },
-            items: true,
-          },
-        });
-        if (orderForCredit) {
-          const { credited } = await creditBonusesForPaidOrder(prisma, orderForCredit as unknown as OrderForBonusCredit);
-          if (credited > 0) console.log("[POST /api/orders] Credited", credited, "bonus points (e.g. birthday)");
-        }
-      }
-      const PUBLIC_URL_FULL = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
-      return NextResponse.json({
-        success: true,
-        orderId,
-        invoiceUrl: `${PUBLIC_URL_FULL}/success?orderReference=${orderId}`,
-      });
-    }
-
-    // ✅ Створення платежу через WayForPay (якщо не крипта і не тест оплата)
-    if (payment_type !== "crypto" && payment_type !== "test_payment") {
-      try {
-        const productNames = normalizedItems.map(
-          (item) =>
-            item.color
-              ? `${item.product_name} (${item.color}, ${item.size})`
-              : `${item.product_name} (${item.size})`
-        );
-        const productCounts = normalizedItems.map((item) => item.quantity);
-        const productPrices = normalizedItems.map((item) => item.price);
-
-        const PUBLIC_URL_FULL = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
-
-        const merchantAccount = process.env.MERCHANT_ACCOUNT || process.env.WAYFORPAY_MERCHANT_ACCOUNT;
-        const merchantSecret = process.env.MERCHANT_SECRET || process.env.WAYFORPAY_MERCHANT_SECRET;
-        // Use localhost for local development, production domain otherwise
-        const merchantDomainName = PUBLIC_URL_FULL.includes("localhost") 
-          ? "localhost" 
-          : (process.env.MERCHANT_DOMAIN || process.env.WAYFORPAY_MERCHANT_DOMAIN || "13vplus.com");
-
-        if (!merchantAccount || !merchantSecret) {
-          console.error("[POST /api/orders] Missing WayForPay credentials");
-          throw new Error("Payment gateway configuration error");
-        }
-
-        const orderDate = Math.floor(Date.now() / 1000);
-
-        // For installment, use PURCHASE method with payment form
-        if (payment_type === "installment") {
-          // Import WayForPay utilities
-          const { generatePaymentSignature } = await import("@/lib/wayforpay");
-
-          // Generate signature for PURCHASE payment
-          const merchantSignature = generatePaymentSignature({
-            merchantAccount,
-            merchantDomainName,
-            orderReference: orderId,
-            orderDate,
-            amount: amountToPay,
-            currency: "UAH",
-            productName: productNames,
-            productCount: productCounts,
-            productPrice: productPrices,
-            secretKey: merchantSecret,
-          });
-
-          // Prepare payment form data for PURCHASE with installment
-          // WayForPay expects productName, productPrice, productCount as arrays
-          const paymentFormData: Record<string, string | number | string[] | number[]> = {
-            merchantAccount,
-            merchantAuthType: "SimpleSignature",
-            merchantDomainName,
-            merchantTransactionType: "AUTH", // CRITICAL: AUTH type enables installment options
-            merchantTransactionSecureType: "AUTO",
-            merchantSignature,
-            apiVersion: 1,
-            language: "UA",
-            orderReference: orderId,
-            orderDate,
-            amount: amountToPay.toFixed(2),
-            currency: "UAH",
-            orderTimeout: 86400, // 24 hours
-            // Specify all installment payment systems with available parts
-            // Format: systemName:parts (e.g., payParts:2,3,4,5,6)
-            paymentSystems: "payParts:2,3,4,5,6;payPartsMono:2,3,4,5,6;payPartsPrivat:2,3,4,5,6;payPartsAbank:2,3,4,5,6;instantAbank;OnusInstallment;payPartsOtp:2,3,4,5,6;globusPlus:2,3,4,5,6",
-            productName: productNames,
-            productPrice: productPrices.map(p => p.toFixed(2)),
-            productCount: productCounts,
-          };
-
-          // Add customer info
-          if (customer_name) {
-            const nameParts = customer_name.trim().split(/\s+/);
-            if (nameParts.length >= 2) {
-              paymentFormData.clientFirstName = nameParts[0];
-              paymentFormData.clientLastName = nameParts.slice(1).join(" ");
-            } else {
-              paymentFormData.clientFirstName = customer_name;
-            }
+      // Лист підтвердження на email клієнта (як при реальній оплаті)
+      if (email && String(email).trim()) {
+        try {
+          const productIds = [...new Set(normalizedItems.map((i) => i.product_id))];
+          const mediaList = productIds.length > 0
+            ? await prisma.productMedia.findMany({
+                where: { productId: { in: productIds } },
+                orderBy: [{ productId: "asc" }, { id: "asc" }],
+                select: { productId: true, url: true },
+              })
+            : [];
+          const productImageUrls = new Map<number, string>();
+          const seen = new Set<number>();
+          for (const m of mediaList) {
+            if (seen.has(m.productId)) continue;
+            seen.add(m.productId);
+            const fullUrl = m.url.startsWith("http") ? m.url : `${PUBLIC_URL_FULL}/api/images/${m.url}`;
+            productImageUrls.set(m.productId, fullUrl);
           }
-
-          if (email) {
-            paymentFormData.clientEmail = email;
-          }
-
-          if (phone_number) {
-            paymentFormData.clientPhone = phone_number;
-          }
-
-          paymentFormData.serviceUrl = `${PUBLIC_URL_FULL}/api/wayforpay/webhook`;
-          paymentFormData.returnUrl = `${PUBLIC_URL_FULL}/order-success?orderId=${orderId}`;
-
-          console.log("[POST /api/orders] Creating WayForPay payment form for installment...");
-          console.log("[POST /api/orders] Payment form data:", JSON.stringify(paymentFormData, null, 2));
-
-          // Call WayForPay API to get payment URL (using behavior=offline for mobile)
-          try {
-            const wayforpayResponse = await fetch("https://secure.wayforpay.com/pay?behavior=offline", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-              },
-              body: new URLSearchParams(
-                Object.entries(paymentFormData).flatMap(([key, value]) => {
-                  if (Array.isArray(value)) {
-                    return value.map((v, i) => [`${key}[${i}]`, String(v)]);
-                  }
-                  return [[key, String(value)]];
-                })
-              ),
-            });
-
-            const wayforpayResult = await wayforpayResponse.json();
-            console.log("[POST /api/orders] WayForPay response:", JSON.stringify(wayforpayResult, null, 2));
-
-            if (wayforpayResult.url) {
-              console.log("[POST /api/orders] WayForPay payment URL created successfully");
-              console.log("[POST /api/orders] Payment URL:", wayforpayResult.url);
-              console.log("[POST /api/orders] Successfully completed order creation");
-              console.log("=".repeat(50));
-
-              // Return payment URL for redirect
-              return NextResponse.json({
-                success: true,
-                orderId: orderId,
-                paymentUrl: wayforpayResult.url,
-                paymentType: payment_type,
-                formData: paymentFormData, // Also return form data as fallback
-              });
-            } else {
-              console.error("[POST /api/orders] WayForPay payment URL creation failed:", wayforpayResult);
-              // Fallback: return form data for client-side form submission
-              return NextResponse.json({
-                success: true,
-                orderId: orderId,
-                paymentType: payment_type,
-                formData: paymentFormData,
-                formAction: "https://secure.wayforpay.com/pay",
-              });
-            }
-          } catch (wayforpayError) {
-            console.error("[POST /api/orders] Error calling WayForPay API:", wayforpayError);
-            // Fallback: return form data for client-side form submission
-            return NextResponse.json({
-              success: true,
-              orderId: orderId,
-              paymentType: payment_type,
-              formData: paymentFormData,
-              formAction: "https://secure.wayforpay.com/pay",
-            });
-          }
-        }
-
-        // For full payment and prepay, use the working method
-        console.log(`[POST /api/orders] Creating payment for type: ${payment_type}`);
-        // Import WayForPay utilities
-        const { generatePurchaseSignature } = await import("@/lib/wayforpay");
-
-        // Generate signature
-        const merchantSignature = generatePurchaseSignature({
-          merchantAccount,
-          merchantDomainName,
-          orderReference: orderId,
-          orderDate,
-          amount: amountToPay,
-          currency: "UAH",
-          productNames,
-          productCounts,
-          productPrices,
-          secretKey: merchantSecret,
-        });
-
-        // Prepare payment data
-        const paymentData: Record<string, string | number | string[] | number[]> = {
-          merchantAccount,
-          merchantAuthType: "SimpleSignature",
-          merchantDomainName,
-          merchantTransactionType: "AUTO",
-          merchantTransactionSecureType: "AUTO",
-          merchantSignature,
-          apiVersion: 1,
-          language: "UA",
-          orderReference: orderId,
-          orderDate,
-          amount: amountToPay.toFixed(2),
-          currency: "UAH",
-          productName: productNames,
-          productCount: productCounts,
-          productPrice: productPrices.map((p: number) => p.toFixed(2)),
-        };
-
-        // Add customer info
-        if (customer_name) {
-          const nameParts = customer_name.trim().split(/\s+/);
-          if (nameParts.length >= 2) {
-            paymentData.clientFirstName = nameParts[0];
-            paymentData.clientLastName = nameParts.slice(1).join(" ");
-          } else {
-            paymentData.clientFirstName = customer_name;
-          }
-        }
-
-        if (email) {
-          paymentData.clientEmail = email;
-        }
-
-        if (phone_number) {
-          paymentData.clientPhone = phone_number;
-        }
-
-        paymentData.returnUrl = `${PUBLIC_URL_FULL}/success?orderReference=${orderId}`;
-        paymentData.serviceUrl = `${PUBLIC_URL_FULL}/api/wayforpay/webhook`;
-
-        console.log(
-          "[POST /api/orders] WayForPay payment data created successfully"
-        );
-        console.log("[POST /api/orders] Payment data:", JSON.stringify(paymentData, null, 2));
-
-        console.log("[POST /api/orders] Returning response with payment data");
-        console.log("[POST /api/orders] Successfully completed order creation");
-        console.log("=".repeat(50));
-
-        return NextResponse.json({
-          success: true,
-          orderId: orderId,
-          paymentUrl: "https://secure.wayforpay.com/pay",
-          paymentData: paymentData,
-        });
-      } catch (paymentError) {
-        console.error(
-          "[POST /api/orders] Payment creation error:",
-          paymentError
-        );
-        // Return error if payment creation failed
-        return NextResponse.json(
-          {
-            error: "Не вдалося створити платіж. Перевірте налаштування WayForPay.",
-            orderId: orderId,
-            details: paymentError instanceof Error ? paymentError.message : "Unknown error",
-          },
-          { status: 500 }
-        );
-      }
-    }
-
-    // ✅ Створення платежу через Plisio для криптоплатежів
-    if (payment_type === "crypto") {
-      try {
-        const PUBLIC_URL = process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000";
-
-        // Create Plisio invoice
-        const plisioResponse = await fetch(
-          `${PUBLIC_URL}/api/plisio/create-invoice`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              orderNumber: orderId,
-              orderName: `Order ${orderId}`,
-              amount: amountToPay.toFixed(2),
-              email: email || undefined,
-              callbackUrl: `${PUBLIC_URL}/api/plisio/webhook`,
-              successCallbackUrl: `${PUBLIC_URL}/success?orderReference=${orderId}`,
-              failCallbackUrl: `${PUBLIC_URL}/final?orderReference=${orderId}&status=failed`,
-            }),
-          }
-        );
-
-        if (!plisioResponse.ok) {
-          console.error(
-            "[POST /api/orders] Failed to create Plisio invoice"
+          await sendOrderConfirmationEmail(
+            {
+              customer_name,
+              email: String(email).trim(),
+              phone_number: phone_number,
+              delivery_method,
+              city,
+              post_office,
+              payment_type,
+              comment: comment ?? null,
+              invoice_id: orderId,
+              created_at: new Date(),
+              items: normalizedItems.map((item) => ({
+                product_id: item.product_id,
+                product_name: item.product_name,
+                size: item.size,
+                quantity: item.quantity,
+                price: item.price,
+                color: item.color,
+              })),
+            },
+            productImageUrls
           );
-          throw new Error("Failed to create crypto payment");
+        } catch (e) {
+          log.warn("Order confirmation email (test_payment) failed:", e);
         }
-
-        const plisioData = await plisioResponse.json();
-        console.log(
-          "[POST /api/orders] Plisio invoice created successfully"
-        );
-
-        console.log("[POST /api/orders] Returning response with Plisio invoice");
-        console.log("[POST /api/orders] Successfully completed order creation");
-        console.log("=".repeat(50));
-
-        return NextResponse.json({
-          success: true,
-          orderId: orderId,
-          paymentUrl: plisioData.invoiceUrl,
-          txnId: plisioData.txnId,
-          paymentType: "crypto",
-        });
-      } catch (paymentError) {
-        console.error(
-          "[POST /api/orders] Plisio payment creation error:",
-          paymentError
-        );
-        // Return error if payment creation failed
-        return NextResponse.json(
-          {
-            error: "Не вдалося створити платіж. Перевірте налаштування Plisio.",
-            orderId: orderId,
-            details: paymentError instanceof Error ? paymentError.message : "Unknown error",
-          },
-          { status: 500 }
-        );
       }
+      return NextResponse.json({
+        success: true,
+        orderId,
+        invoiceUrl: `${PUBLIC_URL_FULL}/success?orderReference=${orderId}`,
+      });
     }
 
-    // For non-crypto, non-payment orders (shouldn't happen, but just in case)
-    console.log("[POST /api/orders] Returning response with orderId:", orderId);
-    console.log("[POST /api/orders] Successfully completed order creation");
-    console.log("=".repeat(50));
+    // Оплата через Monobank (Mono)
+    const monoToken = process.env.NEXT_PUBLIC_MONO_TOKEN;
+    if (!monoToken) {
+      log.error(" Missing NEXT_PUBLIC_MONO_TOKEN");
+      return NextResponse.json(
+        { error: "Не налаштовано оплату. Зв'яжіться з підтримкою." },
+        { status: 500 }
+      );
+    }
+
+    const amountInMinorUnits = Math.round(amountToPay * 100);
+    const basketOrder = normalizedItems.map((item) => ({
+      name: item.color ? `${item.product_name} (${item.color})` : item.product_name,
+      qty: item.quantity,
+      sum: Math.round(item.price * item.quantity * 100),
+      total: Math.round(item.price * item.quantity * 100),
+      unit: "шт.",
+      code: item.color ? `${item.product_id}-${item.size}-${item.color}` : `${item.product_id}-${item.size}`,
+    }));
+
+    const invoicePayload = {
+      amount: amountInMinorUnits,
+      ccy: 980,
+      merchantPaymInfo: {
+        reference: orderId,
+        destination: "Оплата замовлення",
+        comment: comment || "Оплата замовлення",
+        basketOrder,
+      },
+      redirectUrl: `${PUBLIC_URL_FULL}/success`,
+      webHookUrl: `${PUBLIC_URL_FULL}/api/mono-webhook`,
+      validity: 3600,
+      paymentType: "debit",
+    };
+
+    log.debug(" Creating Mono invoice...");
+    const monoRes = await fetch("https://api.monobank.ua/api/merchant/invoice/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Token": monoToken,
+      },
+      body: JSON.stringify(invoicePayload),
+    });
+
+    const invoiceData = await monoRes.json();
+    if (!monoRes.ok) {
+      log.error(" Monobank error:", invoiceData);
+      return NextResponse.json(
+        {
+          error: "Не вдалося створити рахунок для оплати. Спробуйте пізніше або зв'яжіться з нами.",
+          details: invoiceData,
+        },
+        { status: 500 }
+      );
+    }
+
+    const { invoiceId: monoInvoiceId, pageUrl } = invoiceData;
+    if (!monoInvoiceId || !pageUrl) {
+      log.error(" Monobank response missing invoiceId or pageUrl:", invoiceData);
+      return NextResponse.json(
+        { error: "Некоректна відповідь платіжної системи." },
+        { status: 500 }
+      );
+    }
+
+    log.debug(" Saving order with Mono invoice_id...");
+    await sqlPostOrder({
+      ...orderPayload,
+      invoice_id: monoInvoiceId,
+      payment_status: "pending",
+    });
 
     return NextResponse.json({
       success: true,
-      orderId: orderId,
-      message: "Замовлення успішно створено",
+      orderId: monoInvoiceId,
+      invoiceUrl: pageUrl,
     });
   } catch (error) {
-    console.error("[POST /api/orders] ERROR occurred:", error);
-    console.error("[POST /api/orders] Error details:", {
+    log.error(" ERROR occurred:", error);
+    log.error("Error details:", {
       message: error instanceof Error ? error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
     });
-    console.log("=".repeat(50));
-    
+
     return NextResponse.json(
       { error: "Failed to create order", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }

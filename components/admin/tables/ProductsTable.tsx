@@ -34,7 +34,6 @@ interface Product {
   sizes: { size: string }[];
   top_sale?: boolean;
   limited_edition?: boolean;
-  season?: string;
   category_name?: string;
   color: string;
   first_media?: { url: string; type: string } | null;
@@ -110,31 +109,11 @@ export default function ProductsTable() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        // Перевірка кешу
-        const cachedData = localStorage.getItem(CACHE_KEY);
-        const cacheExpiry = localStorage.getItem(CACHE_EXPIRY_KEY);
-        const now = Date.now();
-
-        if (cachedData && cacheExpiry && now < parseInt(cacheExpiry)) {
-          // Використовуємо кешовані дані
-          console.log("Використання кешованих даних продуктів");
-          setProducts(JSON.parse(cachedData));
-          setLoading(false);
-          return;
-        }
-
-        // Якщо кеш застарів або відсутній, завантажуємо з сервера
-        console.log("Завантаження продуктів з сервера");
-        const res = await fetch("/api/products");
+        const res = await fetch("/api/products", { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to fetch products");
         const data = await res.json();
-
         setProducts(data);
-        console.log(data[0].name);
-
-        console.log(data[0].media);
-
-        // Зберігаємо в кеш
+        const now = Date.now();
         localStorage.setItem(CACHE_KEY, JSON.stringify(data));
         localStorage.setItem(
           CACHE_EXPIRY_KEY,
@@ -217,25 +196,13 @@ export default function ProductsTable() {
                   isHeader
                   className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
-                  Сезон
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
-                >
                   Колір
                 </TableCell>
                 <TableCell
                   isHeader
                   className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
-                  Топ продаж?
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
-                >
-                  Лімітована серія?
+                  Бестселлер
                 </TableCell>
                 <TableCell
                   isHeader
@@ -256,7 +223,7 @@ export default function ProductsTable() {
               {loading ? (
                 <TableRow>
                   <TableCell
-                    colSpan={12}
+                    colSpan={10}
                     className="text-center py-6 text-gray-600"
                   >
                     Завантаження...
@@ -265,7 +232,7 @@ export default function ProductsTable() {
               ) : products.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={12}
+                    colSpan={10}
                     className="text-center py-6 text-gray-600"
                   >
                     Продуктів не знайдено.
@@ -314,20 +281,10 @@ export default function ProductsTable() {
                       {product.category_name || "—"}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-sm text-gray-700">
-                      {Array.isArray(product.season)
-                        ? product.season.length > 0
-                          ? product.season.join(", ")
-                          : "—"
-                        : product.season || "—"}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {product.color || "—"}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {product.top_sale ? "✅" : "—"}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-sm text-gray-700">
-                      {product.limited_edition ? "✅" : "—"}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {new Date(product.created_at).toLocaleDateString()}

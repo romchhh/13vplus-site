@@ -8,6 +8,7 @@ import React, {
   ReactNode,
   useRef,
 } from "react";
+import { getItemSubtotal } from "@/lib/pricing";
 
 interface BasketItem {
   id: number;
@@ -18,6 +19,8 @@ interface BasketItem {
   imageUrl: string;
   color?: string;
   discount_percentage?: number;
+  /** Короткий опис для відображення в кошику (напр. з product.main_info) */
+  subtitle?: string;
 }
 
 interface BasketContextType {
@@ -87,6 +90,7 @@ function setCachedStock(productId: number, size: string, available: number): voi
 export function BasketProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<BasketItem[]>([]);
   const pendingChecksRef = useRef<Set<string>>(new Set());
+  const pendingAddRef = useRef<BasketItem | null>(null);
 
   // Load from localStorage only on client side after hydration
   useEffect(() => {
@@ -125,12 +129,14 @@ export function BasketProvider({ children }: { children: ReactNode }) {
     
     // If we have cached stock and it's sufficient, skip API call
     if (cachedStock !== null && cachedStock >= totalQuantity) {
-      // Optimistic update - add item immediately
+      pendingAddRef.current = newItem;
       const trackAddToCart = () => {
         if (typeof window !== "undefined" && window.fbq) {
-          const value = (newItem.discount_percentage
-            ? newItem.price * (1 - newItem.discount_percentage / 100)
-            : newItem.price) * newItem.quantity;
+          const value = getItemSubtotal(
+            newItem.price,
+            newItem.quantity,
+            newItem.discount_percentage
+          );
           window.fbq("track", "AddToCart", {
             content_name: newItem.name,
             content_ids: [String(newItem.id)],
@@ -142,15 +148,18 @@ export function BasketProvider({ children }: { children: ReactNode }) {
       };
 
       setItems((prevItems) => {
-        const existingIndex = prevItems.findIndex((i) => sameBasketKey(i, newItem));
+        const toAdd = pendingAddRef.current;
+        pendingAddRef.current = null;
+        if (!toAdd) return prevItems;
+        const existingIndex = prevItems.findIndex((i) => sameBasketKey(i, toAdd));
         if (existingIndex !== -1) {
           const updated = [...prevItems];
-          updated[existingIndex].quantity += newItem.quantity;
+          updated[existingIndex].quantity += toAdd.quantity;
           trackAddToCart();
           return updated;
         }
         trackAddToCart();
-        return [...prevItems, newItem];
+        return [...prevItems, toAdd];
       });
 
       // Verify in background (non-blocking)
@@ -200,11 +209,14 @@ export function BasketProvider({ children }: { children: ReactNode }) {
         setCachedStock(newItem.id, newItem.size, data.stockChecks[0].available);
       }
 
+      pendingAddRef.current = newItem;
       const trackAddToCart = () => {
         if (typeof window !== "undefined" && window.fbq) {
-          const value = (newItem.discount_percentage
-            ? newItem.price * (1 - newItem.discount_percentage / 100)
-            : newItem.price) * newItem.quantity;
+          const value = getItemSubtotal(
+            newItem.price,
+            newItem.quantity,
+            newItem.discount_percentage
+          );
           window.fbq("track", "AddToCart", {
             content_name: newItem.name,
             content_ids: [String(newItem.id)],
@@ -215,17 +227,19 @@ export function BasketProvider({ children }: { children: ReactNode }) {
         }
       };
 
-      // Use functional update to ensure we work with latest state
       setItems((prevItems) => {
-        const existingIndex = prevItems.findIndex((i) => sameBasketKey(i, newItem));
+        const toAdd = pendingAddRef.current;
+        pendingAddRef.current = null;
+        if (!toAdd) return prevItems;
+        const existingIndex = prevItems.findIndex((i) => sameBasketKey(i, toAdd));
         if (existingIndex !== -1) {
           const updated = [...prevItems];
-          updated[existingIndex].quantity += newItem.quantity;
+          updated[existingIndex].quantity += toAdd.quantity;
           trackAddToCart();
           return updated;
         }
         trackAddToCart();
-        return [...prevItems, newItem];
+        return [...prevItems, toAdd];
       });
     } catch (error) {
       // Re-throw error so components can handle it

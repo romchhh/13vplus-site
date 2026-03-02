@@ -38,7 +38,12 @@ export default function MonthlySalesChart() {
     async function fetchOrders() {
       try {
         const res = await fetch("/api/orders");
-        if (!res.ok) throw new Error("Failed to fetch orders");
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(
+            (body.details as string) || (body.error as string) || "Failed to fetch orders"
+          );
+        }
 
         const orders: Order[] = await res.json();
 

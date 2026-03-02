@@ -8,27 +8,37 @@
 import fs from "node:fs";
 import path from "node:path";
 
-// Load environment variables from .env file
-function loadEnvUrl(): string {
-  const envPath = path.join(process.cwd(), ".env");
-  if (!process.env.DATABASE_URL && fs.existsSync(envPath)) {
+// Завантажити .env одразу при завантаженні скрипта (до будь-якого import prisma)
+(function loadEnvSync() {
+  const envPath = path.resolve(process.cwd(), ".env");
+  if (fs.existsSync(envPath)) {
     const content = fs.readFileSync(envPath, "utf8");
-    const match = content.match(/DATABASE_URL=(.*)/);
-    if (match) {
-      process.env.DATABASE_URL = match[1].replace(/['"]/g, "");
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("DATABASE_URL=")) {
+        let value = trimmed.slice(13).trim();
+        if (value.startsWith('"') || value.startsWith("'")) {
+          const quote = value[0];
+          const end = value.indexOf(quote, 1);
+          value = end > 0 ? value.slice(1, end) : value.slice(1);
+        }
+        value = value.split(/\s+#\s+/)[0].trim();
+        if (value) process.env.DATABASE_URL = value;
+        break;
+      }
     }
   }
-  if (!process.env.DATABASE_URL) {
-    console.error("❌ DATABASE_URL is not set. Please check your .env file.");
+})();
+
+function loadEnvUrl(): void {
+  const url = process.env.DATABASE_URL;
+  if (!url || !url.startsWith("postgres")) {
+    console.error("❌ DATABASE_URL не задано або не схожий на postgresql://. Перевірте .env у корені проєкту.");
     process.exit(1);
   }
-  return process.env.DATABASE_URL;
+  const hostMatch = url.match(/@([^/]+?)(?:\/|$)/);
+  if (hostMatch) console.log("   Підключення до:", hostMatch[1]);
 }
-
-// Load DATABASE_URL before importing prisma
-loadEnvUrl();
-
-import { sqlPostProduct, sqlGetAllCategories } from "../lib/sql";
 
 // Color palette with hex values
 const colorPalette: Record<string, string> = {
@@ -54,7 +64,6 @@ const testProducts = [
     discount_percentage: null,
     top_sale: false,
     limited_edition: true,
-    season: ["Весна", "Літо"],
     color: "Чорний",
     fabric_composition: "100% шовк",
     has_lining: false,
@@ -79,7 +88,6 @@ const testProducts = [
     discount_percentage: 21,
     top_sale: true,
     limited_edition: false,
-    season: ["Весна", "Літо", "Осінь", "Зима"],
     color: "Сірий",
     fabric_composition: "98% бавовна, 2% еластан",
     has_lining: false,
@@ -104,7 +112,6 @@ const testProducts = [
     discount_percentage: null,
     top_sale: false,
     limited_edition: false,
-    season: ["Осінь", "Зима"],
     color: "Коричневий",
     fabric_composition: "80% вовна, 20% поліестер",
     has_lining: true,
@@ -129,7 +136,6 @@ const testProducts = [
     discount_percentage: null,
     top_sale: false,
     limited_edition: false,
-    season: ["Весна", "Літо", "Осінь"],
     color: "Чорний",
     fabric_composition: "95% бавовна, 5% еластан",
     has_lining: false,
@@ -178,7 +184,6 @@ const testProducts = [
     discount_percentage: null,
     top_sale: false,
     limited_edition: false,
-    season: ["Літо"],
     color: "Чорний",
     fabric_composition: "80% поліамід, 20% еластан",
     has_lining: true,
@@ -292,6 +297,162 @@ const testProducts = [
       { label: "Зелений", hex: colorPalette["Зелений"] },
     ],
   },
+  // Wellness / Choice — тестові товари
+  {
+    name: "Фітокомплекс Вітаміни та мінерали",
+    description: "Комплекс вітамінів та мінералів на рослинній основі для підтримки імунітету та енергії.",
+    price: 450,
+    old_price: 520,
+    discount_percentage: 13,
+    top_sale: true,
+    limited_edition: false,
+    color: "",
+    fabric_composition: undefined,
+    has_lining: false,
+    sizes: [{ size: "O/S", stock: 50 }],
+    colors: [],
+  },
+  {
+    name: "Програма корекції ваги Choice",
+    description: "Набір для комплексної підтримки метаболізму та контролю ваги. Рослинні компоненти.",
+    price: 890,
+    old_price: null,
+    discount_percentage: null,
+    top_sale: true,
+    limited_edition: false,
+    color: "",
+    fabric_composition: undefined,
+    has_lining: false,
+    sizes: [{ size: "O/S", stock: 30 }],
+    colors: [],
+  },
+  {
+    name: "Крем для тіла з екстрактами трав",
+    description: "Натуральний догляд за тілом. Зволожує та підживлює шкіру. Без парабенів.",
+    price: 320,
+    old_price: null,
+    discount_percentage: null,
+    top_sale: true,
+    limited_edition: false,
+    color: "",
+    fabric_composition: undefined,
+    has_lining: false,
+    sizes: [{ size: "O/S", stock: 40 }],
+    colors: [],
+  },
+  {
+    name: "Еко-засіб для миття посуду",
+    description: "Екологічний засіб для дому. Безпечний для здоров'я та навколишнього середовища.",
+    price: 180,
+    old_price: null,
+    discount_percentage: null,
+    top_sale: false,
+    limited_edition: false,
+    color: "",
+    fabric_composition: undefined,
+    has_lining: false,
+    sizes: [{ size: "O/S", stock: 60 }],
+    colors: [],
+  },
+  {
+    name: "Набір вітамінів для денного прийому",
+    description: "Збалансований комплекс для щоденного прийому. Підтримка організму та вітальність.",
+    price: 620,
+    old_price: 700,
+    discount_percentage: 11,
+    top_sale: true,
+    limited_edition: false,
+    color: "",
+    fabric_composition: undefined,
+    has_lining: false,
+    sizes: [{ size: "O/S", stock: 25 }],
+    colors: [],
+  },
+  {
+    name: "Масло для тіла з лавандою",
+    description: "Розслаблюючий догляд за тілом. Натуральні олії та ефір лаванди.",
+    price: 280,
+    old_price: null,
+    discount_percentage: null,
+    top_sale: false,
+    limited_edition: false,
+    color: "",
+    fabric_composition: undefined,
+    has_lining: false,
+    sizes: [{ size: "O/S", stock: 35 }],
+    colors: [],
+  },
+  // Бестселлери
+  {
+    name: "Імунобіотик Choice",
+    description: "Популярний комплекс для підтримки імунітету та мікробіому. Рослинні інгредієнти, зручна схема прийому.",
+    price: 590,
+    old_price: 650,
+    discount_percentage: 9,
+    top_sale: true,
+    limited_edition: false,
+    color: "",
+    fabric_composition: undefined,
+    has_lining: false,
+    sizes: [{ size: "O/S", stock: 45 }],
+    colors: [],
+  },
+  {
+    name: "Набір для здорового сну",
+    description: "Комплекс трав та магнію для спокійного сну та відновлення. Бестселлер сезону.",
+    price: 380,
+    old_price: 420,
+    discount_percentage: 10,
+    top_sale: true,
+    limited_edition: false,
+    color: "",
+    fabric_composition: undefined,
+    has_lining: false,
+    sizes: [{ size: "O/S", stock: 55 }],
+    colors: [],
+  },
+  {
+    name: "Детокс-напій з зеленого чаю та імбиру",
+    description: "Освіжаючий концентрат для щоденної підтримки обміну речовин. Без цукру, з натуральними екстрактами.",
+    price: 240,
+    old_price: null,
+    discount_percentage: null,
+    top_sale: true,
+    limited_edition: false,
+    color: "",
+    fabric_composition: undefined,
+    has_lining: false,
+    sizes: [{ size: "O/S", stock: 70 }],
+    colors: [],
+  },
+  {
+    name: "Коллаген для шкіри та суглобів",
+    description: "Морський коллаген з вітаміном C. Підтримка еластичності шкіри та здоров’я суглобів. Топ продажів.",
+    price: 720,
+    old_price: 800,
+    discount_percentage: 10,
+    top_sale: true,
+    limited_edition: false,
+    color: "",
+    fabric_composition: undefined,
+    has_lining: false,
+    sizes: [{ size: "O/S", stock: 38 }],
+    colors: [],
+  },
+  {
+    name: "Омега-3 з рослинних джерел",
+    description: "Вітамін D3 та омега-3 на основі водоростей. Для серця, судин та імунітету. Дуже популярний товар.",
+    price: 410,
+    old_price: 460,
+    discount_percentage: 11,
+    top_sale: true,
+    limited_edition: false,
+    color: "",
+    fabric_composition: undefined,
+    has_lining: false,
+    sizes: [{ size: "O/S", stock: 52 }],
+    colors: [],
+  },
 ];
 
 // Map product names to category names (approximate matching)
@@ -301,19 +462,64 @@ const categoryMapping: Record<string, string> = {
   "пальто": "Пальта",
   "Спортивний": "Спортивний одяг",
   "безрукавка": "Жилетки",
-  "купальник": "Майки", // or create a swimwear category
+  "купальник": "Майки",
   "шапка": "Головні убори",
   "куртка": "Куртки",
   "майка": "Майки",
   "плащ": "Куртки",
+  "Фітокомплекс": "Фітокомплекси та вітаміни",
+  "вітамін": "Фітокомплекси та вітаміни",
+  "корекції ваги": "Корекція ваги",
+  "Крем для тіла": "Догляд за тілом",
+  "Масло для тіла": "Догляд за тілом",
+  "догляд": "Догляд за тілом",
+  "Еко-засіб": "Есо-засоби для дому",
+  "есо": "Есо-засоби для дому",
+  "Імунобіотик": "Фітокомплекси та вітаміни",
+  "здорового сну": "Фітокомплекси та вітаміни",
+  "Детокс": "Фітокомплекси та вітаміни",
+  "Коллаген": "Догляд за тілом",
+  "Омега": "Фітокомплекси та вітаміни",
 };
 
 async function main() {
+  loadEnvUrl();
+
+  // Перевірка підключення до БД до використання Prisma (уникаємо P1010 через раннє створення пулу)
+  const { Pool } = await import("pg");
+  const testPool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL?.includes("sslmode=require") ? { rejectUnauthorized: false } : false,
+  });
+  try {
+    const client = await testPool.connect();
+    await client.query("SELECT 1");
+    client.release();
+    await testPool.end();
+  } catch (rawErr: unknown) {
+    const msg = (rawErr as Error)?.message ?? String(rawErr);
+    console.error("\n❌ Не вдалося підключитися до бази даних.");
+    if (/database .* does not exist|не існує/i.test(msg)) {
+      console.error("   База з DATABASE_URL не існує. Створіть її, наприклад: createdb choice_site_db");
+    } else if (/password|access denied|permission/i.test(msg)) {
+      console.error("   Перевірте логін і пароль у DATABASE_URL у .env");
+    } else {
+      console.error("   Помилка:", msg);
+    }
+    console.error("   Переконайтесь, що PostgreSQL запущений і DATABASE_URL у .env вірний.\n");
+    process.exit(1);
+  }
+
+  const { prisma } = await import("../lib/prisma");
+  const { sqlPostProduct } = await import("../lib/sql");
+
   try {
     console.log("🚀 Starting to add test products...\n");
 
-    // Get all categories
-    const categories = await sqlGetAllCategories();
+    const categories = await prisma.category.findMany({
+      select: { id: true, name: true },
+      orderBy: { priority: "desc" },
+    });
     console.log(`📦 Found ${categories.length} categories:`);
     categories.forEach((cat) => {
       console.log(`   - ${cat.name} (ID: ${cat.id})`);
@@ -386,8 +592,17 @@ async function main() {
     console.log(`   ✅ Successfully added: ${successCount} products`);
     console.log(`   ❌ Errors: ${errorCount} products`);
     console.log("=".repeat(50));
-  } catch (error) {
-    console.error("💥 Fatal error:", error);
+  } catch (error: unknown) {
+    const code = (error as { code?: string })?.code;
+    if (code === "P1001") {
+      console.error("\n❌ Не вдалося підключитися до бази даних (Can't reach database server).");
+      console.error("   Перевірте:\n   • чи запущений PostgreSQL (локально або хост з .env);\n   • чи правильний DATABASE_URL у .env;\n   • чи є доступ до сервера (мережа, VPN, файрвол).");
+    } else if (code === "P1010") {
+      console.error("\n❌ Доступ до бази даних заборонено (User was denied access).");
+      console.error("   Перевірте:\n   • чи існує база даних з .env (наприклад: createdb choice_site_db);\n   • чи виконані міграції Prisma (npx prisma migrate deploy);\n   • чи логін/пароль у DATABASE_URL вірні.");
+    } else {
+      console.error("💥 Fatal error:", error);
+    }
     process.exit(1);
   }
 }
@@ -398,8 +613,17 @@ main()
     console.log("\n🎉 Script completed successfully!");
     process.exit(0);
   })
-  .catch((error) => {
-    console.error("\n💥 Script failed:", error);
+  .catch((error: unknown) => {
+    const code = (error as { code?: string })?.code;
+    if (code === "P1001") {
+      console.error("\n❌ Не вдалося підключитися до бази даних (Can't reach database server).");
+      console.error("   Перевірте:\n   • чи запущений PostgreSQL (локально або хост з .env);\n   • чи правильний DATABASE_URL у .env;\n   • чи є доступ до сервера (мережа, VPN, файрвол).");
+    } else if (code === "P1010") {
+      console.error("\n❌ Доступ до бази даних заборонено (User was denied access).");
+      console.error("   Перевірте:\n   • чи існує база даних з .env (наприклад: createdb choice_site_db);\n   • чи виконані міграції Prisma (npx prisma migrate deploy);\n   • чи логін/пароль у DATABASE_URL вірні.");
+    } else {
+      console.error("\n💥 Script failed:", error);
+    }
     process.exit(1);
   });
 

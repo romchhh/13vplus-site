@@ -111,7 +111,6 @@ export const CACHE_KEYS = {
   CATEGORIES: "cache_categories",
   PRODUCT: (id: number) => `cache_product_${id}`,
   PRODUCTS_CATEGORY: (category: string) => `cache_products_category_${category}`,
-  PRODUCTS_SEASON: (season: string) => `cache_products_season_${season}`,
   PRODUCTS_SUBCATEGORY: (subcategory: string) =>
     `cache_products_subcategory_${subcategory}`,
 };

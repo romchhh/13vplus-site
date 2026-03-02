@@ -40,22 +40,38 @@ export default function NewsletterPage() {
 
   const fetchCampaigns = () => {
     setCampaignsLoading(true);
+    setMessage(null);
     fetch("/api/admin/newsletter/campaigns")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load campaigns");
+        return r.json();
+      })
       .then((data) => {
         if (Array.isArray(data)) setCampaigns(data);
       })
-      .catch(() => setCampaigns([]))
+      .catch((err) => {
+        setCampaigns([]);
+        setMessage({ type: "error", text: "Не вдалося завантажити кампанії. Спробуйте оновити сторінку." });
+        console.error("Newsletter campaigns fetch:", err);
+      })
       .finally(() => setCampaignsLoading(false));
   };
 
   useEffect(() => {
+    setMessage(null);
     fetch("/api/admin/newsletter/recipients")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.recipients) setRecipients(data.recipients);
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load recipients");
+        return r.json();
       })
-      .catch(() => setRecipients([]))
+      .then((data) => {
+        if (data?.recipients) setRecipients(data.recipients);
+      })
+      .catch((err) => {
+        setRecipients([]);
+        setMessage({ type: "error", text: "Не вдалося завантажити список отримувачів. Спробуйте оновити сторінку." });
+        console.error("Newsletter recipients fetch:", err);
+      })
       .finally(() => setLoading(false));
   }, []);
 

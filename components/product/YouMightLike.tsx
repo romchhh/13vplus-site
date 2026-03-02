@@ -1,291 +1,142 @@
 "use client";
 
-import React, { useMemo, useRef, useEffect, useState } from "react";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/navigation";
+import React, { useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { getProductImageSrc } from "@/lib/getFirstProductImage";
 import { useProducts } from "@/lib/useProducts";
 
-// Video component with proper mobile autoplay
-function VideoWithAutoplay({ src, className }: { src: string; className?: string }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+export type YouMightLikeProduct = {
+  id: number;
+  name: string;
+  slug?: string | null;
+  price: number;
+  first_media?: { url: string; type: string } | null;
+  description?: string | null;
+};
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      video.muted = true;
-      video.playsInline = true;
-      video.setAttribute('muted', '');
-      video.setAttribute('playsinline', '');
-      video.setAttribute('webkit-playsinline', '');
-      
-      const playVideo = async () => {
-        try {
-          await video.play();
-        } catch {
-          // Retry after delay for mobile
-          setTimeout(async () => {
-            try {
-              await video.play();
-            } catch (e) {
-              console.log("Video autoplay failed:", e);
-            }
-          }, 200);
-        }
-      };
-      
-      if (video.readyState >= 2) {
-        playVideo();
-      } else {
-        video.addEventListener('loadeddata', playVideo, { once: true });
-        video.addEventListener('canplay', playVideo, { once: true });
-        video.load();
-      }
-    }
-  }, []);
-
-  return (
-    <video
-      ref={videoRef}
-      src={src}
-      className={className}
-      loop
-      muted
-      playsInline
-      autoPlay
-      preload="metadata"
-    />
-  );
+interface YouMightLikeProps {
+  /** Якщо передано — використовуються ці товари (напр. з сервера на сторінці товару). Інакше — клієнтський useProducts(). */
+  suggestedProducts?: YouMightLikeProduct[];
 }
 
-export default function YouMightLike() {
-  const { products: allProducts, loading } = useProducts();
+export default function YouMightLike({ suggestedProducts }: YouMightLikeProps = {}) {
+  const { products: clientProducts, loading } = useProducts();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [, setCanScrollLeft] = useState(false);
-  const [, setCanScrollRight] = useState(true);
 
-  // Shuffle and pick 4 random products
   const products = useMemo(() => {
-    const shuffled = [...allProducts].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 4);
-  }, [allProducts]);
-
-  const checkScrollability = () => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      setCanScrollLeft(container.scrollLeft > 0);
-      setCanScrollRight(
-        container.scrollLeft < container.scrollWidth - container.clientWidth - 1
-      );
+    if (suggestedProducts?.length) {
+      return suggestedProducts.slice(0, 8);
     }
-  };
-
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      checkScrollability();
-      container.addEventListener("scroll", checkScrollability);
-      window.addEventListener("resize", checkScrollability);
-      return () => {
-        container.removeEventListener("scroll", checkScrollability);
-        window.removeEventListener("resize", checkScrollability);
-      };
-    }
-  }, [products]);
+    const shuffled = [...clientProducts].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 8);
+  }, [suggestedProducts, clientProducts]);
 
   const scrollLeft = () => {
     const container = scrollContainerRef.current;
-    if (container) {
-      container.scrollBy({ left: -400, behavior: "smooth" });
-    }
+    if (container) container.scrollBy({ left: -320, behavior: "smooth" });
   };
 
   const scrollRight = () => {
     const container = scrollContainerRef.current;
-    if (container) {
-      container.scrollBy({ left: 400, behavior: "smooth" });
-    }
+    if (container) container.scrollBy({ left: 320, behavior: "smooth" });
   };
 
-  if (loading) {
-    return <div className="text-center py-10 text-black">Завантаження...</div>;
+  const isLoading = !suggestedProducts && loading;
+  if (isLoading) {
+    return (
+      <section className="w-full bg-[#FFFFFF] py-12 lg:py-16">
+        <div className="max-w-[1920px] mx-auto px-6 lg:px-10">
+          <p className="text-[#3D1A00] font-['Montserrat']">Завантаження...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!products.length) {
+    return null;
   }
 
   return (
-    <section className="max-w-[1920px] w-full mx-auto relative px-4 sm:px-6 pt-16 lg:pt-24 pb-8 lg:pb-12 bg-white">
-      <div className="flex flex-col gap-12 lg:gap-16">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 lg:gap-0 border-b border-black/10 pb-8 lg:pb-12">
-          <h2 className="text-3xl lg:text-5xl font-bold font-['Montserrat'] uppercase tracking-wider text-black">
-            Доповніть свій лук
+    <section className="w-full bg-[#FFFFFF]">
+      <div className="max-w-[1920px] mx-auto px-6 lg:px-10 py-12 lg:py-16">
+        {/* Заголовок та стрілки — як у Наші бестселери */}
+        <div className="flex items-center justify-between gap-4 mb-8 lg:mb-10">
+          <h2 className="text-2xl lg:text-3xl font-bold font-['Montserrat'] uppercase tracking-tight text-[#3D1A00]">
+            Схожі товари
           </h2>
-          <p className="text-base lg:text-xl font-light font-['Montserrat'] text-black/60 leading-relaxed max-w-2xl tracking-wide">
-            Доповніть свій образ ідеальними акцентами. Рекомендації, які допоможуть створити цілісний стиль.
-          </p>
-        </div>
-
-        {/* Mobile layout: Single slider */}
-        <div className="sm:hidden -mx-4 px-4 relative">
-          <Swiper
-            modules={[Navigation]}
-            spaceBetween={16}
-            slidesPerView={1.5}
-            centeredSlides={false}
-            grabCursor={true}
-            initialSlide={0}
-            navigation={{
-              nextEl: ".swiper-button-next-youmightlike",
-              prevEl: ".swiper-button-prev-youmightlike",
-            }}
-            breakpoints={{
-              320: { slidesPerView: 1.2, spaceBetween: 16 },
-              480: { slidesPerView: 1.5, spaceBetween: 20 },
-            }}
-          >
-            {products.map((product, i) => (
-              <SwiperSlide
-                key={product.id !== -1 ? product.id : `template-${i}`}
-              >
-                <Link
-                href={`/product/${product.id}`}
-                  className="w-full group space-y-4 relative"
-              >
-                  <div className="relative w-full h-[500px] bg-black/5 overflow-hidden">
-                    {product.first_media?.type === "video" ? (
-                      <>
-                        <VideoWithAutoplay
-                      src={`/api/images/${product.first_media.url}`}
-                          className="object-cover group-hover:opacity-90 transition duration-300 w-full h-full"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="bg-white/90 text-black px-6 py-3 text-base font-medium font-['Montserrat'] uppercase tracking-wider">
-                            Переглянути
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                    <Image
-                          className="object-cover group-hover:opacity-90 transition duration-300"
-                          src={getProductImageSrc(product.first_media, "https://placehold.co/432x682")}
-                          alt={product.name}
-                          fill
-                          sizes="90vw"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="bg-white/90 text-black px-6 py-3 text-base font-medium font-['Montserrat'] uppercase tracking-wider">
-                            Переглянути
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <div className="text-center space-y-2 mt-4">
-                    <div className="text-base font-light font-['Montserrat'] text-black/80 uppercase tracking-wider">
-                      {product.name}
-                    </div>
-                    <div className="text-base font-medium font-['Montserrat'] text-black">
-                      {product.price.toLocaleString()} ₴
-                    </div>
-                  </div>
-                </Link>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-          <button className="swiper-button-prev-youmightlike absolute left-2 top-1/2 -translate-y-1/2 z-10 text-black hover:text-black/80 transition-colors duration-200">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6"/>
-            </svg>
-          </button>
-          <button className="swiper-button-next-youmightlike absolute right-2 top-1/2 -translate-y-1/2 z-10 text-black hover:text-black/80 transition-colors duration-200">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </button>
-        </div>
-
-        {/* Desktop layout: Horizontal scrollable grid */}
-        <div className="hidden sm:block relative">
-          {/* Navigation arrows - fixed outside scroll container */}
-          <button
-            onClick={scrollLeft}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 text-black hover:text-black/80 transition-colors duration-200 pointer-events-auto"
-            aria-label="Прокрутити вліво"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6"/>
-            </svg>
-          </button>
-          <button
-            onClick={scrollRight}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 text-black hover:text-black/80 transition-colors duration-200 pointer-events-auto"
-            aria-label="Прокрутити вправо"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </button>
-          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide" ref={scrollContainerRef}>
-            <div className="flex gap-4 md:gap-6 min-w-max pb-4 px-4 md:px-6 scroll-smooth">
-            {products.map((product, i) => (
-              <div key={product.id !== -1 ? product.id : `template-${i}`} className="flex items-center">
-                <Link
-                  href={`/product/${product.id}`}
-                  className="group relative flex-shrink-0 flex flex-col"
-                  style={{ width: "42.5vw", minWidth: "340px", maxWidth: "510px" }}
-                >
-                <div className="aspect-[2/3] w-full overflow-hidden relative bg-black/5">
-                  {product.first_media?.type === "video" ? (
-                    <>
-                      <VideoWithAutoplay
-                        src={`/api/images/${product.first_media.url}`}
-                        className="object-cover group-hover:opacity-90 transition duration-300 w-full h-full"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="bg-white/90 text-black px-8 py-4 text-lg font-medium font-['Montserrat'] uppercase tracking-wider">
-                          Переглянути
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <Image
-                        className="object-cover group-hover:opacity-90 transition duration-300"
-                        src={getProductImageSrc(product.first_media, "https://placehold.co/432x682")}
-                      alt={`${product.name} від 13VPLUS`}
-                      fill
-                        sizes="(max-width: 640px) 85vw, (max-width: 1024px) 42.5vw, 510px"
-                      loading="lazy"
-                      quality={75}
-                      placeholder="blur"
-                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-                    />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="bg-white/90 text-black px-8 py-4 text-lg font-medium font-['Montserrat'] uppercase tracking-wider">
-                          Переглянути
-                        </div>
-                    </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="mt-6 text-center space-y-3">
-                  <div className="text-base font-light font-['Montserrat'] text-black/80 uppercase tracking-wider">
-                  {product.name}
-                  </div>
-                  <div className="text-lg font-medium font-['Montserrat'] text-black">
-                    {product.price.toLocaleString()} ₴
-                  </div>
-                </div>
-              </Link>
-              </div>
-            ))}
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={scrollLeft}
+              className="p-2 text-[#3D1A00] hover:opacity-70 transition-opacity"
+              aria-label="Прокрутити вліво"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <button
+              onClick={scrollRight}
+              className="p-2 text-[#3D1A00] hover:opacity-70 transition-opacity"
+              aria-label="Прокрутити вправо"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
           </div>
+        </div>
+
+        {/* Горизонтальний список: 2 на мобільному, 4 на десктопі — як у Bestsellers */}
+        <div
+          ref={scrollContainerRef}
+          className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          {products.map((product) => (
+            <Link
+              key={product.id}
+              href={`/product/${(product.slug && String(product.slug).trim()) ? product.slug : product.id}`}
+              className="flex-shrink-0 w-[calc((100%-1.5rem)/2)] lg:w-[calc((100%-4.5rem)/4)] group"
+              aria-label={product.name}
+            >
+              <div className="aspect-[3/4] w-full rounded-lg overflow-hidden bg-gray-200 mb-3 relative">
+                {product.first_media?.url ? (
+                  product.first_media?.type === "video" ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-200 text-[#3D1A00]/50 font-['Montserrat'] text-sm">
+                      Відео
+                    </div>
+                  ) : (
+                    <Image
+                      src={getProductImageSrc(product.first_media, "")}
+                      alt={product.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 1023px) 50vw, 25vw"
+                    />
+                  )
+                ) : (
+                  <div className="absolute inset-0 bg-gray-200" aria-hidden />
+                )}
+              </div>
+              <div className="flex justify-between items-start gap-2">
+                <p className="text-[#3D1A00] font-['Montserrat'] font-semibold text-sm lg:text-base line-clamp-2">
+                  {product.name}
+                </p>
+                <span className="text-[#3D1A00] font-['Montserrat'] font-semibold text-sm lg:text-base whitespace-nowrap">
+                  {typeof product.price === "number" ? `${product.price.toLocaleString()} ₴` : "—"}
+                </span>
+              </div>
+              <p className="text-gray-500 font-['Montserrat'] text-xs mt-0.5">
+                CHOICE
+              </p>
+              {product.description && (
+                <p className="text-gray-500 font-['Montserrat'] text-xs mt-1 line-clamp-2">
+                  {product.description}
+                </p>
+              )}
+            </Link>
+          ))}
         </div>
       </div>
     </section>

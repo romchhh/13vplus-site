@@ -8,8 +8,7 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const user = await (prisma as any).user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id },
       select: {
         id: true,
@@ -32,7 +31,7 @@ export async function GET(
         _count: {
           select: {
             wishlist: true,
-            orders: { where: { paymentStatus: "paid" } },
+            orders: true,
           },
         },
         orders: {
@@ -74,7 +73,30 @@ export async function GET(
       return NextResponse.json({ error: "Користувача не знайдено" }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    // Загальна сума всіх оплачених замовлень та дата першого замовлення
+    let totalSpent = 0;
+    let firstOrderAt: string | null = null;
+    if (user._count.orders > 0) {
+      const [allItems, firstOrder] = await Promise.all([
+        prisma.orderItem.findMany({
+          where: { order: { userId: id, paymentStatus: "paid" } },
+          select: { price: true, quantity: true },
+        }),
+        prisma.order.findFirst({
+          where: { userId: id, paymentStatus: "paid" },
+          orderBy: { createdAt: "asc" },
+          select: { createdAt: true },
+        }),
+      ]);
+      totalSpent = allItems.reduce((s, i) => s + Number(i.price) * i.quantity, 0);
+      firstOrderAt = firstOrder?.createdAt ?? null;
+    }
+
+    return NextResponse.json({
+      ...user,
+      totalSpent: Math.round(totalSpent * 100) / 100,
+      firstOrderAt,
+    });
   } catch (error) {
     console.error("Error fetching user:", error);
     return NextResponse.json(
@@ -101,8 +123,7 @@ export async function PUT(
           { status: 400 }
         );
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const updated = await (prisma as any).user.update({
+      const updated = await prisma.user.update({
         where: { id },
         data: { bonusPoints: value },
         select: { id: true, bonusPoints: true },
@@ -118,8 +139,7 @@ export async function PUT(
           { status: 400 }
         );
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const current = await (prisma as any).user.findUnique({
+      const current = await prisma.user.findUnique({
         where: { id },
         select: { bonusPoints: true },
       });
@@ -127,8 +147,7 @@ export async function PUT(
         return NextResponse.json({ error: "Користувача не знайдено" }, { status: 404 });
       }
       const newPoints = Math.max(0, current.bonusPoints + delta);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const updated = await (prisma as any).user.update({
+      const updated = await prisma.user.update({
         where: { id },
         data: { bonusPoints: newPoints },
         select: { id: true, bonusPoints: true },

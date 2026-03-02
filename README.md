@@ -4,33 +4,43 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ### Database Setup
 
-Before running the application, you need to create the database:
+1. **Скопіюйте приклад змінних середовища:**
+   ```bash
+   cp .env.example .env
+   ```
+   Відредагуйте `.env` і вкажіть правильний `DATABASE_URL` (хост, логін, пароль, порт).
 
-**Option 1: Using the script (recommended)**
-```bash
-npm run create-db
-```
+2. **Створення нової бази даних**
 
-**Option 2: Manual creation via psql**
+   **Варіант A (рекомендовано):** у `.env` вже вказано `DATABASE_URL` з назвою бази (наприклад `wellness_site`). Тоді просто:
+   ```bash
+   npm run create-db
+   ```
+
+   **Варіант B:** створити нову БД з іншою назвою (скрипт виведе рядок для `.env`):
+   ```bash
+   npm run create-new-db
+   # або з іменем: npx ts-node --project tsconfig.scripts.json scripts/create-new-db.ts my_database_name
+   ```
+   Скопіюйте виведений `DATABASE_URL` у `.env`.
+
+3. **Застосування міграцій (схема таблиць):**
+   ```bash
+   npm run migrate
+   ```
+
+4. **(Опціонально)** Тестові товари та категорії:
+   ```bash
+   npm run add-test-products
+   npm run seed-test-categories
+   ```
+
+**Ручне створення БД через psql:**
 ```bash
-# Connect to PostgreSQL
 psql -U your_username -h your_host
-
-# Create the database
-CREATE DATABASE 13vplus_db;
-
-# Or use the SQL script
-psql -U your_username -h your_host -f scripts/create-database.sql
+CREATE DATABASE wellness_site;
 ```
-
-**After creating the database, setup the schema:**
-```bash
-# First, create all tables from Prisma schema
-npm run setup-db
-
-# Then, run custom migrations (if needed)
-npm run migrate
-```
+Потім у `.env` вкажіть: `DATABASE_URL="postgresql://user:password@host:5432/wellness_site"`.
 
 ### Running the Development Server
 
@@ -82,5 +92,4 @@ NEXT_PUBLIC_NOVA_POSHTA_API_KEY="?"
 MERCHANT_ACCOUNT="?" (або WAYFORPAY_MERCHANT_ACCOUNT)
 MERCHANT_SECRET="?" (або WAYFORPAY_MERCHANT_SECRET)
 MERCHANT_DOMAIN="?" (або WAYFORPAY_MERCHANT_DOMAIN, опціонально)
-PLISIO_API_KEY="?" (для оплати криптовалютою)
 NEXT_PUBLIC_PUBLIC_URL="?"

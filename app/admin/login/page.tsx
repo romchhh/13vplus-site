@@ -153,7 +153,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="mt-6 text-center text-sm text-gray-400">
-          © {new Date().getFullYear()} 13VPLUS Admin Panel
+          © {new Date().getFullYear()} Choice Admin Panel
         </p>
       </div>
     </div>

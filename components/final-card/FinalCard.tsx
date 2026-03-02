@@ -2,15 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useBasket } from "@/lib/BasketProvider";
-import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
-import "swiper/css/navigation";
-import { Mousewheel } from "swiper/modules";
-import "swiper/css/scrollbar";
-import LoginModal from "@/components/auth/LoginModal";
 
 /** Calculate order subtotal from basket items */
 function getSubtotal(items: { price: number | string; quantity: number; discount_percentage?: number | string }[]) {
@@ -29,9 +22,6 @@ function getSubtotal(items: { price: number | string; quantity: number; discount
 export default function FinalCard() {
   // GENERAL
   const { items, updateQuantity, removeItem, clearBasket } = useBasket();
-  const { data: session, status } = useSession();
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isAccountPromoModalOpen, setIsAccountPromoModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // Prevent hydration mismatch by only rendering after mount
@@ -39,21 +29,16 @@ export default function FinalCard() {
     setMounted(true);
   }, []);
 
-  // При переході на сторінку оформлення — показати модалку «Маєте акаунт?» гостям з товарами в кошику
-  useEffect(() => {
-    if (!mounted || status === "loading") return;
-    if (!session && items.length > 0) {
-      setIsAccountPromoModalOpen(true);
-    }
-  }, [mounted, status, session, items.length]);
-
-  // CUSTOMER
-  const [customerName, setCustomerName] = useState("");
+  // CUSTOMER (Ім'я та Прізвище окремо для макета)
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const customerName = `${firstName.trim()} ${lastName.trim()}`.trim();
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState("nova_poshta_branch");
   const [city, setCity] = useState("");
   const [postOffice, setPostOffice] = useState("");
+  const DELIVERY_COST_BRANCH = 100; // грн за доставку у відділення
   // Auto-fill showroom address when selected
   useEffect(() => {
     if (deliveryMethod === "showroom_pickup") {
@@ -90,24 +75,22 @@ export default function FinalCard() {
 
   const [comment, setComment] = useState("");
   const [paymentType, setPaymentType] = useState("");
-  const [bonusPercentFromLoyalty, setBonusPercentFromLoyalty] = useState(3);
+  const [agreedToPolicy, setAgreedToPolicy] = useState(false);
 
-  // Fetch loyalty tier for bonus % when logged in
-  useEffect(() => {
-    if (session?.user?.email) {
-      fetch("/api/users/loyalty")
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => {
-          if (data?.bonusPercent != null) setBonusPercentFromLoyalty(Number(data.bonusPercent));
-        })
-        .catch(() => {});
-    } else {
-      setBonusPercentFromLoyalty(3);
-    }
-  }, [session?.user?.email]);
+  // Промокод: введений код, результат перевірки
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{
+    promoCodeId: number;
+    discountAmount: number;
+    message?: string;
+  } | null>(null);
+  const [promoValidating, setPromoValidating] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
 
   // Form validation states
   const [fieldErrors, setFieldErrors] = useState<{
+    firstName?: string;
+    lastName?: string;
     name?: string;
     phone?: string;
     email?: string;
@@ -116,15 +99,9 @@ export default function FinalCard() {
     paymentType?: string;
   }>({});
 
-  // Real-time validation functions
-  const validateName = (name: string) => {
-    if (!name.trim()) {
-      return "Ім'я та прізвище обов'язкові";
-    }
-    const nameParts = name.trim().split(/\s+/);
-    if (nameParts.length < 2) {
-      return "Введіть ім'я та прізвище повністю";
-    }
+  const validateName = () => {
+    if (!firstName.trim()) return "Ім'я обов'язкове";
+    if (!lastName.trim()) return "Прізвище обов'язкове";
     return "";
   };
 
@@ -170,19 +147,13 @@ export default function FinalCard() {
     return "";
   };
 
-  // Handle field changes with validation
-  const handleNameChange = (value: string) => {
-    setCustomerName(value);
-    if (value) {
-      const error = validateName(value);
-      setFieldErrors((prev) => ({ ...prev, name: error || undefined }));
-    } else {
-      setFieldErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors.name;
-        return newErrors;
-      });
-    }
+  const handleFirstNameChange = (value: string) => {
+    setFirstName(value);
+    setFieldErrors((prev) => ({ ...prev, firstName: value.trim() ? undefined : "Ім'я обов'язкове" }));
+  };
+  const handleLastNameChange = (value: string) => {
+    setLastName(value);
+    setFieldErrors((prev) => ({ ...prev, lastName: value.trim() ? undefined : "Прізвище обов'язкове" }));
   };
 
   const handlePhoneChange = (value: string) => {
@@ -276,7 +247,8 @@ export default function FinalCard() {
     setSuccess(null);
 
     if (
-      !customerName ||
+      !firstName.trim() ||
+      !lastName.trim() ||
       !phoneNumber ||
       !deliveryMethod ||
       !city ||
@@ -288,16 +260,14 @@ export default function FinalCard() {
       return;
     }
 
-    const trimmedName = customerName.trim();
-    const nameParts = trimmedName.split(/\s+/);
-    if (nameParts.length < 2) {
-      setError("Введіть ім’я та прізвище повністю.");
+    if (items.length === 0) {
+      setError("Ваш кошик порожній.");
       setLoading(false);
       return;
     }
 
-    if (items.length === 0) {
-      setError("Ваш кошик порожній.");
+    if (!agreedToPolicy) {
+      setError("Будь ласка, підтвердіть згоду з Політикою конфіденційності та Публічною офертою.");
       setLoading(false);
       return;
     }
@@ -358,16 +328,12 @@ export default function FinalCard() {
     });
 
     const subtotal = getSubtotal(items);
-    const fullAmount = subtotal;
+    const deliveryCost = deliveryMethod === "nova_poshta_branch" ? DELIVERY_COST_BRANCH : 0;
+    const promoDiscount = appliedPromo?.discountAmount ?? 0;
+    const fullAmount = Math.max(0, subtotal + deliveryCost - promoDiscount);
 
     try {
-      const profileData = session?.user?.email
-        ? await fetch("/api/users/profile").then((r) => (r.ok ? r.json() : null))
-        : null;
-      const userId = profileData?.id ?? null;
-
       const requestBody = {
-        user_id: userId,
         customer_name: customerName,
         phone_number: phoneNumber,
         email: email || null,
@@ -378,6 +344,8 @@ export default function FinalCard() {
         payment_type: paymentType,
         total_amount: fullAmount.toFixed(2),
         bonus_points_to_spend: 0,
+        delivery_cost: deliveryCost,
+        promo_code: appliedPromo ? promoCodeInput.trim().toUpperCase() : undefined,
         items: apiItems,
       };
       
@@ -409,7 +377,7 @@ export default function FinalCard() {
       } else {
         const data = await response.json();
         
-        const { orderId, invoiceUrl, paymentUrl, paymentData } = data;
+        const { orderId, invoiceUrl } = data;
 
         if (!orderId) {
           console.error("[FinalCard] No order ID received!");
@@ -437,24 +405,13 @@ export default function FinalCard() {
           });
         }
 
-        // Check if payment is required
-        const requiresPayment = paymentType !== "crypto";
-        const isCryptoPayment = paymentType === "crypto";
-        
-        // Use invoiceUrl if available (new WayForPay invoice API), otherwise fallback to paymentUrl
-        const redirectUrl = invoiceUrl || paymentUrl;
-        
-        // If payment/invoice URL is provided, redirect to payment gateway
-        if (redirectUrl) {
-          // Store order info temporarily (don't clear basket yet)
+        const requiresPayment = paymentType !== "test_payment";
+        if (invoiceUrl) {
+          // Зберігаємо orderId для сторінки success (після повернення з Mono без query)
           localStorage.setItem(
             "pendingPayment",
-            JSON.stringify({
-              orderId,
-              paymentType,
-            })
+            JSON.stringify({ orderId, paymentType })
           );
-          // Store items and customer info for after payment
           localStorage.setItem("pendingOrderItems", JSON.stringify(items));
           localStorage.setItem(
             "pendingOrderCustomer",
@@ -468,103 +425,14 @@ export default function FinalCard() {
               paymentType,
             })
           );
-          
           setSuccess(paymentType === "test_payment" ? "Замовлення оформлено. Переходимо на сторінку підтвердження..." : "Переходимо до оплати...");
-          
-          if (invoiceUrl) {
-            // For test_payment or WayForPay Invoice API - redirect to success page
-            setTimeout(() => {
-              window.location.href = invoiceUrl;
-            }, paymentType === "test_payment" ? 800 : 1500);
-          } else if (isCryptoPayment && paymentUrl) {
-            // For Plisio - simple redirect to invoice URL
-            setTimeout(() => {
-              window.location.href = paymentUrl;
-            }, 1500);
-          } else if (paymentData && paymentUrl) {
-            // Check if this is a CREATE_INVOICE request (to api.wayforpay.com/api)
-            if (paymentUrl === "https://api.wayforpay.com/api") {
-              // For CREATE_INVOICE, send JSON via fetch and redirect to invoiceUrl
-              setTimeout(async () => {
-                try {
-                  const response = await fetch(paymentUrl, {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(paymentData),
-                  });
-
-                  const result = await response.json();
-                  
-                  if (result.reasonCode === "Ok" || result.reasonCode === 1100) {
-                    // Redirect to invoice URL
-                    if (result.invoiceUrl) {
-                      window.location.href = result.invoiceUrl;
-                    } else {
-                      setError("Не вдалося отримати посилання на оплату");
-                      setLoading(false);
-                    }
-                  } else {
-                    setError(result.reason || "Помилка створення рахунку");
-                    setLoading(false);
-                  }
-                } catch (error) {
-                  console.error("[FinalCard] Invoice creation error:", error);
-                  setError("Помилка створення рахунку. Спробуйте ще раз.");
-                  setLoading(false);
-                }
-              }, 500);
-            } else {
-              // For regular payment form (to secure.wayforpay.com/pay)
-              setTimeout(() => {
-                const form = document.createElement("form");
-                form.method = "POST";
-                form.action = paymentUrl;
-                form.acceptCharset = "utf-8";
-                
-                Object.entries(paymentData).forEach(([key, value]) => {
-                  if (Array.isArray(value)) {
-                    // For arrays (productName, productCount, productPrice)
-                    value.forEach((item, index) => {
-                      const input = document.createElement("input");
-                      input.type = "hidden";
-                      input.name = `${key}[${index}]`;
-                      input.value = String(item);
-                      form.appendChild(input);
-                    });
-                  } else {
-                    // For regular fields
-                    const input = document.createElement("input");
-                    input.type = "hidden";
-                    input.name = key;
-                    input.value = String(value);
-                    form.appendChild(input);
-                  }
-                });
-                
-                document.body.appendChild(form);
-                form.submit();
-              }, 1500);
-            }
-          } else {
-            // Fallback - simple redirect
-            setTimeout(() => {
-              window.location.href = redirectUrl;
-            }, 1500);
-          }
-        } else if (requiresPayment && !redirectUrl) {
-          // Payment required but not created - show error
+          setTimeout(() => {
+            window.location.href = invoiceUrl;
+          }, paymentType === "test_payment" ? 800 : 1500);
+        } else if (requiresPayment) {
           setError(
-            data.message || 
+            data.message ||
             "Не вдалося створити платіж. Будь ласка, спробуйте ще раз або зв'яжіться з нами."
-          );
-          setLoading(false);
-        } else if (isCryptoPayment && !redirectUrl) {
-          // Crypto payment failed to create
-          setError(
-            data.message || 
-            "Не вдалося створити платіж криптовалютою. Будь ласка, спробуйте ще раз або зв'яжіться з нами."
           );
           setLoading(false);
         } else {
@@ -595,7 +463,6 @@ export default function FinalCard() {
       // User returned from payment gateway - check payment status
       const pendingData = JSON.parse(pendingPayment);
       
-      // If status=failed from Plisio, show error
       if (status === "failed") {
         setError("Оплата не була завершена. Будь ласка, спробуйте ще раз або зв'яжіться з нами.");
         localStorage.removeItem("pendingPayment");
@@ -690,29 +557,6 @@ export default function FinalCard() {
       setLoadingPostOffices(false);
     }
   }, [district]);
-
-  // Автозаповнення полів з профілю користувача
-  useEffect(() => {
-    if (session?.user?.email && status === "authenticated") {
-      fetch("/api/users/profile")
-        .then((res) => res.ok ? res.json() : null)
-        .then((data) => {
-          if (data) {
-            if (data.name) setCustomerName(data.name);
-            if (data.email) setEmail(data.email);
-            if (data.phone) setPhoneNumber(data.phone);
-            if (data.address) {
-              const commaIdx = data.address.indexOf(", ");
-              if (commaIdx > 0) {
-                setCity(data.address.slice(0, commaIdx));
-                setPostOffice(data.address.slice(commaIdx + 2));
-              }
-            }
-          }
-        })
-        .catch(() => {});
-    }
-  }, [session, status]);
 
   useEffect(() => {
     // Fetch available cities when delivery method changes to Nova Poshta
@@ -916,144 +760,35 @@ export default function FinalCard() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // ⬇️ When order is completed
+  // ⬇️ Сторінка оформленого замовлення (як на скріні)
   if (items.length == 0 && submittedOrder) {
-    const { items: orderItems, customer } = submittedOrder;
-
     return (
-      <section className="max-w-[1280px] w-full mx-auto p-6 flex flex-col items-center gap-10">
-        {/* Heading */}
-        <div className="text-center">
-          <h1 className="text-5xl sm:text-6xl font-normal leading-tight">
-            <span className="text-stone-500">Дякуємо за </span>
-            <span className="">ваше замовлення!</span>
-          </h1>
-        </div>
+      <section className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-12">
+        <div className="max-w-2xl mx-auto">
+          <nav className="mb-8" aria-label="Breadcrumb">
+            <ol className="flex items-center gap-2 text-sm font-['Montserrat'] font-normal">
+              <li>
+                <Link href="/" className="text-[#3D1A00] hover:opacity-80 transition-opacity">
+                  Головна
+                </Link>
+              </li>
+              <li className="text-gray-400">|</li>
+              <li className="text-gray-400">Оформлення замовлення</li>
+            </ol>
+          </nav>
 
-        {/* Layout container */}
-        <div className="flex flex-col md:flex-row justify-around gap-10 w-full">
-          {/* Vertical Swiper */}
-          <div className="w-full md:w-1/2 h-[450px]">
-            <Swiper
-              direction="vertical"
-              modules={[Mousewheel]}
-              mousewheel
-              spaceBetween={0}
-              slidesPerView={2.5}
-              className="h-full"
-            >
-              {orderItems.map((item, idx) => (
-                <SwiperSlide key={`${item.id}-${item.size}-${idx}`}>
-                  <div className="flex gap-4 items-start p-4 border border-stone-200 rounded">
-                    {item.imageUrl ? (
-                      <div className="relative w-20 h-28">
-                        <Image
-                          src={`/api/images/${item.imageUrl}`}
-                          alt={item.name}
-                          width={80}
-                          height={112}
-                          className="object-cover rounded"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-20 h-28 bg-gray-200 rounded flex items-center justify-center">
-                        <span className="text-gray-400 text-xs">Фото</span>
-                      </div>
-                    )}
-                    <div className="flex flex-col flex-1 gap-1">
-                      <div className="text-base font-['Helvetica Neue'] ">
-                        {item.name}
-                      </div>
-                      <div className="text-base  font-['Helvetica Neue']">
-                        {item.size}
-                      </div>
-                      {item.color && (
-                        <div className="text-base font-['Helvetica Neue']">
-                          Колір: {item.color}
-                        </div>
-                      )}
-                      <div className="text-base  font-['Helvetica Neue']">
-                        Кількість: {item.quantity}x
-                      </div>
-                      <div className="text-base text-zinc-600 font-['Helvetica Neue']">
-                        {item.discount_percentage ? (
-                          <div className="flex items-center gap-2">
-                            {/* Discounted price */}
-                            <span className="font-medium text-red-600">
-                              {(
-                                item.price *
-                                (1 - item.discount_percentage / 100)
-                              ).toFixed(2)}
-                              ₴
-                            </span>
-
-                            {/* Original (crossed-out) price */}
-                            <span className="text-gray-500 line-through">
-                              {item.price}₴
-                            </span>
-
-                            {/* Optional: show discount percentage */}
-                            <span className="text-green-600 text-sm">
-                              -{item.discount_percentage}%
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="font-medium">{item.price}₴</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-
-          {/* Customer Info */}
-          {/* Title */}
-          <div className="flex flex-col justify-between gap-3">
-            <div className="text-3xl  font-normal text-center">
-              Дані клієнта
-            </div>
-            <div className="text-xl font-normal leading-loose w-full md:w-1/3 text-left">
-              <p className="flex justify-start gap-3">
-                <span className="">Ім’я: </span>
-                <span className="text-neutral-400">{customer.name}</span>
-              </p>
-              {customer.email && (
-                <p className="flex justify-start gap-3">
-                  <span className="">Email: </span>
-                  <span className="text-neutral-400">{customer.email}</span>
-                </p>
-              )}
-              <p className="flex justify-start gap-3">
-                <span className="">Телефон: </span>
-                <span className="text-neutral-400">{customer.phone}</span>
-              </p>
-              <p className="flex justify-start gap-3">
-                <span className="">Місто: </span>
-                <span className="text-neutral-400">{customer.city}</span>
-              </p>
-              <p className="flex justify-start gap-3">
-                <span className="">Відділення: </span>
-                <span className="text-neutral-400">{customer.postOffice}</span>
-              </p>
-              {customer.comment && (
-                <p className="flex justify-start gap-3">
-                  <span className="">Коментар: </span>
-                  <span className="text-neutral-400">{customer.comment}</span>
-                </p>
-              )}
-            </div>
-            {/* Back to home */}
+          <div className="text-center py-12 sm:py-16">
+            <h1 className="font-['Montserrat'] font-bold text-3xl sm:text-4xl lg:text-5xl text-[#3D1A00] uppercase tracking-tight mb-4">
+              Дякуємо!
+            </h1>
+            <p className="font-['Montserrat'] font-bold text-2xl sm:text-3xl lg:text-4xl text-[#3D1A00] uppercase tracking-tight mb-10 sm:mb-12">
+              Ваше замовлення оформлене!
+            </p>
             <Link
               href="/"
-              className={`w-80 h-16 ${
-                "bg-stone-100 text-black"
-              } inline-flex justify-center items-center gap-2.5 p-2.5 rounded`}
+              className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-['Montserrat'] font-semibold text-[#3D1A00] uppercase text-base tracking-tight bg-[#9B9B5A] hover:bg-[#8a8a4e] transition-colors"
             >
-              <span className=" text-xl font-medium font-['Helvetica Neue'] tracking-tight leading-snug">
-                На головну
-              </span>
+              Повернутися на головну
             </Link>
           </div>
         </div>
@@ -1062,603 +797,441 @@ export default function FinalCard() {
   }
 
   return (
-    <section className="max-w-[1922px] w-full mx-auto relative overflow-hidden px-4 sm:px-6 lg:px-8">
+    <section className="max-w-[1922px] w-full mx-auto relative overflow-hidden bg-[#FFFFFF] min-h-screen px-6 sm:px-10 md:px-12 lg:px-16 xl:px-20 py-10 sm:py-12">
       {!mounted ? (
-        <div className="py-12 px-4 sm:py-20 flex items-center justify-center w-full min-h-[400px]">
+        <div className="py-12 sm:py-20 flex items-center justify-center w-full min-h-[400px]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
         </div>
       ) : items.length == 0 ? (
         <div className="py-12 px-4 sm:py-20 flex flex-col items-center gap-10 sm:gap-14 w-full max-w-2xl mx-auto">
-          <Image
-            src="/images/light-theme/order.svg"
-            alt="empty cart icon"
-            width={200}
-            height={200}
-          />
-          <span className="text-center text-2xl sm:text-4xl md:text-6xl font-normal font-['Helvetica Neue'] leading-tight sm:leading-[64.93px]">
+          <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-[#3D1A00]/5 flex items-center justify-center">
+            <svg className="w-16 h-16 sm:w-20 sm:h-20 text-[#3D1A00]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          </div>
+          <h2 className="text-center text-2xl sm:text-4xl md:text-5xl font-semibold font-['Montserrat'] text-[#3D1A00] uppercase tracking-tight leading-tight">
             Ваш кошик порожній
-          </span>
+          </h2>
           <Link
             href="/catalog"
-            className="bg-stone-900 text-stone-100 w-full sm:w-80 h-14 sm:h-16 px-6 py-3 inline-flex items-center justify-center gap-2.5 text-base sm:text-xl text-center"
+            className="w-full sm:w-80 h-14 sm:h-16 px-6 py-3 rounded-xl bg-[#8B9A47] hover:bg-[#7a8940] text-white font-['Montserrat'] font-semibold text-base sm:text-lg uppercase tracking-tight inline-flex items-center justify-center text-center transition-colors"
           >
             Продовжити покупки
           </Link>
         </div>
       ) : (
         <>
-          <div className="flex flex-col sm:flex-row justify-center gap-10 sm:gap-50">
-            <div className="mt-10 text-center sm:text-left text-3xl sm:text-6xl font-normal font-['Helvetica Neue'] leading-snug sm:leading-[64.93px] mb-5">
-              Заповніть всі поля
-            </div>
+          {/* Breadcrumbs */}
+          <nav className="mb-6 pt-2" aria-label="Breadcrumb">
+            <ol className="flex items-center gap-2 text-sm font-['Montserrat'] font-normal text-[#3D1A00]/70">
+              <li><Link href="/" className="hover:text-[#3D1A00] transition-colors">Головна</Link></li>
+              <li aria-hidden className="text-[#3D1A00]/40">|</li>
+              <li className="text-[#3D1A00]/80">Оформлення замовлення</li>
+            </ol>
+          </nav>
 
-            <div className="w-full sm:w-1/4"></div>
-          </div>
+          <h1 className="font-['Montserrat'] font-semibold text-2xl sm:text-3xl lg:text-4xl text-[#3D1A00] uppercase tracking-tight text-center mb-10 sm:mb-12">
+            ОФОРМЛЕННЯ ЗАМОВЛЕННЯ
+          </h1>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-10 sm:gap-50">
-            <div className="w-full sm:w-1/3 flex flex-col gap-4">
-              {!session && items.length > 0 && (
-                <div className="mb-1">
-                  <button
-                    type="button"
-                    onClick={() => setIsAccountPromoModalOpen(true)}
-                    className="text-left text-sm text-amber-800 hover:text-amber-900 underline underline-offset-2 transition-colors"
-                  >
-                    Маєте акаунт? Увійдіть або зареєструйтесь — отримайте знижку 3% на першу покупку.
-                  </button>
-                </div>
-              )}
-            <form
-              onSubmit={handleSubmit}
-              className="flex flex-col gap-4 w-full"
-              noValidate
-            >
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="name"
-                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
-                >
-                  Ім&apos;я та прізвище <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  placeholder="Напр.: Іван Петренко"
-                  className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all ${
-                    fieldErrors.name
-                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 focus:ring-black focus:border-transparent"
-                  }`}
-                  value={customerName}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                  onBlur={(e) => {
-                    const error = validateName(e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, name: error || undefined }));
-                  }}
-                  required
-                  autoComplete="name"
-                />
-                {fieldErrors.name && (
-                  <p className="text-red-500 text-xs mt-1">{fieldErrors.name}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="email"
-                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
-                >
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  placeholder="example@email.com"
-                  className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all ${
-                    fieldErrors.email
-                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 focus:ring-black focus:border-transparent"
-                  }`}
-                  value={email}
-                  onChange={(e) => handleEmailChange(e.target.value)}
-                  onBlur={(e) => {
-                    const error = validateEmail(e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, email: error || undefined }));
-                  }}
-                  autoComplete="email"
-                />
-                {fieldErrors.email && (
-                  <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="phone"
-                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
-                >
-                  Телефон <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  placeholder="+380 50 123 4567"
-                  pattern="^\+?\d{10,15}$"
-                  title="Введіть номер телефону у форматі +380xxxxxxxxx"
-                  className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all ${
-                    fieldErrors.phone
-                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 focus:ring-black focus:border-transparent"
-                  }`}
-                  value={phoneNumber}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  onBlur={(e) => {
-                    const error = validatePhone(e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, phone: error || undefined }));
-                  }}
-                  required
-                  autoComplete="tel"
-                />
-                {fieldErrors.phone && (
-                  <p className="text-red-500 text-xs mt-1">{fieldErrors.phone}</p>
-                )}
-              </div>
-
-              {/* Add delivery method, city, and post office fields */}
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="deliveryMethod"
-                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
-                >
-                  Спосіб доставки <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="deliveryMethod"
-                  className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all bg-white"
-                  value={deliveryMethod}
-                  onChange={(e) => setDeliveryMethod(e.target.value)}
-                  required
-                >
-                  <option value="">Оберіть спосіб доставки</option>
-                  <option value="nova_poshta_branch">
-                    Нова пошта — у відділення
-                  </option>
-                  <option value="nova_poshta_locker">
-                    Нова пошта — у поштомат
-                  </option>
-                  <option value="nova_poshta_courier">
-                    Нова пошта — кур&apos;єром
-                  </option>
-                  {/* <option value="ukrposhta">Укрпошта</option> */}
-                  <option value="showroom_pickup">
-                    Самовивіз з шоуруму (13:00–19:00)
-                  </option>
-                </select>
-              </div>
-
-              {deliveryMethod.startsWith("nova_poshta") && (
-                <>
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-10">
+          <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
+            {/* Left column: forms */}
+            <div className="w-full lg:w-1/2 flex flex-col gap-6">
+              {/* ІНФОРМАЦІЯ ПРО ПОКУПЦЯ */}
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+                <h2 className="font-['Montserrat'] font-semibold text-[#3D1A00] uppercase text-sm tracking-wide mb-4">Інформація про покупця</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="city"
-                      className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
-                    >
-                      {deliveryMethod === "nova_poshta_courier"
-                        ? "Місто для доставки кур'єром"
-                        : "Місто"}{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
+                    <label htmlFor="email" className="text-sm font-['Montserrat'] text-[#3D1A00]/80">E-mail</label>
+                    <input
+                      type="email"
+                      id="email"
+                      value={email}
+                      onChange={(e) => handleEmailChange(e.target.value)}
+                      onBlur={(e) => { const err = validateEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: err || undefined })); }}
+                      className={`border border-gray-200 px-4 py-3 font-['Montserrat'] text-sm rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#3D1A00]/15 focus:border-[#3D1A00]/30 transition-colors ${fieldErrors.email ? "border-red-500" : ""}`}
+                      placeholder="example@email.com"
+                      autoComplete="email"
+                    />
+                    {fieldErrors.email && <p className="text-red-500 text-xs">{fieldErrors.email}</p>}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="phone" className="text-sm font-['Montserrat'] text-[#3D1A00]/80">Телефон <span className="text-red-500">*</span></label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      value={phoneNumber}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      onBlur={(e) => { const err = validatePhone(e.target.value); setFieldErrors((p) => ({ ...p, phone: err || undefined })); }}
+                      className={`border border-gray-200 px-4 py-3 font-['Montserrat'] text-sm rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#3D1A00]/15 focus:border-[#3D1A00]/30 transition-colors ${fieldErrors.phone ? "border-red-500" : ""}`}
+                      placeholder="+380 50 123 4567"
+                      required
+                      autoComplete="tel"
+                    />
+                    {fieldErrors.phone && <p className="text-red-500 text-xs">{fieldErrors.phone}</p>}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="firstName" className="text-sm font-['Montserrat'] text-[#3D1A00]/80">Ім&apos;я <span className="text-red-500">*</span></label>
                     <input
                       type="text"
-                      id="city"
-                      value={city}
-                      onChange={handleCityChange} // Update city on input change
-                      onBlur={(e) => {
-                        const error = validateCity(e.target.value);
-                        setFieldErrors((prev) => ({ ...prev, city: error || undefined }));
-                      }}
-                      placeholder="Напр.: Київ"
-                      className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all ${
-                        fieldErrors.city
-                          ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                          : "border-gray-300 focus:ring-black focus:border-transparent"
-                      }`}
+                      id="firstName"
+                      value={firstName}
+                      onChange={(e) => handleFirstNameChange(e.target.value)}
+                      className={`border border-gray-200 px-4 py-3 font-['Montserrat'] text-sm rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#3D1A00]/15 focus:border-[#3D1A00]/30 transition-colors ${fieldErrors.firstName ? "border-red-500" : ""}`}
                       required
+                      autoComplete="given-name"
                     />
-                    {fieldErrors.city && (
-                      <p className="text-red-500 text-xs mt-1">{fieldErrors.city}</p>
-                    )}
-                    {loadingCities ? (
-                      <p className="text-sm text-gray-500 mt-1">Завантаження міст...</p>
-                    ) : (
-                      cityListVisible && (
-                        <div className="max-h-40 overflow-y-auto shadow-lg rounded-md border border-gray-200 mt-1 bg-white z-10">
-                          <ul className="list-none p-0">
-                            {filteredCities.map((cityOption, idx) => (
-                              <li
-                                key={idx}
-                                className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm sm:text-base transition-colors"
-                                onClick={() => handleCitySelect(cityOption)} // Set city on click
-                              >
-                                {cityOption}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )
-                    )}
+                    {fieldErrors.firstName && <p className="text-red-500 text-xs">{fieldErrors.firstName}</p>}
                   </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="lastName" className="text-sm font-['Montserrat'] text-[#3D1A00]/80">Прізвище <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      value={lastName}
+                      onChange={(e) => handleLastNameChange(e.target.value)}
+                      className={`border border-gray-200 px-4 py-3 font-['Montserrat'] text-sm rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#3D1A00]/15 focus:border-[#3D1A00]/30 transition-colors ${fieldErrors.lastName ? "border-red-500" : ""}`}
+                      required
+                      autoComplete="family-name"
+                    />
+                    {fieldErrors.lastName && <p className="text-red-500 text-xs">{fieldErrors.lastName}</p>}
+                  </div>
+                </div>
+              </div>
 
-                  {/* Post Office Input with Autocomplete */}
-                  {deliveryMethod === "nova_poshta_courier" ? (
+              {/* СПОСІБ ДОСТАВКИ */}
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+                <h2 className="font-['Montserrat'] font-semibold text-[#3D1A00] uppercase text-sm tracking-wide mb-4">Спосіб доставки</h2>
+                <div className="flex flex-col gap-3">
+                  <label className="flex items-center gap-3 cursor-pointer py-1 group">
+                    <input type="radio" name="delivery" value="nova_poshta_branch" checked={deliveryMethod === "nova_poshta_branch"} onChange={(e) => setDeliveryMethod(e.target.value)} className="sr-only" />
+                    <span className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${deliveryMethod === "nova_poshta_branch" ? "border-[#3D1A00] bg-[#3D1A00]" : "border-[#3D1A00]/40 group-hover:border-[#3D1A00]"}`}>
+                      {deliveryMethod === "nova_poshta_branch" && <span className="w-2 h-2 rounded-full bg-white" />}
+                    </span>
+                    <span className="font-['Montserrat'] text-sm text-[#3D1A00]">Доставка у відділення</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer py-1 group">
+                    <input type="radio" name="delivery" value="nova_poshta_courier" checked={deliveryMethod === "nova_poshta_courier"} onChange={(e) => setDeliveryMethod(e.target.value)} className="sr-only" />
+                    <span className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${deliveryMethod === "nova_poshta_courier" ? "border-[#3D1A00] bg-[#3D1A00]" : "border-[#3D1A00]/40 group-hover:border-[#3D1A00]"}`}>
+                      {deliveryMethod === "nova_poshta_courier" && <span className="w-2 h-2 rounded-full bg-white" />}
+                    </span>
+                    <span className="font-['Montserrat'] text-sm text-[#3D1A00]">Доставка кур&apos;єром</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer py-1 group">
+                    <input type="radio" name="delivery" value="showroom_pickup" checked={deliveryMethod === "showroom_pickup"} onChange={(e) => setDeliveryMethod(e.target.value)} className="sr-only" />
+                    <span className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${deliveryMethod === "showroom_pickup" ? "border-[#3D1A00] bg-[#3D1A00]" : "border-[#3D1A00]/40 group-hover:border-[#3D1A00]"}`}>
+                      {deliveryMethod === "showroom_pickup" && <span className="w-2 h-2 rounded-full bg-white" />}
+                    </span>
+                    <span className="font-['Montserrat'] text-sm text-[#3D1A00]">Самовивіз з магазину</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* АДРЕСА ДОСТАВКИ */}
+              {(deliveryMethod === "nova_poshta_branch" || deliveryMethod === "nova_poshta_courier" || deliveryMethod === "nova_poshta_locker") && (
+                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+                  <h2 className="font-['Montserrat'] font-semibold text-[#3D1A00] uppercase text-sm tracking-wide mb-4">Адреса доставки</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="flex flex-col gap-1.5">
-                      <label
-                        htmlFor="postOffice"
-                        className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
-                      >
-                        Адреса доставки <span className="text-red-500">*</span>
-                      </label>
+                      <label htmlFor="city" className="text-sm font-['Montserrat'] text-[#3D1A00]/80">Місто <span className="text-red-500">*</span></label>
                       <input
                         type="text"
-                        id="postOffice"
-                        value={postOffice}
-                        onChange={(e) => handlePostOfficeChangeWithValidation(e.target.value)}
-                        onBlur={(e) => {
-                          const error = validatePostOffice(e.target.value);
-                          setFieldErrors((prev) => ({ ...prev, postOffice: error || undefined }));
-                        }}
-                        placeholder="Вул. Січових Стрільців, 10, кв. 25"
-                        className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all ${
-                          fieldErrors.postOffice
-                            ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                            : "border-gray-300 focus:ring-black focus:border-transparent"
-                        }`}
+                        id="city"
+                        value={city}
+                        onChange={handleCityChange}
+                        onBlur={(e) => { const err = validateCity(e.target.value); setFieldErrors((p) => ({ ...p, city: err || undefined })); }}
+                        className={`border border-gray-200 px-4 py-3 font-['Montserrat'] text-sm rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#3D1A00]/15 focus:border-[#3D1A00]/30 transition-colors ${fieldErrors.city ? "border-red-500" : ""}`}
+                        placeholder="Київ"
                         required
                       />
-                      {fieldErrors.postOffice && (
-                        <p className="text-red-500 text-xs mt-1">{fieldErrors.postOffice}</p>
+                      {fieldErrors.city && <p className="text-red-500 text-xs">{fieldErrors.city}</p>}
+                      {cityListVisible && filteredCities.length > 0 && (
+                        <ul className="border border-gray-200 rounded-lg mt-1 max-h-32 overflow-y-auto bg-white shadow-lg py-1">
+                          {filteredCities.map((c, i) => (
+                            <li key={i} className="px-4 py-2.5 text-sm font-['Montserrat'] text-[#3D1A00] cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => handleCitySelect(c)}>{c}</li>
+                          ))}
+                        </ul>
                       )}
-                      {fieldErrors.postOffice && (
-                        <p className="text-red-500 text-xs mt-1">{fieldErrors.postOffice}</p>
-                      )}
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Вкажіть вулицю, будинок та квартиру
-                      </p>
                     </div>
-                  ) : (
                     <div className="flex flex-col gap-1.5">
-                      <label
-                        htmlFor="postOffice"
-                        className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
-                      >
-                        {deliveryMethod === "nova_poshta_locker"
-                          ? "Поштомат"
-                          : "Відділення"}{" "}
-                        <span className="text-red-500">*</span>
-                      </label>
+                      <label htmlFor="postOffice" className="text-sm font-['Montserrat'] text-[#3D1A00]/80">{deliveryMethod === "nova_poshta_courier" ? "Адреса" : "Номер відділення"} <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         id="postOffice"
                         value={postOffice}
                         onChange={handlePostOfficeChange}
-                        onBlur={(e) => {
-                          const error = validatePostOffice(e.target.value);
-                          setFieldErrors((prev) => ({ ...prev, postOffice: error || undefined }));
-                        }}
-                        placeholder={
-                          deliveryMethod === "nova_poshta_locker"
-                            ? "Начніть вводити назву поштомата"
-                            : "Начніть вводити назву відділення"
-                        }
-                        className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all ${
-                          fieldErrors.postOffice
-                            ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                            : "border-gray-300 focus:ring-black focus:border-transparent"
-                        }`}
+                        onBlur={(e) => { const err = validatePostOffice(e.target.value); setFieldErrors((p) => ({ ...p, postOffice: err || undefined })); }}
+                        className={`border border-gray-200 px-4 py-3 font-['Montserrat'] text-sm rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#3D1A00]/15 focus:border-[#3D1A00]/30 transition-colors ${fieldErrors.postOffice ? "border-red-500" : ""}`}
+                        placeholder={deliveryMethod === "nova_poshta_courier" ? "Вул., будинок, квартира" : "Відділення"}
                         required
                       />
-                      {fieldErrors.postOffice && (
-                        <p className="text-red-500 text-xs mt-1">{fieldErrors.postOffice}</p>
-                      )}
-                      {loadingPostOffices ? (
-                        <p className="text-sm text-gray-500 mt-1">Завантаження відділень...</p>
-                      ) : (
-                        postOfficeListVisible && (
-                          <div className="max-h-40 overflow-y-auto shadow-lg rounded-md border border-gray-200 mt-1 bg-white z-10">
-                            <ul className="list-none p-0">
-                              {filteredPostOffices.map(
-                                (postOfficeOption, idx) => (
-                                  <li
-                                    key={idx}
-                                    className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm sm:text-base transition-colors"
-                                    onClick={() =>
-                                      handlePostOfficeSelect(postOfficeOption)
-                                    }
-                                  >
-                                    {postOfficeOption}
-                                  </li>
-                                )
-                              )}
-                            </ul>
-                          </div>
-                        )
+                      {fieldErrors.postOffice && <p className="text-red-500 text-xs">{fieldErrors.postOffice}</p>}
+                      {postOfficeListVisible && filteredPostOffices.length > 0 && deliveryMethod !== "nova_poshta_courier" && (
+                        <ul className="border border-gray-200 rounded-lg mt-1 max-h-32 overflow-y-auto bg-white shadow-lg py-1">
+                          {filteredPostOffices.map((po, i) => (
+                            <li key={i} className="px-4 py-2.5 text-sm font-['Montserrat'] text-[#3D1A00] cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => handlePostOfficeSelect(po)}>{po}</li>
+                          ))}
+                        </ul>
                       )}
                     </div>
-                  )}
-                </>
+                  </div>
+                </div>
               )}
 
               {deliveryMethod === "showroom_pickup" && (
-                <div className="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
-                  <p className="font-medium mb-1">Самовивіз з шоуруму</p>
-                  <p className="text-xs">13:00–19:00, Київ, вул. Костянтинівська, 21</p>
+                <div className="text-sm font-['Montserrat'] text-[#3D1A00]/80 bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+                  Самовивіз: Київ, вул. Костянтинівська, 21 (13:00–19:00)
                 </div>
               )}
 
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="comment"
-                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700"
-                >
-                  Коментар
-                </label>
-                <textarea
-                  id="comment"
-                  placeholder="Додаткові побажання до замовлення (необов'язково)"
-                  className="border border-gray-300 px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all resize-none min-h-[80px]"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  rows={3}
-                />
+              {/* СПОСІБ ОПЛАТИ */}
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+                <h2 className="font-['Montserrat'] font-semibold text-[#3D1A00] uppercase text-sm tracking-wide mb-4">Спосіб оплати</h2>
+                <div className="flex flex-col gap-3">
+                  <label className="flex items-center gap-3 cursor-pointer py-1 group">
+                    <input type="radio" name="payment" value="full" checked={paymentType === "full"} onChange={(e) => handlePaymentTypeChange(e.target.value)} className="sr-only" />
+                    <span className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${paymentType === "full" ? "border-[#3D1A00] bg-[#3D1A00]" : "border-[#3D1A00]/40 group-hover:border-[#3D1A00]"}`}>
+                      {paymentType === "full" && <span className="w-2 h-2 rounded-full bg-white" />}
+                    </span>
+                    <span className="font-['Montserrat'] text-sm text-[#3D1A00]">Онлайн оплата MonoPay</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer py-1 group">
+                    <input type="radio" name="payment" value="prepay" checked={paymentType === "prepay"} onChange={(e) => handlePaymentTypeChange(e.target.value)} className="sr-only" />
+                    <span className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${paymentType === "prepay" ? "border-[#3D1A00] bg-[#3D1A00]" : "border-[#3D1A00]/40 group-hover:border-[#3D1A00]"}`}>
+                      {paymentType === "prepay" && <span className="w-2 h-2 rounded-full bg-white" />}
+                    </span>
+                    <span className="font-['Montserrat'] text-sm text-[#3D1A00]">Накладений платіж (мінімальна передоплата 200 грн)</span>
+                  </label>
+                </div>
+                {fieldErrors.paymentType && <p className="text-red-500 text-xs mt-1">{fieldErrors.paymentType}</p>}
               </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="paymentType"
-                  className="text-sm sm:text-base font-medium font-['Helvetica Neue'] text-gray-700 flex items-center gap-2"
-                >
-                  <Image
-                    src="/images/light-theme/tag.svg"
-                    alt="payment tag"
-                    width={18}
-                    height={18}
-                    className="opacity-70"
-                  />
-                  Спосіб оплати <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="paymentType"
-                  className={`border px-3 py-2.5 text-sm sm:text-base font-normal font-['Helvetica Neue'] rounded-md focus:outline-none focus:ring-2 transition-all bg-white ${
-                    fieldErrors.paymentType
-                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 focus:ring-black focus:border-transparent"
-                  }`}
-                  value={paymentType}
-                  onChange={(e) => handlePaymentTypeChange(e.target.value)}
-                  onBlur={(e) => {
-                    const error = validatePaymentType(e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, paymentType: error || undefined }));
-                  }}
-                  required
-                >
-                  <option value="">Оберіть спосіб оплати</option>
-                  <option value="full">Повна оплата</option>
-                  <option value="prepay">Передоплата 200 грн</option>
-                  {/* <option value="test_payment">Тест оплата (імітація повної оплати)</option> */}
-                  <option value="installment">В розсрочку</option>
-                  <option value="crypto">Крипта (USDT, BTC та інші)</option>
-                </select>
-                {fieldErrors.paymentType && (
-                  <p className="text-red-500 text-xs mt-1">{fieldErrors.paymentType}</p>
-                )}
-              </div>
-
-              {/* Знижка зареєстрованим (для гостей — модальне вікно по кліку над формою) */}
-              {items.length > 0 && session && (() => {
-                const percent = bonusPercentFromLoyalty;
-                const bonusToEarn = Math.floor((getSubtotal(items) * percent) / 100);
-                if (bonusToEarn <= 0) return null;
-                return (
-                  <div className="rounded-lg px-4 py-3 text-sm bg-green-50 border border-green-200 text-green-800">
-                    <p>За цю покупку ви отримаєте знижку <strong>{percent}%</strong> на наступні покупки (еквівалент <strong>{bonusToEarn} ₴</strong>).</p>
-                  </div>
-                );
-              })()}
-
-              <button
-                className="bg-black text-white px-4 py-3 rounded-md mt-2 mb-6 font-medium text-sm sm:text-base hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                type="submit"
-                disabled={loading}
-              >
-                {loading ? "Обробка..." : "Оформити"}
-              </button>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-md text-sm mt-2">
-                  <p className="font-medium mb-1">Помилка</p>
-                  <p className="whitespace-pre-line">{error}</p>
-                </div>
-              )}
-              {success && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2.5 rounded-md text-sm mt-2">
-                  <p className="font-medium">{success}</p>
-                </div>
-              )}
-            </form>
             </div>
 
-            <div className="w-full sm:w-1/4 px-4 sm:px-0 flex flex-col gap-4">
-              {items.length === 0 ? (
-                <p>Ваш кошик порожній</p>
-              ) : (
-                items.map((item) => (
-                  <div
-                    key={`${item.id}-${item.size}`}
-                    className="flex gap-4 border-b pb-4 last:border-none"
-                  >
-                    <Image
-                      src={
-                        item.imageUrl
-                          ? `/api/images/${item.imageUrl}`
-                          : "https://placehold.co/100x150/cccccc/666666?text=No+Image"
-                      }
-                      alt={item.name}
-                      width={112}
-                      height={160}
-                      className="w-28 h-40 object-cover"
-                    />
-                    <div className="flex flex-col justify-between flex-1">
-                      <div>
-                        <p className="text-base font-medium">{item.name}</p>
-                        <div className="text-zinc-600 mt-1">
-                          {item.discount_percentage ? (
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-red-600">
-                                {(
-                                  item.price *
-                                  (1 - item.discount_percentage / 100)
-                                ).toFixed(2)}
-                                ₴
-                              </span>
-                              <span className="line-through">{item.price}₴</span>
-                              <span className="text-green-600 text-sm">
-                                -{item.discount_percentage}%
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="font-medium">{item.price}₴</span>
-                          )}
-                        </div>
-                        <p className="text-stone-900 mt-1">Розмір: {item.size}</p>
-                        {item.color && (
-                          <p className="text-stone-900 mt-1">Колір: {item.color}</p>
-                        )}
-                      </div>
+            {/* Right column: order summary */}
+            <div className="w-full lg:w-1/2 flex flex-col gap-5">
+              {items.map((item) => {
+                const displayPrice = item.discount_percentage ? Math.round(item.price * (1 - item.discount_percentage / 100)) : item.price;
+                return (
+                  <div key={`${item.id}-${item.size}`} className="bg-white border border-[#3D1A00]/15 rounded-xl p-5 sm:p-6 flex flex-row gap-4 sm:gap-6 relative">
+                    {/* Кнопка видалити — темно-коричневий X у правому верхньому куті картки */}
+                    <button
+                      type="button"
+                      className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full text-[#3D1A00] hover:bg-[#3D1A00]/5 transition-colors text-lg font-medium leading-none"
+                      onClick={() => removeItem(item.id, item.size)}
+                      aria-label="Видалити"
+                    >
+                      ×
+                    </button>
 
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="flex items-center border border-neutral-400/60 w-24 h-9 justify-between px-2">
+                    {/* Ліва частина: назва, опис; знизу — кількість + ціна */}
+                    <div className="min-w-0 flex-1 flex flex-col pr-8 sm:pr-10">
+                      <p className="font-['Montserrat'] font-bold text-[#3D1A00] uppercase text-base sm:text-lg leading-tight">
+                        {item.name}
+                      </p>
+                      {(item as { subtitle?: string }).subtitle && (
+                        <p className="font-['Montserrat'] text-[#3D1A00]/70 text-sm leading-relaxed line-clamp-2 mt-1">
+                          {(item as { subtitle?: string }).subtitle}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-4 mt-4 sm:mt-5">
+                        <div className="flex items-center border border-[#3D1A00]/12 rounded overflow-hidden shrink-0">
                           <button
-                            className="text-zinc-500 text-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            type="button"
+                            className="w-8 h-8 flex items-center justify-center text-[#3D1A00] hover:bg-[#3D1A00]/5 disabled:opacity-50 transition-colors text-sm font-medium"
                             onClick={async () => {
                               try {
                                 await updateQuantity(item.id, item.size, item.quantity - 1);
-                              } catch (error) {
-                                console.error("Error updating quantity:", error);
+                              } catch (e) {
+                                console.error(e);
                               }
                             }}
-                            aria-label={`Зменшити кількість ${item.name}`}
                             disabled={item.quantity <= 1}
                           >
                             −
                           </button>
-                          <span aria-live="polite" aria-atomic="true">{item.quantity}</span>
+                          <span className="w-10 h-8 flex items-center justify-center font-['Montserrat'] text-sm text-[#3D1A00] border-x border-[#3D1A00]/12 bg-transparent">
+                            {item.quantity}
+                          </span>
                           <button
-                            className="text-zinc-500 text-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            type="button"
+                            className="w-8 h-8 flex items-center justify-center text-[#3D1A00] hover:bg-[#3D1A00]/5 transition-colors text-sm font-medium"
                             onClick={async () => {
                               try {
                                 await updateQuantity(item.id, item.size, item.quantity + 1);
-                              } catch (error) {
-                                setError(
-                                  error instanceof Error
-                                    ? error.message
-                                    : "Недостатньо товару в наявності"
-                                );
+                              } catch (err) {
+                                setError(err instanceof Error ? err.message : "Недостатньо товару");
                                 setTimeout(() => setError(null), 5000);
                               }
                             }}
-                            aria-label={`Збільшити кількість ${item.name}`}
                           >
                             +
                           </button>
                         </div>
-                        <button
-                          className="text-red-600 text-xl font-bold min-w-[44px] min-h-[44px] flex items-center justify-center"
-                          onClick={() => removeItem(item.id, item.size)}
-                          aria-label={`Видалити ${item.name} з кошика`}
-                        >
-                          ×
-                        </button>
+                        <span className="font-['Montserrat'] font-semibold text-[#3D1A00] text-lg sm:text-xl">
+                          {displayPrice.toLocaleString("uk-UA")} грн
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Права частина: зображення товару — така сама структура на моб і комп */}
+                    <div className="shrink-0 flex items-center justify-end">
+                      <div className="w-28 h-36 sm:w-40 sm:h-48 relative rounded-lg overflow-hidden bg-[#fafafa]">
+                        <Image
+                          src={
+                            item.imageUrl
+                              ? item.imageUrl.startsWith("http") || item.imageUrl.startsWith("/")
+                                ? item.imageUrl
+                                : `/api/images/${item.imageUrl}`
+                              : "https://placehold.co/160x200/eee/999?text=No+Image"
+                          }
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                          sizes="160px"
+                        />
                       </div>
                     </div>
                   </div>
-                ))
-              )}
+                );
+              })}
 
-              {/* Total price container */}
-              <div className="pt-2 mt-2 mb-6 md:mb-0 space-y-2">
-                <div className="flex justify-between items-center text-base text-gray-600">
-                  <span>Сума товарів</span>
-                  <span className="font-medium text-gray-800">{getSubtotal(items).toFixed(2)} ₴</span>
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mt-2">
+                <div className="flex flex-col gap-1.5 mb-4">
+                  <label className="text-sm font-['Montserrat'] text-[#3D1A00]/80">Промокод:</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={promoCodeInput}
+                      onChange={(e) => {
+                        setPromoCodeInput(e.target.value);
+                        setPromoError(null);
+                        if (appliedPromo) setAppliedPromo(null);
+                      }}
+                      className="flex-1 border border-gray-200 px-4 py-3 font-['Montserrat'] text-sm rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#3D1A00]/15 focus:border-[#3D1A00]/30 transition-colors uppercase"
+                      placeholder="Введіть промокод"
+                    />
+                    <button
+                      type="button"
+                      disabled={promoValidating || !promoCodeInput.trim()}
+                      onClick={async () => {
+                        const code = promoCodeInput.trim().toUpperCase();
+                        if (!code) return;
+                        setPromoError(null);
+                        setPromoValidating(true);
+                        try {
+                          const subtotal = getSubtotal(items);
+                          const deliveryCostVal = deliveryMethod === "nova_poshta_branch" ? DELIVERY_COST_BRANCH : 0;
+                          const res = await fetch("/api/promo/validate", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              code,
+                              subtotal,
+                              deliveryCost: deliveryCostVal,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (data.valid && data.promoCodeId != null && data.discountAmount != null) {
+                            setAppliedPromo({
+                              promoCodeId: data.promoCodeId,
+                              discountAmount: data.discountAmount,
+                              message: data.message,
+                            });
+                          } else {
+                            setAppliedPromo(null);
+                            setPromoError(data.message || "Промокод не дійсний");
+                          }
+                        } catch {
+                          setPromoError("Помилка перевірки промокоду");
+                          setAppliedPromo(null);
+                        } finally {
+                          setPromoValidating(false);
+                        }
+                      }}
+                      className="shrink-0 px-4 py-3 font-['Montserrat'] text-sm font-medium rounded-lg bg-[#3D1A00]/10 text-[#3D1A00] hover:bg-[#3D1A00]/20 disabled:opacity-50 transition-colors"
+                    >
+                      {promoValidating ? "Перевірка…" : "Застосувати"}
+                    </button>
+                  </div>
+                  {promoError && <p className="text-xs text-red-600 font-['Montserrat']">{promoError}</p>}
+                  {appliedPromo && (
+                    <p className="text-xs text-green-600 font-['Montserrat']">
+                      {appliedPromo.message} (−{appliedPromo.discountAmount.toLocaleString("uk-UA")} грн)
+                    </p>
+                  )}
                 </div>
-                {session && bonusPercentFromLoyalty > 0 && items.length > 0 && (() => {
-                  const sub = getSubtotal(items);
-                  const loyaltyDiscount = Math.round((sub * bonusPercentFromLoyalty) / 100 * 100) / 100;
-                  if (loyaltyDiscount <= 0) return null;
+                {(() => {
+                  const subtotal = getSubtotal(items);
+                  const deliveryCostVal = deliveryMethod === "nova_poshta_branch" ? DELIVERY_COST_BRANCH : 0;
+                  const discount = appliedPromo?.discountAmount ?? 0;
+                  const total = Math.max(0, subtotal + deliveryCostVal - discount);
                   return (
-                    <div className="flex justify-between items-center gap-2 py-1.5 text-sm">
-                      <span className="font-medium text-emerald-800">
-                        Знижка по програмі лояльності ({bonusPercentFromLoyalty}%)
-                      </span>
-                      <span className="font-semibold text-emerald-700 whitespace-nowrap">
-                        −{loyaltyDiscount.toFixed(2)} ₴
-                      </span>
+                    <div className="space-y-2 font-['Montserrat'] text-[#3D1A00] text-sm">
+                      {deliveryMethod === "nova_poshta_branch" && <div className="flex justify-between"><span className="text-gray-600">Доставка у відділення</span><span>100 грн</span></div>}
+                      {discount > 0 && (
+                        <div className="flex justify-between text-green-600">
+                          <span>Знижка (промокод)</span>
+                          <span>−{discount.toLocaleString("uk-UA")} грн</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-semibold pt-1 border-t border-gray-100"><span>Всього:</span><span>{Math.round(total).toLocaleString("uk-UA")} грн</span></div>
                     </div>
                   );
                 })()}
-                <div className="flex justify-between items-center pt-2">
-                  <span className="text-base font-semibold text-gray-900">До сплати</span>
-                  <span className="text-xl font-bold text-[#8C7461] whitespace-nowrap">
-                    {session && bonusPercentFromLoyalty > 0 && items.length > 0
-                      ? (Math.round((getSubtotal(items) * (1 - bonusPercentFromLoyalty / 100)) * 100) / 100).toFixed(2)
-                      : getSubtotal(items).toFixed(2)}{" "}
-                    ₴
-                  </span>
-                </div>
               </div>
             </div>
           </div>
+
+          {/* Обов'язково: Політика конфіденційності (галочка) + Публічна оферта */}
+          <div className="pt-6">
+            <p className="text-sm font-['Montserrat'] font-semibold text-[#3D1A00] mb-3">Обов&apos;язково:</p>
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <span
+                className={`mt-0.5 w-5 h-5 flex-shrink-0 border rounded-sm transition-colors flex items-center justify-center ${
+                  agreedToPolicy
+                    ? "bg-[#3D1A00] border-[#3D1A00]"
+                    : "border-[#3D1A00]/40 group-hover:border-[#3D1A00]"
+                }`}
+                onClick={() => setAgreedToPolicy(!agreedToPolicy)}
+              >
+                {agreedToPolicy && (
+                  <svg viewBox="0 0 12 10" fill="none" className="w-3 h-3">
+                    <path d="M1 5l3 3 7-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </span>
+              <span
+                className="text-[#3D1A00]/80 text-sm font-['Montserrat'] leading-relaxed"
+                onClick={() => setAgreedToPolicy(!agreedToPolicy)}
+              >
+                Я приймаю умови{" "}
+                <Link href="/terms-of-service" className="underline hover:text-[#3D1A00] transition-colors">
+                  Публічної оферти
+                </Link>{" "}
+                та надаю згоду на обробку персональних даних згідно з{" "}
+                <Link href="/privacy-policy" className="underline hover:text-[#3D1A00] transition-colors">
+                  Політикою конфіденційності
+                </Link>
+              </span>
+            </label>
+          </div>
+
+          <div className="flex justify-center pt-8 pb-16">
+            <button
+              type="submit"
+              disabled={loading || !agreedToPolicy}
+              className="w-full sm:w-auto min-w-[300px] max-w-md py-4 px-10 bg-[#D7D799] hover:bg-[#c5c58a] text-[#3D1A00] font-['Montserrat'] font-semibold uppercase text-base tracking-tight rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Обробка..." : "ОФОРМИТИ ЗАМОВЛЕННЯ"}
+            </button>
+          </div>
+
+          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded text-sm font-['Montserrat'] mb-4"><p className="whitespace-pre-line">{error}</p></div>}
+          {success && <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2.5 rounded text-sm font-['Montserrat'] mb-4">{success}</div>}
+          </form>
         </>
       )}
-      {/* Модальне вікно: Маєте акаунт? + знижка 3% */}
-      {isAccountPromoModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setIsAccountPromoModalOpen(false)}>
-          <div
-            className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-5 py-5 sm:px-6 sm:py-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Маєте акаунт?</h3>
-              <p className="text-gray-600 text-sm mb-3">
-                Увійдіть, щоб автоматично заповнити дані та відстежувати замовлення.
-              </p>
-              <p className="text-gray-600 text-sm mb-5">
-                Не втратьте знижку <strong className="text-amber-700">3%</strong> за першу покупку — увійдіть або зареєструйтесь, щоб отримувати знижки.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAccountPromoModalOpen(false);
-                    setIsLoginModalOpen(true);
-                  }}
-                  className="flex-1 bg-black text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors"
-                >
-                  Увійти або зареєструватися
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAccountPromoModalOpen(false)}
-                  className="px-4 py-2.5 rounded-lg font-medium text-sm text-gray-600 hover:bg-gray-100 transition-colors"
-                >
-                  Продовжити без входу
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} redirectAfterLogin="/final" />
     </section>
   );
 }

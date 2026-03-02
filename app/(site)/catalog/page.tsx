@@ -6,30 +6,30 @@ import { CatalogGridSkeleton } from "@/components/shared/SkeletonLoader";
 export const revalidate = 1200; // ISR every 20 minutes
 
 export const metadata: Metadata = {
-  title: "Каталог товарів | 13VPLUS",
-  description: "Перегляньте весь каталог жіночого одягу від 13VPLUS. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.",
-  keywords: "13VPLUS, каталог товарів, жіночий одяг, повсякденний одяг, домашній одяг, купальники, український бренд",
+  title: "Каталог товарів | Choice",
+  description: "Перегляньте весь каталог жіночого одягу від Choice. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.",
+  keywords: "Choice, каталог товарів, жіночий одяг, повсякденний одяг, домашній одяг, купальники, український бренд",
   openGraph: {
-    title: "Каталог товарів | 13VPLUS",
-    description: "Перегляньте весь каталог жіночого одягу від 13VPLUS. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.",
+    title: "Каталог товарів | Choice",
+    description: "Перегляньте весь каталог жіночого одягу від Choice. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.",
     type: "website",
     locale: "uk_UA",
     url: `${process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000"}/catalog`,
     images: [
       {
-        url: `${process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000"}/images/13VPLUS BLACK PNG 2.png`,
+        url: `${process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000"}/images/tg_image_3614117882.png`,
         width: 1200,
         height: 630,
-        alt: "13VPLUS - Каталог товарів",
+        alt: "Choice - Каталог товарів",
       },
     ],
-    siteName: "13VPLUS",
+    siteName: "Choice",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Каталог товарів | 13VPLUS",
-    description: "Перегляньте весь каталог жіночого одягу від 13VPLUS.",
-    images: [`${process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000"}/images/13VPLUS BLACK PNG 2.png`],
+    title: "Каталог товарів | Choice",
+    description: "Перегляньте весь каталог жіночого одягу від Choice.",
+    images: [`${process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000"}/images/tg_image_3614117882.png`],
   },
   alternates: {
     canonical: `${process.env.PUBLIC_URL || process.env.NEXT_PUBLIC_PUBLIC_URL || "http://localhost:3000"}/catalog`,
@@ -50,7 +50,6 @@ export default async function CatalogPage() {
     }>
       <CatalogServer 
         category={null}
-        season={null}
         subcategory={null}
       />
     </Suspense>

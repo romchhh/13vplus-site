@@ -1,74 +1,43 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCategories } from "@/lib/CategoriesProvider";
 
-export default function CategoriesShowcase() {
-  const { categories: allCategories, loading } = useCategories();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [, setCanScrollLeft] = useState(false);
-  const [, setCanScrollRight] = useState(true);
-  const [isMobile, setIsMobile] = useState(true);
-
-  // Filter categories that have media
-  const categories = allCategories.filter(
-    (cat) => cat.mediaUrl && cat.mediaType
+// Same loading markup as Suspense fallback in page.tsx to avoid hydration mismatch
+function CategoriesLoadingPlaceholder() {
+  return (
+    <section className="w-full bg-[#FFFFFF] py-16 lg:py-20">
+      <div className="max-w-[1920px] mx-auto px-6">
+        <p className="text-[#3D1A00] font-['Montserrat']">Завантаження категорій...</p>
+      </div>
+    </section>
   );
+}
 
-  const checkScrollability = () => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      setCanScrollLeft(container.scrollLeft > 0);
-      setCanScrollRight(
-        container.scrollLeft < container.scrollWidth - container.clientWidth - 1
-      );
-    }
-  };
+export default function CategoriesShowcase() {
+  const { categories, loading } = useCategories();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      checkScrollability();
-      container.addEventListener("scroll", checkScrollability);
-      window.addEventListener("resize", checkScrollability);
-      return () => {
-        container.removeEventListener("scroll", checkScrollability);
-        window.removeEventListener("resize", checkScrollability);
-      };
-    }
-  }, [categories]);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    setMounted(true);
   }, []);
 
   const scrollLeft = () => {
     const container = scrollContainerRef.current;
-    if (container) {
-      container.scrollBy({ left: -400, behavior: "smooth" });
-    }
+    if (container) container.scrollBy({ left: -320, behavior: "smooth" });
   };
 
   const scrollRight = () => {
     const container = scrollContainerRef.current;
-    if (container) {
-      container.scrollBy({ left: 400, behavior: "smooth" });
-    }
+    if (container) container.scrollBy({ left: 320, behavior: "smooth" });
   };
 
-  if (loading) {
-    return (
-      <div className="text-center py-20 text-lg text-white bg-black">
-        Завантаження категорій...
-      </div>
-    );
+  // Before mount or while loading: render same placeholder on server and client to avoid hydration error
+  if (!mounted || loading) {
+    return <CategoriesLoadingPlaceholder />;
   }
 
   if (categories.length === 0) {
@@ -76,121 +45,90 @@ export default function CategoriesShowcase() {
   }
 
   return (
-    <section className="max-w-[1920px] w-full mx-auto relative bg-black pb-16 lg:pb-24">
-      {/* Stylish Divider and Title Section */}
-      <div className="relative py-16 lg:py-24 px-6 overflow-hidden bg-black">
-        <div className="max-w-6xl mx-auto text-center relative z-10">
-          <h2 className="text-4xl md:text-5xl lg:text-7xl font-bold font-['Montserrat'] uppercase tracking-tight text-white mb-6 leading-tight">
-            Колекції
+    <section className="w-full bg-[#FFFFFF]">
+      <div className="max-w-[1920px] mx-auto px-6 lg:px-10 py-12 lg:py-16">
+        {/* Заголовок КАТЕГОРІЇ та стрілки */}
+        <div className="flex items-center justify-between gap-4 mb-8 lg:mb-10">
+          <h2 className="text-2xl lg:text-3xl font-bold font-['Montserrat'] uppercase tracking-tight text-[#3D1A00]">
+            Категорії
           </h2>
-          <p className="text-sm lg:text-base font-['Montserrat'] text-white/60 max-w-xl mx-auto tracking-wide">
-            Кожна категорія — це унікальний світ стилю та оригінальності
-          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={scrollLeft}
+              className="p-2 text-[#3D1A00] hover:opacity-70 transition-opacity"
+              aria-label="Прокрутити вліво"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <button
+              onClick={scrollRight}
+              className="p-2 text-[#3D1A00] hover:opacity-70 transition-opacity"
+              aria-label="Прокрутити вправо"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Fixed centered text */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-        <div className="text-white text-2xl md:text-3xl lg:text-4xl font-bold font-['Montserrat'] uppercase tracking-wider text-center px-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] mt-24 md:mt-28">
-          АКТУАЛЬНО ЗАРАЗ
-        </div>
-      </div>
-
-      {/* Scroll container */}
-      <div className="relative h-screen">
-        {/* Navigation arrows - hidden on mobile, visible on desktop */}
-        <button
-          onClick={scrollLeft}
-          className="hidden md:block absolute left-4 top-1/2 -translate-y-1/2 z-20 text-white hover:text-white/80 transition-colors duration-200 pointer-events-auto"
-          aria-label="Прокрутити вліво"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
-        </button>
-        <button
-          onClick={scrollRight}
-          className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 z-20 text-white hover:text-white/80 transition-colors duration-200 pointer-events-auto"
-          aria-label="Прокрутити вправо"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
-        </button>
-        <div 
-          className="h-screen overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory" 
+        {/* Горизонтальний список: на мобільному 2 категорії, на десктопі 4 */}
+        <div
           ref={scrollContainerRef}
-          style={{ WebkitOverflowScrolling: 'touch' }}
+          className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
+          style={{ WebkitOverflowScrolling: "touch" }}
         >
-        <div className="flex gap-4 md:gap-4 lg:gap-6 h-full items-center">{categories.map((category, index) => (
+          {categories.map((category) => (
             <Link
               key={category.id}
-              href={`/catalog/${encodeURIComponent(category.name)}`}
-              className="group relative flex-shrink-0 flex flex-col h-full snap-center snap-always"
-              style={{
-                width:
-                  index === 0 && isMobile
-                    ? "100vw"
-                    : "calc(100vh * 2 / 3)",
-              }}
-              aria-label={`Переглянути категорію ${category.name}`}
-              prefetch={index === 0}
+              href={`/catalog/${category.slug || encodeURIComponent(category.name)}`}
+              className="flex-shrink-0 w-[calc((100%-1.5rem)/2)] lg:w-[calc((100%-4.5rem)/4)] group"
+              aria-label={`Категорія ${category.name}`}
             >
-              <div className="h-full w-full overflow-hidden relative bg-black/5">
-                {category.mediaType === "video" ? (
-                  <>
+              <div className="aspect-[3/4] w-full rounded-lg overflow-hidden bg-gray-200 mb-3 relative">
+                {category.mediaUrl && category.mediaType ? (
+                  category.mediaType === "video" ? (
                     <video
                       src={`/api/images/${category.mediaUrl}`}
-                      className="object-cover group-hover:opacity-90 transition duration-300 w-full h-full pointer-events-none"
+                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                       loop
                       muted
                       playsInline
-                      autoPlay
-                      preload="none"
-                      onLoadedMetadata={(e) => {
-                        // Start playing once metadata is loaded
-                        const video = e.currentTarget;
-                        video.play().catch(() => {
-                          // Autoplay failed, will retry on user interaction
-                        });
-                      }}
+                      preload="metadata"
                     />
-                    {/* Button overlay for video */}
-                    <div className="absolute inset-0 flex items-end justify-center pb-8 pointer-events-none">
-                      <div className="bg-transparent border-2 border-white text-white px-8 py-2.5 text-lg font-medium font-['Montserrat'] uppercase tracking-wider group-hover:bg-white group-hover:text-black transition-colors duration-300 pointer-events-auto">
-                        {category.name}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
+                  ) : (
                     <Image
-                      className="object-cover group-hover:opacity-90 transition duration-300"
                       src={`/api/images/${category.mediaUrl}`}
-                      alt={`Категорія ${category.name} від 13VPLUS`}
+                      alt={category.name}
                       fill
-                      sizes="(max-width: 640px) 100vw, 66vh"
-                      loading={index === 0 ? "eager" : "lazy"}
-                      quality={85}
-                      placeholder="blur"
-                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-                      priority={index === 0}
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="260px"
                     />
-                    {/* Button overlay for image */}
-                    <div className="absolute inset-0 flex items-end justify-center pb-8 pointer-events-none">
-                      <div className="bg-transparent border-2 border-white text-white px-8 py-2.5 text-lg font-medium font-['Montserrat'] uppercase tracking-wider group-hover:bg-white group-hover:text-black transition-colors duration-300 pointer-events-auto">
-                        {category.name}
-                      </div>
-                    </div>
-                  </>
+                  )
+                ) : (
+                  <div className="absolute inset-0 bg-gray-200" aria-hidden />
                 )}
               </div>
+              <p className="text-[#3D1A00] font-['Montserrat'] font-semibold text-sm lg:text-base text-left">
+                {category.name}
+              </p>
             </Link>
           ))}
-          </div>
+        </div>
+
+        {/* Весь каталог — справа внизу */}
+        <div className="flex justify-end mt-8 lg:mt-10">
+          <Link
+            href="/catalog"
+            className="inline-flex items-center gap-1 text-[#8B9A47] font-['Montserrat'] font-semibold hover:opacity-80 transition-opacity"
+          >
+            Весь каталог
+            <span aria-hidden>→</span>
+          </Link>
         </div>
       </div>
     </section>
   );
 }
-

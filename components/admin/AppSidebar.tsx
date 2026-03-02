@@ -68,6 +68,15 @@ const navItems: NavItem[] = [
     path: "/admin/users",
   },
   {
+    name: "Промокоди",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+      </svg>
+    ),
+    path: "/admin/promo-codes",
+  },
+  {
     name: "Розсилки",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -326,15 +335,15 @@ const AppSidebar: React.FC = () => {
         <Link href="/">
           {isExpanded || isHovered || isMobileOpen ? (
             <Image
-              src="/images/tg_image_3614117882.png"
-              alt="13VPLUS Logo"
+              src="/images/logos/choice-logo-dark.png"
+              alt="Choice Logo"
               width={150}
               height={40}
             />
           ) : (
             <Image
-              src="/images/13vplus-logo-favicon.png"
-              alt="13VPLUS"
+              src="/images/logos/choice-logo-dark.png"
+              alt="Choice"
               width={32}
               height={32}
             />

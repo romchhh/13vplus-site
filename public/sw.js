@@ -1,20 +1,16 @@
-// Mobile-optimized service worker for 13VPLUS e-commerce
-const CACHE_NAME = '13vplus-mobile-v4';
-const STATIC_CACHE = '13vplus-static-v4';
-const DYNAMIC_CACHE = '13vplus-dynamic-v4';
-const IMAGE_CACHE = '13vplus-images-v4';
-const API_CACHE = '13vplus-api-v4';
+// Mobile-optimized service worker for Choice e-commerce
+const CACHE_NAME = 'choice-mobile-v4';
+const STATIC_CACHE = 'choice-static-v4';
+const DYNAMIC_CACHE = 'choice-dynamic-v4';
+const IMAGE_CACHE = 'choice-images-v4';
+const API_CACHE = 'choice-api-v4';
 
 // Critical resources to cache immediately
 const STATIC_ASSETS = [
   '/',
   '/catalog',
-  '/images/13VPLUS BLACK PNG 2.png',
-  '/images/Знімок екрана 2025-10-17 о 22.25.53.png', // Mobile hero image
-  '/images/location-icon.svg',
-  '/images/email-icon.svg',
-  '/images/instagram-icon.svg',
-  '/images/facebook-icon.svg'
+  '/images/tg_image_3614117882.png',
+  '/images/instagram-icon.svg'
   // Video only cached on desktop, Why Choose Us images load on scroll
 ];
 

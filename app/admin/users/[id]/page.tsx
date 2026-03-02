@@ -43,6 +43,8 @@ interface UserDetail {
   accounts: Array<{ provider: string; providerAccountId: string }>;
   _count: { orders: number; wishlist: number };
   orders: Order[];
+  totalSpent?: number;
+  firstOrderAt?: string | null;
 }
 
 const paymentStatusLabels: Record<string, string> = {
@@ -193,6 +195,20 @@ export default function UserDetailPage() {
           <div className="bg-white rounded-lg shadow p-4">
             <dt className="text-sm font-medium text-gray-500">Замовлень</dt>
             <dd className="mt-1 text-2xl font-semibold text-gray-900">{user._count.orders}</dd>
+          </div>
+          <div className="bg-white rounded-lg shadow p-4">
+            <dt className="text-sm font-medium text-gray-500">Загальна сума замовлень</dt>
+            <dd className="mt-1 text-2xl font-semibold text-gray-900">
+              {user.totalSpent != null ? `${Number(user.totalSpent).toFixed(2)} грн` : "—"}
+            </dd>
+          </div>
+          <div className="bg-white rounded-lg shadow p-4">
+            <dt className="text-sm font-medium text-gray-500">З нами з</dt>
+            <dd className="mt-1 text-2xl font-semibold text-gray-900">
+              {user.firstOrderAt
+                ? new Date(user.firstOrderAt).toLocaleDateString("uk-UA")
+                : "—"}
+            </dd>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <dt className="text-sm font-medium text-gray-500">В обраному</dt>

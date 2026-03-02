@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { sqlGetAllCategories, sqlPostCategory } from "@/lib/sql";
 import { apiLogger } from "@/lib/logger";
 import { revalidateCategories } from "@/lib/revalidate";
@@ -9,8 +10,13 @@ export const revalidate = 1200; // 20 minutes
 // ========================
 // GET /api/categories
 // ========================
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // ?revalidate=1 — скинути кеш категорій (наприклад після add-categories або в адмінці)
+    const url = request.nextUrl ?? new URL(request.url);
+    if (url.searchParams.get("revalidate") === "1") {
+      revalidateTag("categories");
+    }
     const categories = await sqlGetAllCategories();
     
     return NextResponse.json(categories, {

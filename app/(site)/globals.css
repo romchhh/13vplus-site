@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background-color-light: #ffffff;
+  --background-color-light: #FFF9F0;
+  --background-warm-yellow: #FFF9F0;
   --text-color-light: #1e1e1e;
   
   /* Extended spacing scale for consistency */
@@ -93,7 +94,7 @@ body {
 }
 
 html {
-  background-color: #ffffff;
+  background-color: var(--background-warm-yellow);
   scroll-behavior: smooth;
 }
 

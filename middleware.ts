@@ -31,25 +31,13 @@ function base64Decode(str: string): string {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // CRITICAL FIX: Handle webhook routes FIRST before any other logic
-  // This prevents Server Actions validation from running
-  if (pathname.startsWith("/api/wayforpay/webhook") || 
-      pathname.startsWith("/api/plisio/webhook")) {
-    
-    console.log("[Middleware] Webhook route detected:", pathname);
-    
-    // Create a response that bypasses Server Actions
+  // Handle payment webhook routes so Server Actions validation doesn't block them
+  if (pathname.startsWith("/api/mono-webhook")) {
     const response = NextResponse.next();
-    
-    // Remove headers that trigger Server Actions validation
-    // These headers are set by the proxy/load balancer and cause Server Actions validation
     response.headers.delete("x-forwarded-host");
     response.headers.delete("origin");
-    
-    // Set headers to indicate this is NOT a Server Action
     response.headers.set("Content-Type", "application/json");
     response.headers.set("X-Middleware-Webhook", "true");
-    
     return response;
   }
 
@@ -89,11 +77,18 @@ export function middleware(request: NextRequest) {
     response.headers.set('Critical-CH', 'Viewport-Width, Device-Memory');
   }
 
-  // Admin authentication logic (for /admin pages and /api/admin)
+  // Admin authentication logic (for /admin pages, /api/admin, and sensitive APIs)
+  const method = request.method;
   const isAdminPage = pathname.startsWith("/admin");
   const isAdminApi = pathname.startsWith("/api/admin");
+  const isOrdersList = pathname === "/api/orders" && method === "GET";
+  const isOrderById = /^\/api\/orders\/\d+$/.test(pathname);
+  const isImagesUpload = pathname.startsWith("/api/images") && method === "POST";
+  const isMigrateOrCleanup = pathname === "/api/migrate" || pathname === "/api/cleanup";
+  const isSensitiveApi =
+    isAdminApi || isOrdersList || isOrderById || isImagesUpload || isMigrateOrCleanup;
 
-  if (!isAdminPage && !isAdminApi) {
+  if (!isAdminPage && !isSensitiveApi) {
     return response;
   }
 
@@ -122,8 +117,8 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // API admin: require auth, return 401 if not authenticated
-  if (isAdminApi) {
+  // API admin and sensitive routes: require auth, return 401 if not authenticated
+  if (isSensitiveApi) {
     if (!isAuthenticated) {
       return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -155,8 +150,7 @@ export const config = {
   matcher: [
     "/admin/:path*",
     "/api/admin/:path*",
-    "/api/wayforpay/webhook/:path*", // Explicitly include webhook routes
-    "/api/plisio/webhook/:path*",
+    "/api/mono-webhook",
     "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

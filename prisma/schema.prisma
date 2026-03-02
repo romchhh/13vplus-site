@@ -6,6 +6,7 @@ generator client {
   output   = "../node_modules/.prisma/client"
 }
 
+// In Prisma 7, connection URL is set in prisma.config.ts (datasource.url)
 datasource db {
   provider = "postgresql"
 }
@@ -88,6 +89,7 @@ model Wishlist {
 model Category {
   id          Int       @id @default(autoincrement())
   name        String
+  slug        String?   @unique // ЧПУ: англ. транскрипція назви (nullable для існуючих записів до backfill)
   priority    Int       @default(0)
   mediaType   String?   @map("media_type") // "photo" or "video"
   mediaUrl    String?   @map("media_url")
@@ -100,52 +102,55 @@ model Category {
 model Subcategory {
   id         Int      @id @default(autoincrement())
   name       String
+  slug       String?  @unique // ЧПУ для URL
   categoryId Int      @map("category_id")
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   products   Product[]
-  
+
   @@map("subcategories")
 }
 
 model Product {
-  id                Int            @id @default(autoincrement())
-  name              String
-  description       String?
-  price             Decimal        @db.Decimal(10, 2)
-  oldPrice          Decimal?       @map("old_price") @db.Decimal(10, 2)
-  discountPercentage Int?          @map("discount_percentage")
-  priority          Int            @default(0)
-  topSale           Boolean        @default(false) @map("top_sale")
-  limitedEdition    Boolean        @default(false) @map("limited_edition")
-  season            String[]       @default([])
-  color             String?
-  categoryId        Int?           @map("category_id")
-  subcategoryId     Int?           @map("subcategory_id")
-  fabricComposition String?        @map("fabric_composition")
-  hasLining         Boolean        @default(false) @map("has_lining")
-  liningDescription String?        @map("lining_description")
-  createdAt         DateTime       @default(now()) @map("created_at")
-  
-  category          Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  subcategory       Subcategory?   @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
-  sizes             ProductSize[]
-  media             ProductMedia[]
-  colors            ProductColor[]
-  orderItems        OrderItem[]
-  wishlistedBy      Wishlist[]
-  
-  @@map("products")
-}
+  id                   Int            @id @default(autoincrement())
+  name                 String
+  slug                 String?        @unique
+  subtitle             String?        @map("subtitle")
+  releaseForm          String?        @map("release_form")  // Форма випуску, напр. "30 саше по 2 г"
+  course               String?        // Курс, напр. "30 днів"
+  packageWeight        String?        @map("package_weight") // Вага упаковки, напр. "60 г"
+  mainInfo             String?        @map("main_info") @db.Text
+  shortDescription     String?        @map("short_description") @db.Text
+  description          String?        @db.Text // Повний опис
+  mainAction           String?        @map("main_action") @db.Text
+  indicationsForUse    String?        @map("indications_for_use") @db.Text
+  benefits             String?        @db.Text
+  fullComposition      String?        @map("full_composition") @db.Text
+  usageMethod          String?        @map("usage_method") @db.Text
+  contraindications    String?       @db.Text
+  storageConditions    String?        @map("storage_conditions") @db.Text
+  price                Decimal        @db.Decimal(10, 2)
+  oldPrice             Decimal?       @map("old_price") @db.Decimal(10, 2)
+  discountPercentage   Int?           @map("discount_percentage")
+  priority             Int            @default(0)
+  topSale              Boolean        @default(false) @map("top_sale")
+  inStock              Boolean        @default(true) @map("in_stock")
+  limitedEdition       Boolean        @default(false) @map("limited_edition")
+  season               String[]       @default([])
+  stock                Int            @default(0)
+  categoryId           Int?           @map("category_id")
+  subcategoryId        Int?           @map("subcategory_id")
+  fabricComposition    String?        @map("fabric_composition") @db.Text
+  hasLining            Boolean        @default(false) @map("has_lining")
+  liningDescription    String?        @map("lining_description") @db.Text
+  createdAt            DateTime       @default(now()) @map("created_at")
 
-model ProductSize {
-  id        Int     @id @default(autoincrement())
-  productId Int     @map("product_id")
-  size      String
-  stock     Int     @default(0)
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
-  @@unique([productId, size])
-  @@map("product_sizes")
+  category             Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategory          Subcategory?   @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  media                ProductMedia[]
+  orderItems           OrderItem[]
+  wishlistedBy         Wishlist[]
+
+  @@map("products")
 }
 
 model ProductMedia {
@@ -158,14 +163,20 @@ model ProductMedia {
   @@map("product_media")
 }
 
-model ProductColor {
-  id        Int     @id @default(autoincrement())
-  productId Int     @map("product_id")
-  label     String
-  hex       String?
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
-  @@map("product_colors")
+model PromoCode {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique // код для введення (наприклад SALE10)
+  type        String    // "percent" | "fixed"
+  value       Decimal   @db.Decimal(10, 2) // % або сума в грн
+  validFrom   DateTime? @map("valid_from")
+  validUntil  DateTime? @map("valid_until")
+  maxUses     Int?      @map("max_uses") // null = необмежено
+  usedCount   Int       @default(0) @map("used_count")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  orders      Order[]
+
+  @@map("promo_codes")
 }
 
 model Order {
@@ -183,24 +194,28 @@ model Order {
   paymentStatus String      @default("pending") @map("payment_status") // "pending" | "paid" | "canceled"
   bonusPointsSpent Int      @default(0) @map("bonus_points_spent") // скільки бонусів списано при оформленні
   loyaltyDiscountAmount Decimal? @map("loyalty_discount_amount") @db.Decimal(10, 2) // знижка по програмі лояльності (грн)
-  status        String?     // Optional status field
-  createdAt     DateTime    @default(now()) @map("created_at")
+  promoCodeId  Int?        @map("promo_code_id")
+  promoDiscountAmount Decimal? @map("promo_discount_amount") @db.Decimal(10, 2) // знижка по промокоду (грн)
+  status       String?     // Optional status field
+  createdAt    DateTime    @default(now()) @map("created_at")
   
-  user          User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  items         OrderItem[]
+  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  promoCode    PromoCode?  @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
+  items        OrderItem[]
   
   @@map("orders")
 }
 
 model OrderItem {
-  id        Int      @id @default(autoincrement())
-  orderId   Int      @map("order_id")
-  productId Int?     @map("product_id")
-  size      String
-  quantity  Int
-  price     Decimal  @db.Decimal(10, 2)
-  color     String?
-  
+  id          Int      @id @default(autoincrement())
+  orderId     Int      @map("order_id")
+  productId   Int?     @map("product_id")
+  productName String? @map("product_name") // збережена назва товару на момент замовлення (не залежить від видалення товару)
+  size        String
+  quantity    Int
+  price       Decimal  @db.Decimal(10, 2)
+  color       String?
+
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 

@@ -14,6 +14,7 @@ interface SearchSidebarProps {
 interface Product {
   id: number;
   name: string;
+  slug?: string | null;
   price: number;
   first_media?: { type: string; url: string } | null;
 }
@@ -279,11 +280,10 @@ export default function SearchSidebar({
   // Highlight matching text
   const highlightText = (text: string, searchQuery: string) => {
     if (!searchQuery.trim()) return text;
-    
     const parts = text.split(new RegExp(`(${searchQuery})`, "gi"));
     return parts.map((part, index) =>
       part.toLowerCase() === searchQuery.toLowerCase() ? (
-        <mark key={index} className="bg-yellow-200 text-black px-0.5 rounded">
+        <mark key={index} className="bg-[#D7D799]/60 text-[#3D1A00] px-0.5 rounded">
           {part}
         </mark>
       ) : (
@@ -304,19 +304,31 @@ export default function SearchSidebar({
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — стиль сайту #3D1A00, #8B9A47, Montserrat */}
       <div
-        className={`fixed top-0 right-0 h-full w-full sm:w-4/5 sm:max-w-md bg-stone-100 shadow-md z-40 transform transition-transform duration-300 ${
+        className={`fixed top-0 right-0 h-full w-full sm:w-4/5 sm:max-w-md bg-white shadow-xl z-40 transform transition-transform duration-300 border-l border-[#3D1A00]/10 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         } overflow-y-auto`}
       >
         <div className="flex flex-col p-4 sm:p-6 space-y-6 text-base sm:text-lg">
           {/* Header */}
-          <div className="flex justify-between items-center text-xl sm:text-2xl font-semibold">
-            <span>Пошук</span>
+          <div className="flex justify-between items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Image
+                src="/images/dark-theme/search.svg"
+                alt=""
+                width={20}
+                height={20}
+                className="h-5 w-5 brightness-0 opacity-80"
+              />
+              <span className="text-xl sm:text-2xl font-semibold font-['Montserrat'] text-[#3D1A00] uppercase tracking-tight">
+                Пошук
+              </span>
+            </div>
             <button
-              className="hover:text-[#8C7461] text-2xl"
+              className="w-10 h-10 flex items-center justify-center rounded-lg text-[#3D1A00] hover:bg-[#3D1A00]/10 transition-colors text-2xl leading-none font-['Montserrat']"
               onClick={() => setIsOpen(false)}
+              aria-label="Закрити пошук"
             >
               ×
             </button>
@@ -324,88 +336,56 @@ export default function SearchSidebar({
 
           {/* Search Input */}
           <div className="relative">
-            <div className="relative flex items-center">
-              {/* Search Icon */}
-              <svg
-                className="absolute left-3 w-5 h-5 text-stone-400 pointer-events-none"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-              
-          <input
+            <div className="relative flex items-center bg-white border-2 border-[#3D1A00]/20 rounded-xl focus-within:ring-2 focus-within:ring-[#3D1A00]/20 focus-within:border-[#3D1A00]/50 transition-all">
+              <Image
+                src="/images/dark-theme/search.svg"
+                alt=""
+                width={20}
+                height={20}
+                className="absolute left-4 w-5 h-5 pointer-events-none brightness-0 opacity-60"
+              />
+              <input
                 ref={inputRef}
-            type="text"
-            value={query}
+                type="text"
+                value={query}
                 onChange={(e) => handleQueryChange(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onFocus={() => query.length >= 2 && setShowSuggestions(true)}
-            placeholder="Введіть запит..."
-                className="pl-10 pr-10 py-3 border text-lg rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#8C7461] focus:border-transparent bg-white text-black border-stone-300 placeholder-stone-500 transition-all"
-          />
-              
-              {/* Clear Button */}
+                placeholder="Введіть запит для пошуку"
+                className="pl-12 pr-12 py-3.5 bg-transparent text-lg rounded-xl w-full focus:outline-none text-[#3D1A00] placeholder-[#3D1A00]/50 font-['Montserrat'] transition-all"
+              />
               {query && (
                 <button
                   type="button"
                   onClick={handleClearInput}
-                  className="absolute right-3 p-1 text-stone-400 hover:text-stone-600 transition-colors"
+                  className="absolute right-3 p-1 text-[#3D1A00]/50 hover:text-[#3D1A00] transition-colors"
                   aria-label="Очистити"
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               )}
             </div>
-            
-            {/* Autocomplete Suggestions */}
             {showSuggestions && autocompleteSuggestions.length > 0 && (
               <div
                 ref={suggestionsRef}
-                className="absolute z-50 w-full mt-1 bg-white border border-stone-300 rounded-lg shadow-xl max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-200"
+                className="absolute z-50 w-full mt-1 bg-white border border-[#3D1A00]/15 rounded-xl shadow-lg max-h-60 overflow-y-auto"
               >
                 {autocompleteSuggestions.map((suggestion, index) => (
                   <button
                     key={index}
                     type="button"
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className={`w-full text-left px-4 py-2.5 transition-colors text-black ${
+                    className={`w-full text-left px-4 py-2.5 font-['Montserrat'] transition-colors rounded-lg ${
                       index === selectedSuggestionIndex
-                        ? "bg-stone-200"
-                        : "hover:bg-stone-100"
+                        ? "bg-[#8B9A47]/15 text-[#3D1A00]"
+                        : "text-[#3D1A00] hover:bg-[#3D1A00]/5"
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <svg
-                        className="w-4 h-4 text-stone-400 flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
+                      <svg className="w-4 h-4 text-[#3D1A00]/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
                       <span>{highlightText(suggestion, query)}</span>
                     </div>
@@ -417,98 +397,69 @@ export default function SearchSidebar({
 
           {/* Search Results */}
           <div className="mt-4">
-            {/* Loading Skeleton */}
             {loading && (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="flex items-center gap-4 animate-pulse">
-                    <div className="w-16 h-16 bg-stone-200 rounded"></div>
+                    <div className="w-16 h-16 bg-[#3D1A00]/10 rounded-lg"></div>
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-stone-200 rounded w-3/4"></div>
-                      <div className="h-3 bg-stone-200 rounded w-1/4"></div>
+                      <div className="h-4 bg-[#3D1A00]/10 rounded w-3/4"></div>
+                      <div className="h-3 bg-[#3D1A00]/10 rounded w-1/4"></div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Empty State */}
             {!loading && query && filteredProducts.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <svg
-                  className="w-16 h-16 text-stone-300 mb-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
+                <svg className="w-16 h-16 text-[#3D1A00]/20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p className="text-neutral-500 text-lg font-medium mb-2">
-                  Нічого не знайдено
-                </p>
-                <p className="text-neutral-400 text-sm">
-                  Спробуйте інший запит або перегляньте популярні товари
-                </p>
+                <p className="text-[#3D1A00]/70 text-lg font-medium font-['Montserrat'] mb-2">Нічого не знайдено</p>
+                <p className="text-[#3D1A00]/50 text-sm font-['Montserrat']">Спробуйте інший запит або перегляньте популярні товари</p>
               </div>
             )}
 
             {!loading && query && filteredProducts.length > 0 && (
               <>
                 <div className="mb-3 flex items-center justify-between">
-                  <span className="text-sm text-neutral-600 font-medium">
+                  <span className="text-sm text-[#3D1A00]/70 font-medium font-['Montserrat']">
                     Знайдено: {filteredProducts.length} {filteredProducts.length === 1 ? "товар" : "товарів"}
                   </span>
                 </div>
                 <ul className="flex flex-col gap-3">
-                {filteredProducts.map((product) => (
-                  <li key={product.id}>
-                    <Link
-                      href={`/product/${product.id}`}
-                        onClick={() => {
-                          handleSearch(query);
-                          setIsOpen(false);
-                        }}
-                        className="flex items-center gap-4 p-3 rounded-lg transition-all duration-200 group border border-transparent"
-                    >
+                  {filteredProducts.map((product) => (
+                    <li key={product.id}>
+                      <Link
+                        href={`/product/${product.slug ?? product.id}`}
+                        onClick={() => { handleSearch(query); setIsOpen(false); }}
+                        className="flex items-center gap-4 p-3 rounded-xl border border-[#3D1A00]/10 hover:border-[#3D1A00]/20 hover:bg-[#3D1A00]/5 transition-all duration-200 group"
+                      >
                         <div className="relative flex-shrink-0">
-                      <Image
-                        src={getProductImageSrc(product.first_media, "https://placehold.co/64x64")}
-                        alt={product.name}
-                        width={64}
-                        height={64}
-                            className="w-16 h-16 object-cover rounded border group-hover:scale-105 transition-transform duration-200"
-                      />
+                          <Image
+                            src={getProductImageSrc(product.first_media, "https://placehold.co/64x64")}
+                            alt={product.name}
+                            width={64}
+                            height={64}
+                            className="w-16 h-16 object-cover rounded-lg border border-[#3D1A00]/10 group-hover:scale-[1.02] transition-transform duration-200"
+                          />
                         </div>
                         <div className="flex flex-col flex-1 min-w-0">
-                          <span className="font-medium text-black group-hover:text-[#8C7461] transition-colors">
+                          <span className="font-['Montserrat'] font-medium text-[#3D1A00] group-hover:text-[#8B9A47] transition-colors">
                             {highlightText(product.name, query)}
                           </span>
-                          <span className="text-sm font-semibold text-[#8C7461] mt-0.5">
+                          <span className="text-sm font-semibold text-[#8B9A47] mt-0.5 font-['Montserrat']">
                             {product.price.toLocaleString()} ₴
-                        </span>
-                      </div>
-                        <svg
-                          className="w-5 h-5 text-stone-400 group-hover:text-[#8C7461] transition-colors flex-shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
+                          </span>
+                        </div>
+                        <svg className="w-5 h-5 text-[#3D1A00]/40 group-hover:text-[#8B9A47] transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               </>
             )}
 
@@ -518,16 +469,13 @@ export default function SearchSidebar({
                 {searchHistory.length > 0 && (
                   <div>
                     <div className="flex justify-between items-center mb-3">
-                      <h3 className="text-base sm:text-lg font-semibold text-black">
+                      <h3 className="text-base sm:text-lg font-semibold font-['Montserrat'] text-[#3D1A00] uppercase tracking-tight">
                         Недавні пошуки
                       </h3>
                       <button
                         type="button"
-                        onClick={() => {
-                          clearSearchHistory();
-                          setSearchHistory([]);
-                        }}
-                        className="text-xs text-neutral-500 hover:text-neutral-700 underline transition-colors"
+                        onClick={() => { clearSearchHistory(); setSearchHistory([]); }}
+                        className="text-xs font-['Montserrat'] text-[#3D1A00]/60 hover:text-[#3D1A00] underline transition-colors"
                       >
                         Очистити
                       </button>
@@ -538,7 +486,7 @@ export default function SearchSidebar({
                           key={index}
                           type="button"
                           onClick={() => handleSearch(item.query)}
-                          className="px-3 py-1.5 bg-white border border-stone-300 rounded-lg text-sm hover:bg-stone-200 hover:border-stone-400 transition-all duration-200 text-black"
+                          className="px-3 py-1.5 bg-white border border-[#3D1A00]/20 rounded-lg text-sm font-['Montserrat'] text-[#3D1A00] hover:bg-[#3D1A00]/5 hover:border-[#3D1A00]/30 transition-all duration-200"
                         >
                           {item.query}
                         </button>
@@ -547,11 +495,10 @@ export default function SearchSidebar({
                   </div>
                 )}
 
-                {/* Popular Searches */}
                 {popularSearches.length > 0 && (
                   <div>
                     <div className="mb-3">
-                      <h3 className="text-base sm:text-lg font-semibold text-black">
+                      <h3 className="text-base sm:text-lg font-semibold font-['Montserrat'] text-[#3D1A00] uppercase tracking-tight">
                         Популярні запити
                       </h3>
                     </div>
@@ -561,7 +508,7 @@ export default function SearchSidebar({
                           key={index}
                           type="button"
                           onClick={() => handleSearch(search)}
-                          className="px-3 py-1.5 bg-stone-200 border border-stone-300 rounded-lg text-sm hover:bg-stone-300 hover:border-stone-400 transition-all duration-200 text-black"
+                          className="px-3 py-1.5 bg-[#3D1A00]/5 border border-[#3D1A00]/15 rounded-lg text-sm font-['Montserrat'] text-[#3D1A00] hover:bg-[#3D1A00]/10 transition-all duration-200"
                         >
                           {search}
                         </button>
@@ -570,10 +517,9 @@ export default function SearchSidebar({
                   </div>
                 )}
 
-                {/* Popular Products */}
                 <div>
                   <div className="mb-3">
-                    <h3 className="text-base sm:text-lg font-semibold text-black">
+                    <h3 className="text-base sm:text-lg font-semibold font-['Montserrat'] text-[#3D1A00] uppercase tracking-tight">
                       Люди часто цікавляться
                     </h3>
                   </div>
@@ -581,10 +527,10 @@ export default function SearchSidebar({
                     <div className="space-y-4">
                       {[1, 2, 3].map((i) => (
                         <div key={i} className="flex items-center gap-4 animate-pulse">
-                          <div className="w-16 h-16 bg-stone-200 rounded"></div>
+                          <div className="w-16 h-16 bg-[#3D1A00]/10 rounded-lg"></div>
                           <div className="flex-1 space-y-2">
-                            <div className="h-4 bg-stone-200 rounded w-3/4"></div>
-                            <div className="h-3 bg-stone-200 rounded w-1/4"></div>
+                            <div className="h-4 bg-[#3D1A00]/10 rounded w-3/4"></div>
+                            <div className="h-3 bg-[#3D1A00]/10 rounded w-1/4"></div>
                           </div>
                         </div>
                       ))}
@@ -594,39 +540,29 @@ export default function SearchSidebar({
                       {popularProducts.map((product) => (
                         <li key={product.id}>
                           <Link
-                            href={`/product/${product.id}`}
+                            href={`/product/${product.slug ?? product.id}`}
                             onClick={() => setIsOpen(false)}
-                            className="flex items-center gap-4 p-3 rounded-lg transition-all duration-200 group border border-transparent"
+                            className="flex items-center gap-4 p-3 rounded-xl border border-[#3D1A00]/10 hover:border-[#3D1A00]/20 hover:bg-[#3D1A00]/5 transition-all duration-200 group"
                           >
                             <div className="relative flex-shrink-0">
-                            <Image
-                              src={getProductImageSrc(product.first_media, "https://placehold.co/64x64")}
-                              alt={product.name}
-                              width={64}
-                              height={64}
-                                className="w-16 h-16 object-cover rounded border group-hover:scale-105 transition-transform duration-200"
-                            />
+                              <Image
+                                src={getProductImageSrc(product.first_media, "https://placehold.co/64x64")}
+                                alt={product.name}
+                                width={64}
+                                height={64}
+                                className="w-16 h-16 object-cover rounded-lg border border-[#3D1A00]/10 group-hover:scale-[1.02] transition-transform duration-200"
+                              />
                             </div>
                             <div className="flex flex-col flex-1 min-w-0">
-                              <span className="font-medium text-black group-hover:text-[#8C7461] transition-colors">
+                              <span className="font-['Montserrat'] font-medium text-[#3D1A00] group-hover:text-[#8B9A47] transition-colors">
                                 {product.name}
                               </span>
-                              <span className="text-sm font-semibold text-[#8C7461] mt-0.5">
+                              <span className="text-sm font-semibold text-[#8B9A47] mt-0.5 font-['Montserrat']">
                                 {product.price.toLocaleString()} ₴
                               </span>
                             </div>
-                            <svg
-                              className="w-5 h-5 text-stone-400 group-hover:text-[#8C7461] transition-colors flex-shrink-0"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 5l7 7-7 7"
-                              />
+                            <svg className="w-5 h-5 text-[#3D1A00]/40 group-hover:text-[#8B9A47] transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                           </Link>
                         </li>
@@ -634,9 +570,7 @@ export default function SearchSidebar({
                     </ul>
                   ) : (
                     <div className="text-center py-8">
-                      <p className="text-neutral-400 text-sm">
-                        Введіть запит для пошуку товарів
-                    </p>
+                      <p className="text-[#3D1A00]/50 text-sm font-['Montserrat']">Введіть запит для пошуку</p>
                     </div>
                   )}
                 </div>

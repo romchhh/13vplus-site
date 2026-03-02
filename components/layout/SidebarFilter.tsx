@@ -13,11 +13,6 @@ interface Category {
   name: string;
 }
 
-interface Color {
-  color: string;
-  hex?: string;
-}
-
 interface SidebarFilterProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -25,17 +20,12 @@ interface SidebarFilterProps {
   setOpenAccordion: React.Dispatch<React.SetStateAction<number | null>>;
   sortOrder: "recommended" | "newest" | "asc" | "desc" | "sale";
   setSortOrder: React.Dispatch<React.SetStateAction<"recommended" | "newest" | "asc" | "desc" | "sale">>;
-  selectedSizes: string[];
-  setSelectedSizes: React.Dispatch<React.SetStateAction<string[]>>;
   minPrice: number | null;
   maxPrice: number | null;
   setMinPrice: React.Dispatch<React.SetStateAction<number | null>>;
   setMaxPrice: React.Dispatch<React.SetStateAction<number | null>>;
-  selectedColors: string[];
-  setSelectedColors: React.Dispatch<React.SetStateAction<string[]>>;
   selectedCategories: number[];
   setSelectedCategories: React.Dispatch<React.SetStateAction<number[]>>;
-  colors: Color[];
   categories: Category[];
   products: Product[];
   filteredCount: number;
@@ -46,26 +36,18 @@ export default function SidebarFilter({
   setIsOpen,
   sortOrder,
   setSortOrder,
-  selectedSizes,
-  setSelectedSizes,
   minPrice,
   maxPrice,
   setMinPrice,
   setMaxPrice,
-  selectedColors,
-  setSelectedColors,
   selectedCategories,
   setSelectedCategories,
-  colors,
   categories,
   products,
   filteredCount,
 }: SidebarFilterProps) {
-  const availableSizes = ["O/S", "160 cm", "XXS", "XS", "XS/S", "S", "M", "M/L", "L", "L/XL"];
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     sort: true,
-    size: true,
-    color: true,
     category: true,
     price: true,
   });
@@ -88,18 +70,6 @@ export default function SidebarFilter({
     if (minPrice === null) setLocalMinPrice(priceRange.min);
     if (maxPrice === null) setLocalMaxPrice(priceRange.max);
   }, [priceRange, minPrice, maxPrice]);
-
-  const toggleSize = (size: string) => {
-    setSelectedSizes((prev) =>
-      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
-    );
-  };
-
-  const toggleColor = (color: string) => {
-    setSelectedColors((prev) =>
-      prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
-    );
-  };
 
   const toggleCategory = (categoryId: number) => {
     setSelectedCategories((prev) =>
@@ -126,8 +96,6 @@ export default function SidebarFilter({
   };
 
   const clearAllFilters = () => {
-    setSelectedSizes([]);
-    setSelectedColors([]);
     setSelectedCategories([]);
     setMinPrice(null);
     setMaxPrice(null);
@@ -137,13 +105,11 @@ export default function SidebarFilter({
 
   const hasActiveFilters = useMemo(() => {
     return (
-      selectedSizes.length > 0 ||
-      selectedColors.length > 0 ||
       selectedCategories.length > 0 ||
       minPrice !== null ||
       maxPrice !== null
     );
-  }, [selectedSizes, selectedColors, selectedCategories, minPrice, maxPrice]);
+  }, [selectedCategories, minPrice, maxPrice]);
 
   return (
     <div className="relative z-50">
@@ -264,100 +230,6 @@ export default function SidebarFilter({
                 />
                 <span className="text-base font-['Montserrat'] text-gray-700 group-hover:text-gray-900">Спочатку акційні</span>
               </label>
-            </div>
-          </div>
-
-          {/* Size Section */}
-          <div className="border-b border-gray-200 pb-6">
-            <button
-              onClick={() => toggleSection("size")}
-              className="w-full flex items-center justify-between text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4 hover:text-gray-700 transition-colors"
-            >
-              <span>РОЗМІР</span>
-              <svg
-                className={`w-5 h-5 transition-transform duration-200 ${
-                  openSections.size ? "rotate-180" : ""
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
-            <div
-              className={`flex flex-wrap gap-2 overflow-hidden transition-all duration-300 ${
-                openSections.size ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              {availableSizes.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => toggleSize(size)}
-                  className={`px-4 py-2 text-sm font-['Montserrat'] border-2 transition-all duration-200 rounded ${
-                    selectedSizes.includes(size)
-                      ? "bg-gray-900 text-white border-gray-900 scale-105 shadow-md"
-                      : "bg-white text-gray-900 border-gray-300 hover:border-gray-900 hover:scale-105"
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Color Section */}
-          <div className="border-b border-gray-200 pb-6">
-            <button
-              onClick={() => toggleSection("color")}
-              className="w-full flex items-center justify-between text-lg font-bold font-['Montserrat'] uppercase tracking-wide text-gray-900 mb-4 hover:text-gray-700 transition-colors"
-            >
-              <span>КОЛІР</span>
-              <svg
-                className={`w-5 h-5 transition-transform duration-200 ${
-                  openSections.color ? "rotate-180" : ""
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
-            <div
-              className={`flex flex-wrap gap-3 overflow-hidden transition-all duration-300 ${
-                openSections.color ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              {colors.map((colorItem, index) => {
-                const isSelected = selectedColors.includes(colorItem.color);
-                return (
-                  <button
-                    key={index}
-                    onClick={() => toggleColor(colorItem.color)}
-                    className={`w-10 h-10 rounded-full border-2 transition-all duration-200 ${
-                      isSelected
-                        ? "border-gray-900 scale-110 ring-2 ring-gray-900 ring-offset-2"
-                        : "border-gray-300 hover:border-gray-600 hover:scale-105"
-                    }`}
-                    style={{
-                      backgroundColor: colorItem.hex || "#ccc",
-                    }}
-                    title={colorItem.color}
-                    aria-label={`Обрати колір ${colorItem.color}`}
-                  />
-                );
-              })}
             </div>
           </div>
 

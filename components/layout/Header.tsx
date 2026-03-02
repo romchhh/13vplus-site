@@ -3,16 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAppContext } from "@/lib/GeneralProvider";
 import { useBasket } from "@/lib/BasketProvider";
-import { useWishlist } from "@/lib/WishlistProvider";
 import { useCategories } from "@/lib/CategoriesProvider";
 import SidebarBasket from "./SidebarBasket";
 import SidebarSearch from "./SidebarSearch";
 import SidebarMenu from "./SidebarMenu";
-import LoginModal from "@/components/auth/LoginModal";
 
 interface Subcategory {
   id: number;
@@ -31,14 +28,8 @@ export default function Header() {
 
   const router = useRouter();
   const pathname = usePathname();
-  const { data: session } = useSession();
   const { items } = useBasket();
-  const { wishlist, setWishlist } = useWishlist();
-  const wishlistRef = useRef(wishlist);
-  wishlistRef.current = wishlist;
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, anchor: string) => {
     e.preventDefault();
@@ -61,39 +52,6 @@ export default function Header() {
     }
   };
 
-  useEffect(() => {
-    if (!session?.user?.email) return;
-    const localIds = wishlistRef.current;
-    fetch("/api/users/wishlist")
-      .then((res) => (res.ok ? res.json() : { productIds: [] }))
-      .then(async (data) => {
-        const serverIds = Array.isArray(data?.productIds) ? data.productIds : [];
-        const toAdd = localIds.filter((id: number) => !serverIds.includes(id));
-        for (const productId of toAdd) {
-          try {
-            await fetch("/api/users/wishlist", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ productId }),
-            });
-          } catch {
-            // ignore
-          }
-        }
-        if (toAdd.length > 0) {
-          const res2 = await fetch("/api/users/wishlist");
-          const data2 = res2.ok ? await res2.json() : { productIds: serverIds };
-          const ids = Array.isArray(data2?.productIds) ? data2.productIds : serverIds;
-          setWishlist(ids);
-        } else {
-          setWishlist(serverIds);
-        }
-      })
-      .catch(() => {});
-    // Тільки при зміні сесії (вхід/вихід), не при кожному рендері
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.email]);
-  
   // Use categories from context instead of fetching
   const { categories } = useCategories();
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -110,6 +68,18 @@ export default function Header() {
   const infoRef = useRef<HTMLDivElement | null>(null);
   const [categoryLeftPositions, setCategoryLeftPositions] = useState<Map<number, number>>(new Map());
   const [infoLeftPosition, setInfoLeftPosition] = useState<number>(0);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  const isHeroMode = pathname === "/" && !isScrolled;
+  // Коли бургер відкритий — хедер завжди білий (навіть якщо був прозорий)
+  const headerTransparent = isHeroMode && !isSidebarOpen;
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); // init
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -197,7 +167,9 @@ export default function Header() {
   return (
     <>
       <header
-        className="max-w-[1920px] mx-auto fixed top-0 left-1/2 transform -translate-x-1/2 w-full z-50 bg-black text-white shadow-md transition-all duration-300"
+        className={`max-w-[1920px] mx-auto fixed top-0 left-1/2 transform -translate-x-1/2 w-full z-50 transition-all duration-300 ${
+          headerTransparent ? "bg-transparent text-white shadow-none" : "bg-white text-[#3D1A00] shadow-md"
+        }`}
         onMouseLeave={() => {
           if (!pinnedCatalog) {
             hoverTimeout.current = setTimeout(() => {
@@ -207,16 +179,39 @@ export default function Header() {
         }}
       >
         {/* === WRAPPER: everything inside shares same bg and styles === */}
-        <div className="w-full transition-all duration-300 shadow-md">
-          {/* Top nav */}
-          <div className="hidden lg:flex justify-between items-center h-16 px-10">
+        <div className={`w-full transition-all duration-300 ${headerTransparent ? "shadow-none" : "shadow-md"}`}>
+          {/* Top info bar — роздільна лінія тільки в межах контенту (не на весь екран) */}
+          <div className={`hidden lg:flex justify-center transition-colors ${headerTransparent ? "bg-[#FFF9F0]" : "bg-[#D7D799]"}`}>
+            <div className="w-full max-w-[1920px] mx-auto px-10 flex justify-between items-center h-11 text-xs font-['Montserrat'] text-[#3D1A00] border-b border-[#3D1A00]/20">
+              <span>Офіційний представник бренду Choice в Україні</span>
+              <div className="flex items-center gap-4">
+                <Link href="/contacts" className="hover:opacity-80 transition-colors">Зв&apos;язатися з Choice</Link>
+                <a href="https://www.instagram.com/my_choice_mari" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-colors">Instagram</a>
+                <a href="https://t.me/my_choice_mari" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-colors">Telegram</a>
+              </div>
+            </div>
+          </div>
+          {/* Top info bar — mobile */}
+          <div className={`lg:hidden flex justify-center transition-colors ${headerTransparent ? "bg-[#FFF9F0]" : "bg-[#D7D799]"}`}>
+            <div className="w-full max-w-[1920px] mx-auto flex justify-between items-center min-h-10 py-2.5 px-3 sm:px-4 text-[10px] sm:text-xs font-['Montserrat'] text-[#3D1A00] border-b border-[#3D1A00]/20">
+              <span className="truncate mr-2 max-w-[55%] sm:max-w-none">Офіційний представник бренду Choice в Україні</span>
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <Link href="/contacts" className="hover:opacity-80 transition-colors whitespace-nowrap">Зв&apos;язатися з Choice</Link>
+                <a href="https://www.instagram.com/my_choice_mari" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-colors whitespace-nowrap">Instagram</a>
+                <a href="https://t.me/my_choice_mari" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-colors whitespace-nowrap">Telegram</a>
+              </div>
+            </div>
+          </div>
+          {/* Top nav — трохи вищий */}
+          <div className="hidden lg:flex justify-center">
+            <div className="w-full max-w-[1920px] mx-auto flex justify-between items-center h-20 px-10">
             <Link href="/" className="flex items-center pt-1">
               <Image
-                height={20}
-                width={75}
-                alt="logo"
-                src="/images/tg_image_3614117882.png"
-                className="h-5 w-auto"
+                src={headerTransparent ? "/images/logos/choice-logo-white.png" : "/images/logos/choice-logo-dark.png"}
+                alt="Choice"
+                width={120}
+                height={32}
+                className="h-8 w-auto"
               />
             </Link>
 
@@ -248,11 +243,11 @@ export default function Header() {
                 >
                   <button
                     onClick={() =>
-                      (window.location.href = `/catalog/${encodeURIComponent(
-                        category.name
-                      )}`)
+                      (window.location.href = `/catalog/${category.slug || encodeURIComponent(category.name)}`)
                     }
-                    className="cursor-pointer whitespace-nowrap text-xs font-bold font-['Montserrat'] text-white hover:bg-white hover:text-black hover:px-3 hover:py-1.5 hover:rounded-full transition-all duration-200"
+                    className={`cursor-pointer whitespace-nowrap text-xs font-bold font-['Montserrat'] hover:px-3 hover:py-1.5 hover:rounded-full transition-all duration-200 ${
+                      headerTransparent ? "text-white hover:bg-white hover:text-[#3D1A00]" : "text-[#3D1A00] hover:bg-[#3D1A00] hover:text-white"
+                    }`}
                   >
                     {category.name}
                   </button>
@@ -261,7 +256,7 @@ export default function Header() {
                   {hoveredCategoryId === category.id &&
                     subcategories.length > 0 && (
                       <div
-                        className="fixed top-16 left-0 w-full bg-white shadow-md px-4 py-4 z-50 transition-opacity duration-200 opacity-100 pointer-events-auto"
+                        className="fixed top-[7.75rem] left-0 w-full bg-white shadow-md px-4 py-4 z-50 transition-opacity duration-200 opacity-100 pointer-events-auto"
                       >
                         <div className="max-w-[1920px] mx-auto w-full flex flex-col gap-1" style={{ paddingLeft: `${categoryLeftPositions.get(category.id) || 0}px` }}>
                         {subcategories.map((subcat) => (
@@ -270,14 +265,14 @@ export default function Header() {
                             href={`/catalog?subcategory=${encodeURIComponent(
                               subcat.name
                             )}`}
-                              className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
+                              className="text-gray-600 hover:text-[#3D1A00] text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
                           >
                             {subcat.name}
                           </Link>
                         ))}
                           <Link
-                            href={`/catalog/${encodeURIComponent(category.name)}`}
-                            className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200 underline mt-2"
+                            href={`/catalog/${category.slug || encodeURIComponent(category.name)}`}
+                            className="text-gray-600 hover:text-[#3D1A00] text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200 underline mt-2"
                           >
                             Переглянути всі
                           </Link>
@@ -301,14 +296,14 @@ export default function Header() {
                   }, 200); // delay in ms
                 }}
               >
-                <span className={`cursor-default whitespace-nowrap text-xs font-bold font-['Montserrat'] text-white hover:bg-white hover:text-black hover:px-3 hover:py-1.5 hover:rounded-full transition-all duration-200 ${
-                  infoMenuOpen ? "bg-white text-black rounded-full px-3 py-1.5" : ""
-                }`}>
+                <span className={`cursor-default whitespace-nowrap text-xs font-bold font-['Montserrat'] hover:px-3 hover:py-1.5 hover:rounded-full transition-all duration-200 ${
+                  headerTransparent ? "text-white hover:bg-white hover:text-[#3D1A00]" : "text-[#3D1A00] hover:bg-[#3D1A00] hover:text-white"
+                } ${infoMenuOpen ? (headerTransparent ? "bg-white text-[#3D1A00] rounded-full px-3 py-1.5" : "bg-[#3D1A00] text-white rounded-full px-3 py-1.5") : ""}`}>
                   ІНФО
                 </span>
 
                 <div
-                  className={`fixed top-16 left-0 w-full bg-white shadow-md px-4 py-2 z-50 transition-opacity duration-200 ${
+                  className={`fixed top-[7.75rem] left-0 w-full bg-white shadow-md px-4 py-2 z-50 transition-opacity duration-200 ${
                     infoMenuOpen
                       ? "opacity-100 pointer-events-auto"
                       : "opacity-0 pointer-events-none"
@@ -316,36 +311,34 @@ export default function Header() {
                 >
                   <div className="max-w-[1920px] mx-auto w-full flex flex-col gap-1" style={{ paddingLeft: `${infoLeftPosition}px` }}>
                     <Link
-                      href="/#about"
-                      onClick={(e) => handleAnchorClick(e, "#about")}
-                      className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
+                      href="/info#about"
+                      className="text-gray-600 hover:text-[#3D1A00] text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
                     >
-                      Про нас
+                      Про бренд
                     </Link>
                     <Link
-                      href="/#contacts"
-                      onClick={(e) => handleAnchorClick(e, "#contacts")}
-                      className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
+                      href="/info#partnership"
+                      className="text-gray-600 hover:text-[#3D1A00] text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
+                    >
+                      Партнерство
+                    </Link>
+                    <Link
+                      href="/info#delivery"
+                      className="text-gray-600 hover:text-[#3D1A00] text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
+                    >
+                      Доставка та оплата
+                    </Link>
+                    <Link
+                      href="/info#faq"
+                      className="text-gray-600 hover:text-[#3D1A00] text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
+                    >
+                      FAQ
+                    </Link>
+                    <Link
+                      href="/contacts"
+                      className="text-gray-600 hover:text-[#3D1A00] text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
                     >
                       Контакти
-                    </Link>
-                    <Link
-                      href="/info"
-                      className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
-                    >
-                      Доставка
-                    </Link>
-                    <Link
-                      href="/info"
-                      className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
-                    >
-                      Оплата
-                    </Link>
-                    <Link
-                      href="/info#obmin-povernennya"
-                      className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
-                    >
-                      Повернення та обмін
                     </Link>
                   </div>
                 </div>
@@ -356,134 +349,50 @@ export default function Header() {
             <div className="flex items-center gap-4">
               <button 
                 onClick={() => setIsSearchOpen(true)} 
-                className="flex items-center bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded-full px-4 py-2 transition-colors"
+                className="flex items-center rounded-full px-4 py-2 transition-colors bg-[#D7D799] hover:opacity-90"
               >
                 <Image
-                  className="cursor-pointer brightness-0 invert h-5 w-5 mr-2"
+                  className="cursor-pointer h-5 w-5 mr-2 brightness-0"
                   height="20"
                   width="20"
                   alt="search icon"
                   src="/images/dark-theme/search.svg"
+                  style={{ filter: "brightness(0) saturate(100%) invert(14%) sepia(99%) saturate(2044%) hue-rotate(11deg) brightness(95%) contrast(101%)" }}
                 />
-                <span className="text-white text-sm font-['Montserrat']">Пошук</span>
+                <span className="text-sm font-['Montserrat'] text-[#3D1A00]">Пошук</span>
               </button>
 
-              {session ? (
-                <Link href="/profile?tab=wishlist" className="relative flex items-center" title="Вішлист">
-                  <svg
-                    className="w-5 h-5 text-white cursor-pointer"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                    />
-                  </svg>
-                  {wishlist.length > 0 && (
-                    <span className="absolute -bottom-0.5 -right-1 text-white text-xs font-['Montserrat'] font-medium">
-                      {wishlist.length > 99 ? "99+" : wishlist.length}
-                    </span>
-                  )}
-                </Link>
-              ) : (
-                <button
-                  onClick={() => setIsLoginModalOpen(true)}
-                  className="relative flex items-center"
-                  title="Вішлист (увійдіть)"
-                >
-                  <svg
-                    className="w-5 h-5 text-white cursor-pointer"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                    />
-                  </svg>
-                  {wishlist.length > 0 && (
-                    <span className="absolute -bottom-0.5 -right-1 text-white text-xs font-['Montserrat'] font-medium">
-                      {wishlist.length > 99 ? "99+" : wishlist.length}
-                    </span>
-                  )}
-                </button>
-              )}
-              
-              {/* Profile Icon */}
-              {session ? (
-                <Link href="/profile" className="flex items-center relative">
-                  <div className="relative">
-                    <svg
-                      className="w-5 h-5 text-white cursor-pointer"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                    <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border-2 border-black rounded-full"></span>
-                  </div>
-                </Link>
-              ) : (
-                <button
-                  onClick={() => setIsLoginModalOpen(true)}
-                  className="flex items-center"
-                >
-                  <svg
-                    className="w-5 h-5 text-white cursor-pointer"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </button>
-              )}
-              
               <button
-                className="cursor-pointer relative flex items-center"
+                className="cursor-pointer relative flex items-center justify-center p-2 min-w-[3rem] min-h-[3rem]"
                 onClick={() => setIsBasketOpen(!isBasketOpen)}
               >
                 <Image
-                  className="brightness-0 invert h-5 w-5"
-                  height="20"
-                  width="20"
+                  className="h-7 w-7"
+                  height="28"
+                  width="28"
                   alt="shopping basket"
                   src="/images/light-theme/cart.svg"
+                  style={{ filter: headerTransparent ? "brightness(0) invert(1)" : "brightness(0) saturate(100%) invert(14%) sepia(99%) saturate(2044%) hue-rotate(11deg) brightness(95%) contrast(101%)" }}
                 />
                 {totalItems > 0 && (
-                  <span className="absolute -bottom-0.5 -right-1 text-white text-xs font-['Montserrat'] font-medium">
+                  <span className="absolute top-0 right-0 min-w-[1.25rem] h-5 px-1 flex items-center justify-center text-white text-sm font-['Montserrat'] font-bold bg-[#8C7461] rounded-full leading-none">
                     {totalItems > 99 ? "99+" : totalItems}
                   </span>
                 )}
               </button>
             </div>
+            </div>
           </div>
         </div>
 
         {/* Mobile Header */}
-        <div className="lg:hidden w-full h-14 relative overflow-hidden px-4 flex items-center justify-between bg-black text-white shadow-md transition-all duration-300">
+        <div className={`lg:hidden w-full h-16 relative overflow-hidden px-4 flex items-center justify-between transition-all duration-300 ${
+          headerTransparent ? "bg-transparent text-white shadow-none" : "bg-white text-[#3D1A00] shadow-md"
+        }`}>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="relative w-7 h-7 flex items-center justify-center text-white"
+              className={`relative w-7 h-7 flex items-center justify-center ${headerTransparent ? "text-white" : "text-[#3D1A00]"}`}
             >
               {isSidebarOpen ? (
                 <svg
@@ -533,11 +442,11 @@ export default function Header() {
               }}
             >
               <Image
-                height="18"
-                width="65"
-                alt="logo"
-                src="/images/tg_image_3614117882.png"
-                className="h-[18px] w-auto"
+                src={headerTransparent ? "/images/logos/choice-logo-white.png" : "/images/logos/choice-logo-dark.png"}
+                alt="Choice"
+                width={100}
+                height={26}
+                className="h-6 w-auto"
               />
             </Link>
           </div>
@@ -545,119 +454,33 @@ export default function Header() {
           <div className="flex items-center gap-3 ml-auto">
             <button 
               onClick={() => setIsSearchOpen(true)} 
-              className="flex items-center bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded-full px-3 py-1.5 transition-colors"
+              className="flex items-center rounded-full px-3 py-1.5 transition-colors bg-[#D7D799] hover:opacity-90"
             >
               <Image
                 height="18"
                 width="18"
                 alt="search icon"
                 src="/images/dark-theme/search.svg"
-                className="brightness-0 invert h-[18px] w-[18px] mr-1.5"
+                className="h-[18px] w-[18px] mr-1.5 brightness-0"
+                style={{ filter: "brightness(0) saturate(100%) invert(14%) sepia(99%) saturate(2044%) hue-rotate(11deg) brightness(95%) contrast(101%)" }}
               />
-              <span className="text-white text-xs font-['Montserrat']">Пошук</span>
+              <span className="text-xs font-['Montserrat'] text-[#3D1A00]">Пошук</span>
             </button>
-            {session ? (
-              <Link href="/profile?tab=wishlist" className="relative flex items-center" title="Вішлист">
-                <svg
-                  className="w-5 h-5 text-white cursor-pointer"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                  />
-                </svg>
-                {wishlist.length > 0 && (
-                  <span className="absolute -bottom-0.5 -right-1 text-white text-xs font-['Montserrat'] font-medium">
-                    {wishlist.length > 99 ? "99+" : wishlist.length}
-                  </span>
-                )}
-              </Link>
-            ) : (
-              <button
-                onClick={() => setIsLoginModalOpen(true)}
-                className="relative flex items-center"
-                title="Вішлист (увійдіть)"
-              >
-                <svg
-                  className="w-5 h-5 text-white cursor-pointer"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                  />
-                </svg>
-                {wishlist.length > 0 && (
-                  <span className="absolute -bottom-0.5 -right-1 text-white text-xs font-['Montserrat'] font-medium">
-                    {wishlist.length > 99 ? "99+" : wishlist.length}
-                  </span>
-                )}
-              </button>
-            )}
-            
-            {/* Profile Icon Mobile */}
-            {session ? (
-              <Link href="/profile" className="flex items-center relative">
-                <div className="relative">
-                  <svg
-                    className="w-5 h-5 text-white cursor-pointer"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                  <span className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 bg-green-500 border-2 border-black rounded-full"></span>
-                </div>
-              </Link>
-            ) : (
-              <button
-                onClick={() => setIsLoginModalOpen(true)}
-                className="flex items-center"
-              >
-                <svg
-                  className="w-5 h-5 text-white cursor-pointer"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              </button>
-            )}
-            
+
             <button
               onClick={() => setIsBasketOpen(!isBasketOpen)}
-              className="relative flex items-center"
+              className="relative flex items-center justify-center p-2 min-w-[2.75rem] min-h-[2.75rem]"
             >
               <Image
-                height="20"
-                width="20"
+                height="24"
+                width="24"
                 alt="shopping basket"
                 src="/images/light-theme/cart.svg"
-                className="brightness-0 invert h-5 w-5"
+                className="h-6 w-6"
+                style={{ filter: headerTransparent ? "brightness(0) invert(1)" : "brightness(0) saturate(100%) invert(14%) sepia(99%) saturate(2044%) hue-rotate(11deg) brightness(95%) contrast(101%)" }}
               />
               {totalItems > 0 && (
-                <span className="absolute -bottom-0.5 -right-1 text-white text-xs font-['Montserrat'] font-medium">
+                <span className="absolute top-0 right-0 min-w-[1.125rem] h-4 px-0.5 flex items-center justify-center text-white text-xs font-['Montserrat'] font-bold bg-[#8C7461] rounded-full leading-none">
                   {totalItems > 99 ? "99+" : totalItems}
                 </span>
               )}
@@ -678,11 +501,6 @@ export default function Header() {
       <SidebarSearch
         isOpen={isSearchOpen}
         setIsOpen={setIsSearchOpen}
-      />
-      
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
       />
     </>
   );

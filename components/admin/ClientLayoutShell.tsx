@@ -31,14 +31,14 @@ export default function ClientLayoutShell({
   }
 
   return (
-    <div className="min-h-screen xl:flex">
+    <div className="min-h-screen xl:flex min-w-0 overflow-x-hidden">
       <AppSidebar />
       <Backdrop />
       <div
-        className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}
+        className={`flex-1 min-w-0 transition-all duration-300 ease-in-out ${mainContentMargin}`}
       >
         <AppHeader />
-        <div className="p-4 mx-auto max-w-[--breakpoint-2xl] md:p-6">
+        <div className="px-3 py-4 mx-auto max-w-[--breakpoint-2xl] sm:px-4 md:px-6 md:py-6 w-full overflow-x-hidden">
           {children}
         </div>
       </div>

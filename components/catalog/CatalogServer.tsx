@@ -2,9 +2,7 @@ import CatalogClient from "./CatalogClient";
 import { 
   sqlGetAllProducts, 
   sqlGetProductsByCategory, 
-  sqlGetProductsBySeason, 
   sqlGetProductsBySubcategoryName,
-  sqlGetAllColors,
   sqlGetAllCategories
 } from "@/lib/sql";
 import { CollectionPageStructuredData, BreadcrumbStructuredData } from "@/components/shared/StructuredData";
@@ -12,42 +10,31 @@ import { CollectionPageStructuredData, BreadcrumbStructuredData } from "@/compon
 interface Product {
   id: number;
   name: string;
+  slug?: string | null;
   price: number;
+  description?: string | null;
   first_media?: { url: string; type: string } | null;
-  sizes?: { size: string; stock: string }[];
-  color?: string;
+  discount_percentage?: number | null;
+  category_id?: number | null;
 }
 
 interface CatalogServerProps {
   category?: string | null;
-  season?: string | null;
   subcategory?: string | null;
 }
 
 async function getProducts(params: CatalogServerProps): Promise<Product[]> {
-  const { category, season, subcategory } = params;
+  const { category, subcategory } = params;
   
   try {
     if (subcategory) {
       return await sqlGetProductsBySubcategoryName(subcategory);
     } else if (category) {
       return await sqlGetProductsByCategory(category);
-    } else if (season) {
-      return await sqlGetProductsBySeason(season);
     }
     return await sqlGetAllProducts();
   } catch (error) {
     console.error("Error fetching products:", error);
-    return [];
-  }
-}
-
-async function getColors(): Promise<{ color: string; hex?: string }[]> {
-  try {
-    const data = await sqlGetAllColors();
-    return data;
-  } catch (error) {
-    console.error("Error fetching colors:", error);
     return [];
   }
 }
@@ -64,9 +51,8 @@ async function getCategories(): Promise<{ id: number; name: string }[]> {
 
 export default async function CatalogServer(props: CatalogServerProps) {
   // Parallel data fetching for better performance
-  const [products, colors, categories] = await Promise.all([
+  const [products, categories] = await Promise.all([
     getProducts(props),
-    getColors(),
     getCategories(),
   ]);
 
@@ -75,8 +61,8 @@ export default async function CatalogServer(props: CatalogServerProps) {
   const catalogUrl = `${baseUrl}/catalog${categoryName ? `?category=${encodeURIComponent(categoryName)}` : ""}`;
   const pageName = categoryName || "Каталог товарів";
   const pageDescription = categoryName
-    ? `Каталог товарів категорії "${categoryName}" від 13VPLUS. Якісний жіночий одяг з індивідуальним пошивом.`
-    : "Перегляньте весь каталог жіночого одягу від 13VPLUS. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.";
+    ? `Каталог товарів категорії "${categoryName}" від Choice. Якісний жіночий одяг з індивідуальним пошивом.`
+    : "Перегляньте весь каталог жіночого одягу від Choice. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.";
 
   const breadcrumbs = [
     { name: "Головна", url: baseUrl },
@@ -95,7 +81,7 @@ export default async function CatalogServer(props: CatalogServerProps) {
         category={categoryName || undefined}
       />
       <BreadcrumbStructuredData items={breadcrumbs} />
-      <CatalogClient initialProducts={products} colors={colors} categories={categories} />
+      <CatalogClient initialProducts={products} categories={categories} />
     </>
   );
 }

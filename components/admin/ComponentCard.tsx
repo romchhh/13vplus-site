@@ -15,23 +15,23 @@ const ComponentCard: React.FC<ComponentCardProps> = ({
 }) => {
   return (
     <div
-      className={`rounded-2xl border border-gray-300 bg-white shadow-sm ${className}`}
+      className={`rounded-xl sm:rounded-2xl border border-gray-300 bg-white shadow-sm ${className}`}
     >
       {/* Card Header */}
-      <div className="px-6 py-5 bg-gray-50 border-b border-gray-200">
-        <h3 className="text-base font-semibold text-gray-900">
+      <div className="px-4 py-4 sm:px-6 sm:py-5 bg-gray-50 border-b border-gray-200">
+        <h3 className="text-sm font-semibold text-gray-900 sm:text-base">
           {title}
         </h3>
         {desc && (
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-xs text-gray-600 sm:text-sm">
             {desc}
           </p>
         )}
       </div>
 
       {/* Card Body */}
-      <div className="p-4 sm:p-6 bg-white">
-        <div className="space-y-6">{children}</div>
+      <div className="p-3 sm:p-4 md:p-6 bg-white">
+        <div className="space-y-4 sm:space-y-6">{children}</div>
       </div>
     </div>
   );
