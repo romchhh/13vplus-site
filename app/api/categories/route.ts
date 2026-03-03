@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     // ?revalidate=1 — скинути кеш категорій (наприклад після add-categories або в адмінці)
     const url = request.nextUrl ?? new URL(request.url);
     if (url.searchParams.get("revalidate") === "1") {
-      revalidateTag("categories");
+      revalidateTag("categories", "max");
     }
     const categories = await sqlGetAllCategories();
     

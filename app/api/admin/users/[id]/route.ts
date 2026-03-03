@@ -89,7 +89,7 @@ export async function GET(
         }),
       ]);
       totalSpent = allItems.reduce((s, i) => s + Number(i.price) * i.quantity, 0);
-      firstOrderAt = firstOrder?.createdAt ?? null;
+      firstOrderAt = firstOrder?.createdAt.toISOString() ?? null;
     }
 
     return NextResponse.json({

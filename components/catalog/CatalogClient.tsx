@@ -16,7 +16,7 @@ interface Product {
   price: number;
   description?: string | null;
   first_media?: { url: string; type: string } | null;
-  discount_percentage?: number;
+  discount_percentage?: number | null;
   category_id?: number | null;
 }
 

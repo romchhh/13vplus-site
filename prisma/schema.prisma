@@ -6,9 +6,9 @@ generator client {
   output   = "../node_modules/.prisma/client"
 }
 
-// In Prisma 7, connection URL is set in prisma.config.ts (datasource.url)
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {

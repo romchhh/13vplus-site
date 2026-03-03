@@ -23,6 +23,7 @@ interface Product {
   has_lining?: boolean;
   lining_description?: string;
   fabric_composition?: string;
+  stock?: number;
 }
 
 interface UseProductsOptions {
