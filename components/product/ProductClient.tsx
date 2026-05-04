@@ -28,6 +28,7 @@ interface ProductClientProps {
     id: number;
     name: string;
     price: number;
+    wholesale_price?: number | null;
     old_price?: number | null;
     discount_percentage?: number | null;
     description?: string | null;
@@ -37,6 +38,14 @@ interface ProductClientProps {
     fabric_composition?: string | null;
     has_lining?: boolean;
     lining_description?: string | null;
+    weight_kg?: number | null;
+    length_cm?: number | null;
+    width_cm?: number | null;
+    height_cm?: number | null;
+    unit_type?: string | null;
+    currency_code?: string | null;
+    variant_property_name?: string | null;
+    extra_fields?: string | null;
   };
 }
 
@@ -370,7 +379,8 @@ export default function ProductClient({ product: initialProduct }: ProductClient
           {(product.colors && product.colors.length > 0) || relatedProducts.length > 0 ? (
             <div className="flex flex-col gap-3">
               <div className="text-sm md:text-base font-['Montserrat'] uppercase tracking-wide text-gray-900">
-                Колір: {selectedColor || (product.colors && product.colors[0]?.label) || ""}
+                {product.variant_property_name || "Колір"}:{" "}
+                {selectedColor || (product.colors && product.colors[0]?.label) || ""}
               </div>
               
               <div className="flex flex-wrap items-center gap-3">
@@ -644,6 +654,55 @@ export default function ProductClient({ product: initialProduct }: ProductClient
             isVisible={!!alertMessage}
             onClose={() => setAlertMessage(null)}
           />
+
+          {/* Характеристики (структура як у CRM) */}
+          <div className="w-full md:w-[522px] space-y-3 text-sm md:text-base font-['Montserrat'] text-gray-800">
+            {(product.weight_kg != null ||
+              product.length_cm != null ||
+              product.width_cm != null ||
+              product.height_cm != null ||
+              product.unit_type ||
+              product.currency_code) && (
+              <div>
+                <div className="mb-2 text-lg md:text-xl uppercase tracking-tight">
+                  параметри
+                </div>
+                <ul className="space-y-1 list-disc pl-5">
+                  {product.weight_kg != null && (
+                    <li>Вага: {Number(product.weight_kg)} кг</li>
+                  )}
+                  {(product.length_cm != null ||
+                    product.width_cm != null ||
+                    product.height_cm != null) && (
+                    <li>
+                      Габарити (Д×Ш×В):{" "}
+                      {[product.length_cm, product.width_cm, product.height_cm]
+                        .map((v) =>
+                          v != null && !Number.isNaN(Number(v))
+                            ? `${Number(v)} см`
+                            : "—"
+                        )
+                        .join(" × ")}
+                    </li>
+                  )}
+                  {product.unit_type ? (
+                    <li>Одиниці виміру: {product.unit_type}</li>
+                  ) : null}
+                  {product.currency_code ? (
+                    <li>Валюта: {product.currency_code}</li>
+                  ) : null}
+                </ul>
+              </div>
+            )}
+            {product.extra_fields ? (
+              <div className="whitespace-pre-wrap border-t border-gray-200 pt-4">
+                <div className="mb-2 text-lg md:text-xl uppercase tracking-tight">
+                  додатково
+                </div>
+                {product.extra_fields}
+              </div>
+            ) : null}
+          </div>
 
           {/* Description Section */}
           <div className="w-full md:w-[522px]">

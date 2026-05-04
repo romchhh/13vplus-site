@@ -2,6 +2,11 @@
 
 import { NextResponse } from "next/server";
 import { sqlGetAllProducts, sqlPostProduct } from "@/lib/sql";
+import { prisma } from "@/lib/prisma";
+import {
+  pushProductToKeyCrm,
+  shouldPushProductToKeyCrmOnAdminSave,
+} from "@/lib/keycrm-push-product";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
@@ -84,6 +89,7 @@ export async function POST(req: Request) {
         name,
         description,
         price,
+        wholesale_price = null,
         old_price,
         discount_percentage,
         priority = 0,
@@ -100,6 +106,15 @@ export async function POST(req: Request) {
         fabric_composition = "",
         has_lining = false,
         lining_description = "",
+        weight_kg = null,
+        length_cm = null,
+        width_cm = null,
+        height_cm = null,
+        unit_type = "шт",
+        currency_code = "UAH",
+        has_multiple_variants = true,
+        variant_property_name = "Колір",
+        extra_fields = null,
       } = body || {};
 
       if (!name || typeof price !== "number") {
@@ -113,6 +128,10 @@ export async function POST(req: Request) {
         name,
         description,
         price,
+        wholesale_price:
+          wholesale_price !== null && wholesale_price !== undefined
+            ? Number(wholesale_price)
+            : null,
         old_price,
         discount_percentage,
         priority,
@@ -132,8 +151,42 @@ export async function POST(req: Request) {
         fabric_composition,
         has_lining,
         lining_description,
+        weight_kg:
+          weight_kg !== null && weight_kg !== undefined && weight_kg !== ""
+            ? Number(weight_kg)
+            : null,
+        length_cm:
+          length_cm !== null && length_cm !== undefined && length_cm !== ""
+            ? Number(length_cm)
+            : null,
+        width_cm:
+          width_cm !== null && width_cm !== undefined && width_cm !== ""
+            ? Number(width_cm)
+            : null,
+        height_cm:
+          height_cm !== null && height_cm !== undefined && height_cm !== ""
+            ? Number(height_cm)
+            : null,
+        unit_type: typeof unit_type === "string" ? unit_type : "шт",
+        currency_code: typeof currency_code === "string" ? currency_code : "UAH",
+        has_multiple_variants:
+          typeof has_multiple_variants === "boolean"
+            ? has_multiple_variants
+            : true,
+        variant_property_name:
+          typeof variant_property_name === "string"
+            ? variant_property_name
+            : "Колір",
+        extra_fields:
+          typeof extra_fields === "string" ? extra_fields : null,
         colors,
       });
+
+      if (shouldPushProductToKeyCrmOnAdminSave()) {
+        void pushProductToKeyCrm(prisma, product.id).catch((err) => {
+          apiLogger.error("KeyCRM", `push product ${product.id}`, err);
+        });
+      }
 
       return NextResponse.json(product, { status: 201 });
     }
@@ -226,6 +279,12 @@ export async function POST(req: Request) {
       })),
       media: savedMedia,
     });
+
+    if (shouldPushProductToKeyCrmOnAdminSave()) {
+      void pushProductToKeyCrm(prisma, product.id).catch((err) => {
+        apiLogger.error("KeyCRM", `push product ${product.id}`, err);
+      });
+    }
 
     return NextResponse.json(product, { status: 201 });
   } catch (error) {

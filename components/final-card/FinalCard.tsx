@@ -12,6 +12,8 @@ import { Mousewheel } from "swiper/modules";
 import "swiper/css/scrollbar";
 import LoginModal from "@/components/auth/LoginModal";
 
+type NpListItem = { ref: string; description: string };
+
 /** Calculate order subtotal from basket items */
 function getSubtotal(items: { price: number | string; quantity: number; discount_percentage?: number | string }[]) {
   return items.reduce((total, item) => {
@@ -54,15 +56,23 @@ export default function FinalCard() {
   const [deliveryMethod, setDeliveryMethod] = useState("nova_poshta_branch");
   const [city, setCity] = useState("");
   const [postOffice, setPostOffice] = useState("");
+  const [cityRef, setCityRef] = useState("");
+  const [warehouseRef, setWarehouseRef] = useState("");
+  const [npCityOptions, setNpCityOptions] = useState<NpListItem[]>([]);
+  const [npWarehouseOptions, setNpWarehouseOptions] = useState<NpListItem[]>([]);
   // Auto-fill showroom address when selected
   useEffect(() => {
     if (deliveryMethod === "showroom_pickup") {
       setCity("Київ");
       setPostOffice("Самовивіз: вул. Костянтинівська, 21 (13:00–19:00)");
+      setCityRef("");
+      setWarehouseRef("");
     } else {
       // Для способів Нової пошти не фіксуємо місто за замовчуванням
       setCity("");
       setPostOffice("");
+      setCityRef("");
+      setWarehouseRef("");
     }
   }, [deliveryMethod]);
 
@@ -215,6 +225,9 @@ export default function FinalCard() {
 
   const handleCityChangeWithValidation = (value: string) => {
     setCity(value);
+    setCityRef("");
+    setWarehouseRef("");
+    setNpWarehouseOptions([]);
     if (value) {
       const error = validateCity(value);
       setFieldErrors((prev) => ({ ...prev, city: error || undefined }));
@@ -229,6 +242,7 @@ export default function FinalCard() {
 
   const handlePostOfficeChangeWithValidation = (value: string) => {
     setPostOffice(value);
+    setWarehouseRef("");
     if (value) {
       const error = validatePostOffice(value);
       setFieldErrors((prev) => ({ ...prev, postOffice: error || undefined }));
@@ -374,6 +388,8 @@ export default function FinalCard() {
         delivery_method: deliveryMethod,
         city,
         post_office: postOffice,
+        city_ref: cityRef || null,
+        warehouse_ref: warehouseRef || null,
         comment,
         payment_type: paymentType,
         total_amount: fullAmount.toFixed(2),
@@ -661,13 +677,11 @@ export default function FinalCard() {
     }
   }, [clearBasket]);
 
-  // POST OFFICE
-  const [cities, setCities] = useState<string[]>([]); // Available cities
-  const [postOffices, setPostOffices] = useState<string[]>([]); // Available post offices
-  const [loadingCities, setLoadingCities] = useState<boolean>(false); // Loading state for cities
-  const [loadingPostOffices, setLoadingPostOffices] = useState<boolean>(false); // Loading state for post offices
-  const [filteredCities, setFilteredCities] = useState<string[]>([]); // Filtered cities list for autocomplete
-  const [filteredPostOffices, setFilteredPostOffices] = useState<string[]>([]); // Filtered post offices list for autocomplete
+  // POST OFFICE — довідник НП (опції з Ref зберігаються вище в cityRef / warehouseRef)
+  const [loadingCities, setLoadingCities] = useState<boolean>(false);
+  const [loadingPostOffices, setLoadingPostOffices] = useState<boolean>(false);
+  const [filteredCities, setFilteredCities] = useState<NpListItem[]>([]);
+  const [filteredPostOffices, setFilteredPostOffices] = useState<NpListItem[]>([]);
   const [cityListVisible, setCityListVisible] = useState(false);
   const [postOfficeListVisible, setPostOfficeListVisible] = useState(false);
   // Region and district for Ukrposhta (currently unused but kept for future implementation)
@@ -706,6 +720,8 @@ export default function FinalCard() {
               if (commaIdx > 0) {
                 setCity(data.address.slice(0, commaIdx));
                 setPostOffice(data.address.slice(commaIdx + 2));
+                setCityRef("");
+                setWarehouseRef("");
               }
             }
           }
@@ -737,11 +753,14 @@ export default function FinalCard() {
           console.log("City fetch response", data); // ✅ Add this
           if (data.success) {
             const cityData = data.data || [];
-            setCities(
-              cityData.map((c: { Description: string }) => c.Description)
+            setNpCityOptions(
+              cityData.map((c: { Ref: string; Description: string }) => ({
+                ref: c.Ref,
+                description: c.Description,
+              }))
             );
           } else {
-            setCities([]);
+            setNpCityOptions([]);
             setError("Не вдалося знайти міста.");
           }
         })
@@ -774,10 +793,12 @@ export default function FinalCard() {
         .then((response) => response.json())
         .then((data) => {
           const cityData = data.data || [];
-          setCities(
-            cityData.map((city: { Description: unknown }) => city.Description)
+          setNpCityOptions(
+            cityData.map((c: { Ref: string; Description: string }) => ({
+              ref: c.Ref,
+              description: c.Description,
+            }))
           );
-          // console.log(data);
         })
         .catch(() => {
           console.error("Error fetching cities");
@@ -791,33 +812,28 @@ export default function FinalCard() {
   }, [deliveryMethod]);
 
   useEffect(() => {
-    // Filter and sort the cities based on the current input
-    const filtered = cities.filter((cityOption) =>
-      cityOption.toLowerCase().includes(city.toLowerCase())
+    const filtered = npCityOptions.filter((opt) =>
+      opt.description.toLowerCase().includes(city.toLowerCase())
     );
 
-    // Sort: exact matches first, then starts with, then contains
-    const sorted = filtered.sort((a, b) => {
-      const aLower = a.toLowerCase();
-      const bLower = b.toLowerCase();
+    const sorted = [...filtered].sort((a, b) => {
+      const aLower = a.description.toLowerCase();
+      const bLower = b.description.toLowerCase();
       const searchLower = city.toLowerCase();
 
-      // Exact match
       if (aLower === searchLower) return -1;
       if (bLower === searchLower) return 1;
 
-      // Starts with
       const aStarts = aLower.startsWith(searchLower);
       const bStarts = bLower.startsWith(searchLower);
       if (aStarts && !bStarts) return -1;
       if (!aStarts && bStarts) return 1;
 
-      // Alphabetical for remaining
-      return a.localeCompare(b);
+      return a.description.localeCompare(b.description);
     });
 
     setFilteredCities(sorted);
-  }, [city, cities]); // Re-filter cities whenever `city` or `cities` changes
+  }, [city, npCityOptions]);
 
   useEffect(() => {
     // Fetch available post offices when a city is selected
@@ -844,12 +860,12 @@ export default function FinalCard() {
         .then((response) => response.json())
         .then((data) => {
           const postOfficeData = data.data || [];
-          setPostOffices(
-            postOfficeData.map(
-              (post: { Description: unknown }) => post.Description
-            )
+          setNpWarehouseOptions(
+            postOfficeData.map((post: { Ref: string; Description: string }) => ({
+              ref: post.Ref,
+              description: post.Description,
+            }))
           );
-          // console.log(data);
         })
         .catch(() => {
           console.error("Error fetching post offices");
@@ -863,33 +879,28 @@ export default function FinalCard() {
   }, [city]);
 
   useEffect(() => {
-    // Filter and sort the post offices based on the current input
-    const filtered = postOffices.filter((postOfficeOption) =>
-      postOfficeOption.toLowerCase().includes(postOffice.toLowerCase())
+    const filtered = npWarehouseOptions.filter((opt) =>
+      opt.description.toLowerCase().includes(postOffice.toLowerCase())
     );
 
-    // Sort: exact matches first, then starts with, then contains
-    const sorted = filtered.sort((a, b) => {
-      const aLower = a.toLowerCase();
-      const bLower = b.toLowerCase();
+    const sorted = [...filtered].sort((a, b) => {
+      const aLower = a.description.toLowerCase();
+      const bLower = b.description.toLowerCase();
       const searchLower = postOffice.toLowerCase();
 
-      // Exact match
       if (aLower === searchLower) return -1;
       if (bLower === searchLower) return 1;
 
-      // Starts with
       const aStarts = aLower.startsWith(searchLower);
       const bStarts = bLower.startsWith(searchLower);
       if (aStarts && !bStarts) return -1;
       if (!aStarts && bStarts) return 1;
 
-      // Alphabetical for remaining
-      return a.localeCompare(b);
+      return a.description.localeCompare(b.description);
     });
 
     setFilteredPostOffices(sorted);
-  }, [postOffice, postOffices]); // Re-filter post offices whenever `postOffice` or `postOffices` changes
+  }, [postOffice, npWarehouseOptions]);
 
   const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleCityChangeWithValidation(e.target.value);
@@ -901,14 +912,23 @@ export default function FinalCard() {
     setPostOfficeListVisible(true); // Show the post office list while typing
   };
 
-  const handleCitySelect = (cityOption: string) => {
-    handleCityChangeWithValidation(cityOption);
-    setCityListVisible(false); // Hide the city list after selecting an option
+  const handleCitySelect = (opt: NpListItem) => {
+    setCity(opt.description);
+    setCityRef(opt.ref);
+    setWarehouseRef("");
+    setPostOffice("");
+    setNpWarehouseOptions([]);
+    const error = validateCity(opt.description);
+    setFieldErrors((prev) => ({ ...prev, city: error || undefined }));
+    setCityListVisible(false);
   };
 
-  const handlePostOfficeSelect = (postOfficeOption: string) => {
-    handlePostOfficeChangeWithValidation(postOfficeOption);
-    setPostOfficeListVisible(false); // Hide the post office list after selecting an option
+  const handlePostOfficeSelect = (opt: NpListItem) => {
+    setPostOffice(opt.description);
+    setWarehouseRef(opt.ref);
+    const error = validatePostOffice(opt.description);
+    setFieldErrors((prev) => ({ ...prev, postOffice: error || undefined }));
+    setPostOfficeListVisible(false);
   };
 
   // STATE
@@ -1274,13 +1294,13 @@ export default function FinalCard() {
                       cityListVisible && (
                         <div className="max-h-40 overflow-y-auto shadow-lg rounded-md border border-gray-200 mt-1 bg-white z-10">
                           <ul className="list-none p-0">
-                            {filteredCities.map((cityOption, idx) => (
+                            {filteredCities.map((cityOption) => (
                               <li
-                                key={idx}
+                                key={cityOption.ref}
                                 className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm sm:text-base transition-colors"
-                                onClick={() => handleCitySelect(cityOption)} // Set city on click
+                                onClick={() => handleCitySelect(cityOption)}
                               >
-                                {cityOption}
+                                {cityOption.description}
                               </li>
                             ))}
                           </ul>
@@ -1315,9 +1335,6 @@ export default function FinalCard() {
                         }`}
                         required
                       />
-                      {fieldErrors.postOffice && (
-                        <p className="text-red-500 text-xs mt-1">{fieldErrors.postOffice}</p>
-                      )}
                       {fieldErrors.postOffice && (
                         <p className="text-red-500 text-xs mt-1">{fieldErrors.postOffice}</p>
                       )}
@@ -1366,19 +1383,17 @@ export default function FinalCard() {
                         postOfficeListVisible && (
                           <div className="max-h-40 overflow-y-auto shadow-lg rounded-md border border-gray-200 mt-1 bg-white z-10">
                             <ul className="list-none p-0">
-                              {filteredPostOffices.map(
-                                (postOfficeOption, idx) => (
-                                  <li
-                                    key={idx}
-                                    className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm sm:text-base transition-colors"
-                                    onClick={() =>
-                                      handlePostOfficeSelect(postOfficeOption)
-                                    }
-                                  >
-                                    {postOfficeOption}
-                                  </li>
-                                )
-                              )}
+                              {filteredPostOffices.map((postOfficeOption) => (
+                                <li
+                                  key={postOfficeOption.ref}
+                                  className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm sm:text-base transition-colors"
+                                  onClick={() =>
+                                    handlePostOfficeSelect(postOfficeOption)
+                                  }
+                                >
+                                  {postOfficeOption.description}
+                                </li>
+                              ))}
                             </ul>
                           </div>
                         )

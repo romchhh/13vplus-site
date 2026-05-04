@@ -97,10 +97,19 @@ export async function PUT(
       topSale,
     });
 
+    const wholesalePrice =
+      body.wholesale_price !== null && body.wholesale_price !== undefined
+        ? Number(body.wholesale_price)
+        : null;
+
     await sqlPutProduct(id, {
       name: body.name,
       description: body.description,
       price: body.price,
+      wholesale_price:
+        wholesalePrice !== null && !Number.isNaN(wholesalePrice)
+          ? wholesalePrice
+          : null,
       old_price: oldPrice,
       discount_percentage: discountPercentage,
       priority,
@@ -128,6 +137,43 @@ export async function PUT(
       has_lining: hasLining,
       fabric_composition: body.fabric_composition,
       lining_description: liningDescription,
+      weight_kg:
+        body.weight_kg !== null &&
+        body.weight_kg !== undefined &&
+        body.weight_kg !== ""
+          ? Number(body.weight_kg)
+          : null,
+      length_cm:
+        body.length_cm !== null &&
+        body.length_cm !== undefined &&
+        body.length_cm !== ""
+          ? Number(body.length_cm)
+          : null,
+      width_cm:
+        body.width_cm !== null &&
+        body.width_cm !== undefined &&
+        body.width_cm !== ""
+          ? Number(body.width_cm)
+          : null,
+      height_cm:
+        body.height_cm !== null &&
+        body.height_cm !== undefined &&
+        body.height_cm !== ""
+          ? Number(body.height_cm)
+          : null,
+      unit_type: typeof body.unit_type === "string" ? body.unit_type : "шт",
+      currency_code:
+        typeof body.currency_code === "string" ? body.currency_code : "UAH",
+      has_multiple_variants:
+        typeof body.has_multiple_variants === "boolean"
+          ? body.has_multiple_variants
+          : true,
+      variant_property_name:
+        typeof body.variant_property_name === "string"
+          ? body.variant_property_name
+          : "Колір",
+      extra_fields:
+        typeof body.extra_fields === "string" ? body.extra_fields : null,
     });
 
     // Revalidate cache after updating product

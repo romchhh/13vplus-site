@@ -11,6 +11,7 @@ import Input from "@/components/admin/form/input/InputField";
 import TextArea from "@/components/admin/form/input/TextArea";
 import DropzoneComponent from "@/components/admin/form/form-elements/DropZone";
 import ToggleSwitch from "@/components/admin/form/ToggleSwitch";
+import { mergeVariantColorsFromInputs } from "@/lib/merge-variant-colors";
 
 const multiOptions = [
   { value: "O/S", text: "O/S", selected: false },
@@ -51,6 +52,7 @@ export default function EditProductPage() {
     name: "",
     description: "",
     price: "",
+    wholesalePrice: "",
     oldPrice: "",
     discountPercentage: "",
     priority: "0",
@@ -65,6 +67,17 @@ export default function EditProductPage() {
     fabricComposition: "",
     hasLining: false,
     liningDescription: "",
+    weightKg: "",
+    lengthCm: "",
+    widthCm: "",
+    heightCm: "",
+    unitType: "шт",
+    currencyCode: "UAH",
+    hasMultipleVariants: true,
+    variantPropertyName: "Колір",
+    extraFields: "",
+    colorVariantLines: "",
+    singleVariantStock: "0",
   });
 
   const [images, setImages] = useState<File[]>([]);
@@ -109,14 +122,26 @@ export default function EditProductPage() {
           }))
         );
 
+        const sizeRows = productData.sizes || [];
+        const isUniversal =
+          sizeRows.length === 1 &&
+          sizeRows[0] &&
+          (sizeRows[0] as { size: string }).size === "Універсал";
+
         setFormData({
           name: productData.name || "",
           description: productData.description || "",
           price: String(productData.price || ""),
+          wholesalePrice:
+            productData.wholesale_price != null
+              ? String(productData.wholesale_price)
+              : "",
           oldPrice: String(productData.old_price || ""),
           discountPercentage: String(productData.discount_percentage || ""),
           priority: String(productData.priority || 0),
-          sizes: (productData.sizes || []).map((s: { size: string }) => s.size),
+          sizes: isUniversal
+            ? []
+            : sizeRows.map((s: { size: string }) => s.size),
           media: mediaArray,
           topSale: productData.top_sale || false,
           limitedEdition: productData.limited_edition || false,
@@ -127,6 +152,31 @@ export default function EditProductPage() {
           fabricComposition: productData.fabric_composition || "",
           hasLining: productData.has_lining || false,
           liningDescription: productData.lining_description || "",
+          weightKg:
+            productData.weight_kg != null ? String(productData.weight_kg) : "",
+          lengthCm:
+            productData.length_cm != null ? String(productData.length_cm) : "",
+          widthCm:
+            productData.width_cm != null ? String(productData.width_cm) : "",
+          heightCm:
+            productData.height_cm != null ? String(productData.height_cm) : "",
+          unitType: productData.unit_type || "шт",
+          currencyCode: productData.currency_code || "UAH",
+          hasMultipleVariants: isUniversal
+            ? false
+            : productData.has_multiple_variants !== false,
+          variantPropertyName: productData.variant_property_name || "Колір",
+          extraFields: productData.extra_fields || "",
+          colorVariantLines: (productData.colors || [])
+            .map((c: { label: string }) => c.label)
+            .join("\n"),
+          singleVariantStock: isUniversal
+            ? String(
+                typeof (sizeRows[0] as { stock?: number }).stock === "number"
+                  ? (sizeRows[0] as { stock: number }).stock
+                  : 0
+              )
+            : "0",
         });
 
         // Initialize sizeStocks from productData.sizes
@@ -284,6 +334,27 @@ export default function EditProductPage() {
     setError(null);
 
     try {
+      const mergedColors = mergeVariantColorsFromInputs(
+        formData.colorVariantLines,
+        colors
+      );
+      const effectiveSizes = formData.hasMultipleVariants
+        ? formData.sizes.map((s) => ({
+            size: s,
+            stock: sizeStocks[s] ?? 0,
+          }))
+        : [
+            {
+              size: "Універсал",
+              stock: Math.max(0, Number(formData.singleVariantStock) || 0),
+            },
+          ];
+      if (formData.hasMultipleVariants && effectiveSizes.length === 0) {
+        setError("Оберіть хоча б один розмір або вимкніть «декілька варіантів».");
+        setLoading(false);
+        return;
+      }
+
       console.log('[EditProduct] Submitting form. Images to upload:', images.length);
       
       let uploadedMedia: { type: "photo" | "video"; url: string }[] = [];
@@ -318,23 +389,35 @@ export default function EditProductPage() {
           name: formData.name,
           description: formData.description,
           price: Number(formData.price),
+          wholesale_price: formData.wholesalePrice.trim()
+            ? Number(formData.wholesalePrice)
+            : null,
           old_price: formData.oldPrice ? Number(formData.oldPrice) : null,
           discount_percentage: formData.discountPercentage
             ? Number(formData.discountPercentage)
             : null,
           priority: Number(formData.priority),
-          sizes: formData.sizes.map((s) => ({ size: s, stock: sizeStocks[s] ?? 0 })),
+          sizes: effectiveSizes,
           media: updatedMedia,
           top_sale: formData.topSale,
           limited_edition: formData.limitedEdition,
           season: formData.season,
           color: formData.color,
-          colors,
+          colors: mergedColors,
           category_id: formData.categoryId,
           subcategory_id: formData.subcategoryId,
           fabric_composition: formData.fabricComposition,
           has_lining: formData.hasLining,
           lining_description: formData.liningDescription,
+          weight_kg: formData.weightKg.trim() ? Number(formData.weightKg) : null,
+          length_cm: formData.lengthCm.trim() ? Number(formData.lengthCm) : null,
+          width_cm: formData.widthCm.trim() ? Number(formData.widthCm) : null,
+          height_cm: formData.heightCm.trim() ? Number(formData.heightCm) : null,
+          unit_type: formData.unitType.trim() || "шт",
+          currency_code: formData.currencyCode.trim().toUpperCase() || "UAH",
+          has_multiple_variants: formData.hasMultipleVariants,
+          variant_property_name: formData.variantPropertyName.trim() || "Колір",
+          extra_fields: formData.extraFields.trim() || null,
         }),
       });
 
@@ -357,295 +440,442 @@ export default function EditProductPage() {
       ) : (
         <form onSubmit={handleSubmit}>
           <PageBreadcrumb pageTitle="Редагувати Товар" />
-          <div className="flex w-full h-auto">
-            <div className="w-1/2 p-4">
-              <ComponentCard title="Редагувати дані">
-                <Label>Назва Товару</Label>
-                <Input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                />
-
-                <Label>Опис</Label>
-                <TextArea
-                  value={formData.description}
-                  onChange={(value) => handleChange("description", value)}
-                  rows={6}
-                />
-
-                <Label>Ціна</Label>
-                <Input
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => handleChange("price", e.target.value)}
-                  placeholder="Поточна ціна"
-                />
-
-                <Label>Стара ціна (опціонально)</Label>
-                <Input
-                  type="number"
-                  value={formData.oldPrice}
-                  onChange={(e) => handleChange("oldPrice", e.target.value)}
-                  placeholder="Ціна до знижки"
-                />
-
-                <Label>Відсоток знижки (опціонально)</Label>
-                <Input
-                  type="number"
-                  value={formData.discountPercentage}
-                  onChange={(e) =>
-                    handleChange("discountPercentage", e.target.value)
-                  }
-                  placeholder="Наприклад: 20"
-                />
-
-                <Label>Пріоритет показу</Label>
-                <Input
-                  type="number"
-                  value={formData.priority}
-                  onChange={(e) => handleChange("priority", e.target.value)}
-                  placeholder="0 - звичайний, 1 - високий"
-                />
-
-                <Label>Розміри</Label>
-                <MultiSelect
-                  label="Розміри"
-                  options={multiOptions}
-                  defaultSelected={formData.sizes}
-                  onChange={(values: string[]) => {
-                    // Update selected sizes
-                    handleChange("sizes", values);
-                    // Ensure stocks exist for any newly added size
-                    setSizeStocks((prev) => {
-                      const next = { ...prev };
-                      values.forEach((sz: string) => {
-                        if (next[sz] === undefined) next[sz] = 0;
-                      });
-                      // Remove stocks for sizes no longer selected
-                      Object.keys(next).forEach((sz) => {
-                        if (!values.includes(sz)) delete (next as Record<string, number>)[sz];
-                      });
-                      return next;
-                    });
-                  }}
-                />
-
-                {/* Per-size stock editor */}
-                {formData.sizes?.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    <Label>Кількість по розмірах</Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {formData.sizes.map((sz) => (
-                        <div key={sz} className="flex items-center gap-2 border rounded px-2 py-1">
-                          <span className="min-w-10 text-sm font-medium">{sz}</span>
-                          <input
-                            type="number"
-                            min={0}
-                            value={sizeStocks[sz] ?? 0}
-                            onChange={(e) => {
-                              const val = Math.max(0, Number(e.target.value) || 0);
-                              setSizeStocks((prev) => ({ ...prev, [sz]: val }));
-                            }}
-                            className="w-20 border border-gray-300 rounded-lg px-2 py-1 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <Label>Категорія</Label>
-                <select
-                  value={formData.categoryId ?? ""}
-                  onChange={(e) => {
-                    const selectedCategoryId = Number(e.target.value);
-                    handleChange("categoryId", selectedCategoryId);
-                    handleChange("subcategoryId", null); // ✅ Reset subcategory
-                  }}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option value="">Виберіть категорію</option>
-                  {categoryOptions.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-
-                {formData.categoryId && (
-                  <>
-                    <Label>Підкатегорія</Label>
-                    <select
-                      value={formData.subcategoryId ?? ""}
-                      onChange={(e) =>
-                        handleChange("subcategoryId", Number(e.target.value))
-                      }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    >
-                      <option value="">Виберіть підкатегорію</option>
-                      {subcategoryOptions
-                        .filter(
-                          (sub) => sub.category_id === formData.categoryId
-                        )
-                        .map((sub) => (
-                          <option key={sub.id} value={sub.id}>
-                            {sub.name}
-                          </option>
-                        ))}
-                    </select>
-                  </>
-                )}
-
-                <Label>Cезон</Label>
-                <MultiSelect
-                  label="Сезон"
-                  options={seasonOptions}
-                  defaultSelected={formData.season}
-                  onChange={(values) => handleChange("season", values)}
-                />
-
-                <div className="space-y-2">
-                  <Label>Кольори</Label>
-                  <div className="flex gap-2 flex-wrap">
-                    {colors.map((c, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-2 border rounded-full px-3 py-1 text-xs"
-                      >
-                        <span
-                          className="w-4 h-4 rounded-full border"
-                          style={{ backgroundColor: c.hex || "#fff" }}
-                        />
-                        {c.label}
-                        <button
-                          type="button"
-                          className="ml-1 text-red-600"
-                          onClick={() =>
-                            setColors(colors.filter((_, i) => i !== idx))
-                          }
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  {/* Removed dropdown; using swatch list below */}
-                  <div className="flex flex-wrap gap-2">
-                    {availableColors.map((c) => (
-                      <button
-                        type="button"
-                        key={`pal-${c.color}`}
-                        className="flex items-center gap-2 border rounded-full px-2 py-1 text-xs hover:shadow transition"
-                        onClick={() =>
-                          setColors((prev) => [
-                            ...prev,
-                            { label: c.color, hex: c.hex },
-                          ])
-                        }
-                        title={c.color}
-                      >
-                        <span
-                          className="w-4 h-4 rounded-full border"
-                          style={{ backgroundColor: c.hex || "#fff" }}
-                        />
-                        <span>{c.color}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={customColorHex}
-                      onChange={(e) => setCustomColorHex(e.target.value)}
-                      className="w-10 h-10 p-0 border rounded"
-                    />
+          <div className="flex w-full h-auto flex-col lg:flex-row">
+            <div className="w-full lg:w-1/2 p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-8rem)]">
+              <ComponentCard title="Основне">
+                <div className="space-y-4">
+                  <div>
+                    <Label>Назва</Label>
                     <Input
                       type="text"
-                      value={customColorLabel}
-                      onChange={(e) => setCustomColorLabel(e.target.value)}
-                      placeholder="Назва кольору"
+                      value={formData.name}
+                      onChange={(e) => handleChange("name", e.target.value)}
                     />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!customColorLabel.trim()) return;
-                        setColors([
-                          ...colors,
-                          {
-                            label: customColorLabel.trim(),
-                            hex: customColorHex,
-                          },
-                        ]);
-                        setCustomColorLabel("");
-                        setCustomColorHex("#000000");
-                      }}
-                      className="px-3 py-2 rounded bg-blue-600 text-white text-sm"
-                    >
-                      Додати власний
-                    </button>
                   </div>
-                </div>
-
-                {/* Блок: Склад тканини і Підкладка */}
-                <div className="border border-gray-300 rounded-lg p-4 space-y-4 bg-white mt-4">
                   <div>
-                    <Label>Склад тканини</Label>
-                    <TextArea
-                      value={formData.fabricComposition}
-                      onChange={(value) =>
-                        handleChange("fabricComposition", value)
-                      }
-                      rows={3}
-                      placeholder="Наприклад: 80% бавовна, 20% поліестер"
+                    <Label>Категорія</Label>
+                    <select
+                      value={formData.categoryId ?? ""}
+                      onChange={(e) => {
+                        handleChange(
+                          "categoryId",
+                          e.target.value ? Number(e.target.value) : null
+                        );
+                        handleChange("subcategoryId", null);
+                      }}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm"
+                    >
+                      <option value="">Виберіть категорію</option>
+                      {categoryOptions.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {formData.categoryId ? (
+                    <div>
+                      <Label>Підкатегорія</Label>
+                      <select
+                        value={formData.subcategoryId ?? ""}
+                        onChange={(e) =>
+                          handleChange(
+                            "subcategoryId",
+                            e.target.value ? Number(e.target.value) : null
+                          )
+                        }
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm"
+                      >
+                        <option value="">Необовʼязково</option>
+                        {subcategoryOptions
+                          .filter((sub) => sub.category_id === formData.categoryId)
+                          .map((sub) => (
+                            <option key={sub.id} value={sub.id}>
+                              {sub.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  ) : null}
+                </div>
+              </ComponentCard>
+
+              <ComponentCard title="Додаткові поля">
+                <div className="space-y-4">
+                  <TextArea
+                    value={formData.extraFields}
+                    onChange={(v) => handleChange("extraFields", v)}
+                    rows={4}
+                    placeholder="Довільні примітки, як у CRM"
+                  />
+                  <MultiSelect
+                    label="Сезон"
+                    options={seasonOptions}
+                    defaultSelected={formData.season}
+                    onChange={(values) => handleChange("season", values)}
+                  />
+                  <div>
+                    <Label>Пріоритет показу</Label>
+                    <Input
+                      type="number"
+                      value={formData.priority}
+                      onChange={(e) => handleChange("priority", e.target.value)}
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <Label className="mb-0">Підкладка?</Label>
+                    <Label className="mb-0">Топ продаж</Label>
                     <ToggleSwitch
-                      enabled={formData.hasLining}
-                      setEnabled={(value) => handleChange("hasLining", value)}
-                      label="Has Lining"
+                      enabled={formData.topSale}
+                      setEnabled={(v) => handleChange("topSale", v)}
+                      label="Top Sale"
                     />
                   </div>
-                  {formData.hasLining && (
-                    <div>
-                      <Label>Опис підкладки</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="mb-0">Лімітована серія</Label>
+                    <ToggleSwitch
+                      enabled={formData.limitedEdition}
+                      setEnabled={(v) => handleChange("limitedEdition", v)}
+                      label="Limited Edition"
+                    />
+                  </div>
+                  <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+                    <Label>Склад тканини та підкладка</Label>
+                    <TextArea
+                      value={formData.fabricComposition}
+                      onChange={(v) => handleChange("fabricComposition", v)}
+                      rows={3}
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Підкладка</span>
+                      <ToggleSwitch
+                        enabled={formData.hasLining}
+                        setEnabled={(v) => handleChange("hasLining", v)}
+                        label="Lining"
+                      />
+                    </div>
+                    {formData.hasLining ? (
                       <TextArea
                         value={formData.liningDescription}
-                        onChange={(value) =>
-                          handleChange("liningDescription", value)
-                        }
+                        onChange={(v) => handleChange("liningDescription", v)}
                         rows={2}
-                        placeholder="Опис підкладки товару"
+                      />
+                    ) : null}
+                  </div>
+                </div>
+              </ComponentCard>
+
+              <ComponentCard title="Ціни та валюта">
+                <div className="space-y-4">
+                  <div>
+                    <Label>Рекомендована ціна (роздріб)</Label>
+                    <Input
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) => handleChange("price", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Оптова ціна</Label>
+                    <Input
+                      type="number"
+                      value={formData.wholesalePrice}
+                      onChange={(e) =>
+                        handleChange("wholesalePrice", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>Стара ціна</Label>
+                    <Input
+                      type="number"
+                      value={formData.oldPrice}
+                      onChange={(e) => handleChange("oldPrice", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Відсоток знижки</Label>
+                    <Input
+                      type="number"
+                      value={formData.discountPercentage}
+                      onChange={(e) =>
+                        handleChange("discountPercentage", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>Валюта</Label>
+                    <select
+                      value={formData.currencyCode}
+                      onChange={(e) => handleChange("currencyCode", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white"
+                    >
+                      <option value="UAH">Ukrainian Hryvnia — UAH</option>
+                    </select>
+                  </div>
+                </div>
+              </ComponentCard>
+
+              <ComponentCard title="Розміри за замовчуванням">
+                <p className="text-xs text-gray-500 mb-3">
+                  Застосовуються до варіантів, якщо окремо не задано (як у KeyCRM).
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Вага (кг)</Label>
+                    <Input
+                      type="number"
+                      step={0.001}
+                      value={formData.weightKg}
+                      onChange={(e) => handleChange("weightKg", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Одиниці</Label>
+                    <Input
+                      type="text"
+                      value={formData.unitType}
+                      onChange={(e) => handleChange("unitType", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Довжина (см)</Label>
+                    <Input
+                      type="number"
+                      step={0.01}
+                      value={formData.lengthCm}
+                      onChange={(e) => handleChange("lengthCm", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Ширина (см)</Label>
+                    <Input
+                      type="number"
+                      step={0.01}
+                      value={formData.widthCm}
+                      onChange={(e) => handleChange("widthCm", e.target.value)}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Висота (см)</Label>
+                    <Input
+                      type="number"
+                      step={0.01}
+                      value={formData.heightCm}
+                      onChange={(e) => handleChange("heightCm", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </ComponentCard>
+
+              <ComponentCard title="Варіанти розмірів">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="mb-0">Декілька варіантів (розміри)</Label>
+                    <ToggleSwitch
+                      enabled={formData.hasMultipleVariants}
+                      setEnabled={(v) => handleChange("hasMultipleVariants", v)}
+                      label="Variants"
+                    />
+                  </div>
+                  {formData.hasMultipleVariants ? (
+                    <>
+                      <MultiSelect
+                        label="Розміри"
+                        options={multiOptions}
+                        defaultSelected={formData.sizes}
+                        onChange={(values: string[]) => {
+                          handleChange("sizes", values);
+                          setSizeStocks((prev) => {
+                            const next = { ...prev };
+                            values.forEach((sz: string) => {
+                              if (next[sz] === undefined) next[sz] = 0;
+                            });
+                            Object.keys(next).forEach((sz) => {
+                              if (!values.includes(sz))
+                                delete (next as Record<string, number>)[sz];
+                            });
+                            return next;
+                          });
+                        }}
+                        zIndex={51}
+                      />
+                      {formData.sizes.length > 0 ? (
+                        <div className="space-y-2">
+                          <Label>Залишок по розмірах</Label>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {formData.sizes.map((sz) => (
+                              <div
+                                key={sz}
+                                className="flex items-center gap-2 border rounded px-2 py-1"
+                              >
+                                <span className="text-sm font-medium">{sz}</span>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={sizeStocks[sz] ?? 0}
+                                  onChange={(e) => {
+                                    const val = Math.max(
+                                      0,
+                                      Number(e.target.value) || 0
+                                    );
+                                    setSizeStocks((prev) => ({
+                                      ...prev,
+                                      [sz]: val,
+                                    }));
+                                  }}
+                                  className="w-20 border rounded px-2 py-1 text-sm"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : (
+                    <div>
+                      <Label>Залишок (Універсал)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={formData.singleVariantStock}
+                        onChange={(e) =>
+                          handleChange("singleVariantStock", e.target.value)
+                        }
                       />
                     </div>
                   )}
                 </div>
+              </ComponentCard>
 
-                <div className="flex items-center justify-between mt-4">
-                  <Label className="mb-0">Топ продаж?</Label>
-                  <ToggleSwitch
-                    enabled={formData.topSale}
-                    setEnabled={(value) => handleChange("topSale", value)}
-                    label="Top Sale"
-                  />
+              <ComponentCard title="Варіанти — властивість #1">
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between">
+                      <Label>Назва властивості</Label>
+                      <span className="text-xs text-gray-500">
+                        {formData.variantPropertyName.length}/80
+                      </span>
+                    </div>
+                    <Input
+                      type="text"
+                      value={formData.variantPropertyName}
+                      onChange={(e) =>
+                        handleChange(
+                          "variantPropertyName",
+                          e.target.value.slice(0, 80)
+                        )
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>Значення (кожне з нового рядка)</Label>
+                    <TextArea
+                      value={formData.colorVariantLines}
+                      onChange={(v) => handleChange("colorVariantLines", v)}
+                      rows={5}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Палітра (hex)</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {colors.map((c, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-2 border rounded-full px-3 py-1 text-xs"
+                        >
+                          <span
+                            className="w-4 h-4 rounded-full border"
+                            style={{ backgroundColor: c.hex || "#fff" }}
+                          />
+                          {c.label}
+                          <button
+                            type="button"
+                            className="ml-1 text-red-600"
+                            onClick={() =>
+                              setColors(colors.filter((_, i) => i !== idx))
+                            }
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {availableColors.map((c) => (
+                        <button
+                          type="button"
+                          key={`pal-${c.color}`}
+                          className="flex items-center gap-2 border rounded-full px-2 py-1 text-xs"
+                          onClick={() =>
+                            setColors((prev) => [
+                              ...prev,
+                              { label: c.color, hex: c.hex },
+                            ])
+                          }
+                        >
+                          <span
+                            className="w-4 h-4 rounded-full border"
+                            style={{ backgroundColor: c.hex || "#fff" }}
+                          />
+                          {c.color}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        type="color"
+                        value={customColorHex}
+                        onChange={(e) => setCustomColorHex(e.target.value)}
+                        className="w-10 h-10 p-0 border rounded"
+                      />
+                      <Input
+                        type="text"
+                        value={customColorLabel}
+                        onChange={(e) => setCustomColorLabel(e.target.value)}
+                        placeholder="Назва"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!customColorLabel.trim()) return;
+                          setColors([
+                            ...colors,
+                            {
+                              label: customColorLabel.trim(),
+                              hex: customColorHex,
+                            },
+                          ]);
+                          setCustomColorLabel("");
+                          setCustomColorHex("#000000");
+                        }}
+                        className="px-3 py-2 rounded bg-blue-600 text-white text-sm"
+                      >
+                        Додати
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Основний колір (legacy)</Label>
+                    <Input
+                      type="text"
+                      value={formData.color}
+                      onChange={(e) => handleChange("color", e.target.value)}
+                    />
+                  </div>
                 </div>
+              </ComponentCard>
 
-                <div className="flex items-center justify-between mt-4">
-                  <Label className="mb-0">Лімітована серія?</Label>
-                  <ToggleSwitch
-                    enabled={formData.limitedEdition}
-                    setEnabled={(value) =>
-                      handleChange("limitedEdition", value)
-                    }
-                    label="Limited Edition"
-                  />
-                </div>
+              <ComponentCard title="Опис товару">
+                <TextArea
+                  value={formData.description}
+                  onChange={(v) => handleChange("description", v)}
+                  rows={8}
+                />
               </ComponentCard>
             </div>
 
-            <div className="w-1/2 p-4">
+            <div className="w-full lg:w-1/2 p-4">
+              <ComponentCard title="Попередній перегляд / медіа">
               <DropzoneComponent onDrop={handleDrop} />
               <div className="mt-2 flex flex-wrap gap-4 text-sm">
                 {formData.media.map((item, i) => (
@@ -759,6 +989,7 @@ export default function EditProductPage() {
                   );
                 })}
               </div>
+              </ComponentCard>
             </div>
           </div>
 

@@ -132,6 +132,9 @@ export async function sqlGetProduct(id: number) {
         name: product.name,
         description: product.description,
         price: Number(product.price),
+        wholesale_price: product.wholesalePrice
+          ? Number(product.wholesalePrice)
+          : null,
         old_price: product.oldPrice ? Number(product.oldPrice) : null,
         discount_percentage: product.discountPercentage,
         priority: product.priority,
@@ -144,6 +147,15 @@ export async function sqlGetProduct(id: number) {
         fabric_composition: product.fabricComposition,
         has_lining: product.hasLining,
         lining_description: product.liningDescription,
+        weight_kg: product.weightKg != null ? Number(product.weightKg) : null,
+        length_cm: product.lengthCm != null ? Number(product.lengthCm) : null,
+        width_cm: product.widthCm != null ? Number(product.widthCm) : null,
+        height_cm: product.heightCm != null ? Number(product.heightCm) : null,
+        unit_type: product.unitType,
+        currency_code: product.currencyCode,
+        has_multiple_variants: product.hasMultipleVariants,
+        variant_property_name: product.variantPropertyName,
+        extra_fields: product.extraFields,
         category_name: product.category?.name || null,
         subcategory_name: product.subcategory?.name || null,
         sizes: product.sizes.map((s) => ({ size: s.size, stock: s.stock })),
@@ -476,6 +488,7 @@ export async function sqlPostProduct(product: {
   name: string;
   description?: string;
   price: number;
+  wholesale_price?: number | null;
   old_price?: number | null;
   discount_percentage?: number | null;
   priority?: number;
@@ -488,6 +501,15 @@ export async function sqlPostProduct(product: {
   fabric_composition?: string;
   has_lining?: boolean;
   lining_description?: string;
+  weight_kg?: number | null;
+  length_cm?: number | null;
+  width_cm?: number | null;
+  height_cm?: number | null;
+  unit_type?: string;
+  currency_code?: string;
+  has_multiple_variants?: boolean;
+  variant_property_name?: string;
+  extra_fields?: string | null;
   sizes?: { size: string; stock: number }[];
   media?: { type: string; url: string }[];
   colors?: { label: string; hex?: string | null }[];
@@ -497,6 +519,7 @@ export async function sqlPostProduct(product: {
       name: product.name,
       description: product.description || null,
       price: product.price,
+      wholesalePrice: product.wholesale_price ?? null,
       oldPrice: product.old_price ?? null,
       discountPercentage: product.discount_percentage || null,
       priority: product.priority || 0,
@@ -509,6 +532,18 @@ export async function sqlPostProduct(product: {
       fabricComposition: product.fabric_composition || null,
       hasLining: product.has_lining || false,
       liningDescription: product.lining_description || null,
+      weightKg: product.weight_kg ?? null,
+      lengthCm: product.length_cm ?? null,
+      widthCm: product.width_cm ?? null,
+      heightCm: product.height_cm ?? null,
+      unitType: product.unit_type?.trim() || "шт",
+      currencyCode: product.currency_code?.trim().toUpperCase() || "UAH",
+      hasMultipleVariants: product.has_multiple_variants ?? true,
+      variantPropertyName: (product.variant_property_name?.trim() || "Колір").slice(
+        0,
+        80
+      ),
+      extraFields: product.extra_fields?.trim() || null,
       sizes: product.sizes
         ? {
             create: product.sizes.map((s) => ({
@@ -546,6 +581,7 @@ export async function sqlPutProduct(
     name: string;
     description?: string;
     price: number;
+    wholesale_price?: number | null;
     old_price?: number | null;
     discount_percentage?: number | null;
     priority?: number;
@@ -558,6 +594,15 @@ export async function sqlPutProduct(
     fabric_composition?: string;
     has_lining?: boolean;
     lining_description?: string;
+    weight_kg?: number | null;
+    length_cm?: number | null;
+    width_cm?: number | null;
+    height_cm?: number | null;
+    unit_type?: string;
+    currency_code?: string;
+    has_multiple_variants?: boolean;
+    variant_property_name?: string;
+    extra_fields?: string | null;
     sizes?: { size: string; stock: number }[];
     media?: { type: string; url: string }[];
     colors?: { label: string; hex?: string | null }[];
@@ -587,6 +632,7 @@ export async function sqlPutProduct(
         name: update.name,
         description: update.description || null,
         price: update.price,
+        wholesalePrice: update.wholesale_price ?? null,
         oldPrice: update.old_price || null,
         discountPercentage: update.discount_percentage || null,
         priority: update.priority || 0,
@@ -599,6 +645,18 @@ export async function sqlPutProduct(
         fabricComposition: update.fabric_composition || null,
         hasLining: update.has_lining || false,
         liningDescription: update.lining_description || null,
+        weightKg: update.weight_kg ?? null,
+        lengthCm: update.length_cm ?? null,
+        widthCm: update.width_cm ?? null,
+        heightCm: update.height_cm ?? null,
+        unitType: update.unit_type?.trim() || "шт",
+        currencyCode: update.currency_code?.trim().toUpperCase() || "UAH",
+        hasMultipleVariants: update.has_multiple_variants ?? true,
+        variantPropertyName: (update.variant_property_name?.trim() || "Колір").slice(
+          0,
+          80
+        ),
+        extraFields: update.extra_fields?.trim() || null,
       },
     });
     
@@ -778,8 +836,8 @@ type OrderInput = {
 };
 
 export async function sqlPostOrder(order: OrderInput) {
-  // Transaction: create order and insert items. Використовуємо raw INSERT, щоб не залежати від колонок
-  // bonus_points_spent та loyalty_discount_amount, яких може не бути в БД до застосування міграцій.
+  // Raw INSERT по мінімальному набору колонок — щоб оформлення замовлення працювало
+  // навіть якщо частина міграцій Prisma ще не застосована в БД (bonus/np/keycrm тощо).
   return await prisma.$transaction(async (tx) => {
     let rows: [{ id: number }];
     try {
@@ -820,7 +878,7 @@ export async function sqlPostOrder(order: OrderInput) {
       try {
         await tx.$executeRaw`UPDATE orders SET bonus_points_spent = ${bonusSpent} WHERE id = ${createdId}`;
       } catch {
-        // Колонка bonus_points_spent може відсутня
+        /* колонка bonus_points_spent може відсутня */
       }
     }
 
@@ -829,7 +887,7 @@ export async function sqlPostOrder(order: OrderInput) {
       try {
         await tx.$executeRaw`UPDATE orders SET loyalty_discount_amount = ${loyaltyDiscount} WHERE id = ${createdId}`;
       } catch {
-        // Колонка loyalty_discount_amount може відсутня
+        /* колонка loyalty_discount_amount може відсутня */
       }
     }
 

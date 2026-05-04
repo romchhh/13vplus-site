@@ -111,7 +111,9 @@ model Product {
   id                Int            @id @default(autoincrement())
   name              String
   description       String?
+  /** Рекомендована (роздрібна) ціна — як у KeyCRM */
   price             Decimal        @db.Decimal(10, 2)
+  wholesalePrice    Decimal?       @map("wholesale_price") @db.Decimal(10, 2)
   oldPrice          Decimal?       @map("old_price") @db.Decimal(10, 2)
   discountPercentage Int?          @map("discount_percentage")
   priority          Int            @default(0)
@@ -124,6 +126,19 @@ model Product {
   fabricComposition String?        @map("fabric_composition")
   hasLining         Boolean        @default(false) @map("has_lining")
   liningDescription String?        @map("lining_description")
+  weightKg          Decimal?       @map("weight_kg") @db.Decimal(10, 3)
+  lengthCm          Decimal?       @map("length_cm") @db.Decimal(10, 2)
+  widthCm           Decimal?       @map("width_cm") @db.Decimal(10, 2)
+  heightCm          Decimal?       @map("height_cm") @db.Decimal(10, 2)
+  unitType          String         @default("шт") @map("unit_type") @db.VarChar(32)
+  currencyCode      String         @default("UAH") @map("currency_code") @db.VarChar(8)
+  hasMultipleVariants Boolean      @default(true) @map("has_multiple_variants")
+  /** Підпис першої властивості варіантів (напр. «Колір») */
+  variantPropertyName String       @default("Колір") @map("variant_property_name") @db.VarChar(80)
+  /** Вільний текст «додаткові поля» для адміністратора / CRM */
+  extraFields       String?        @map("extra_fields") @db.Text
+  /** Після успішного експорту в KeyCRM — ID товару в CRM */
+  keycrmProductId   Int?           @unique @map("keycrm_product_id")
   createdAt         DateTime       @default(now()) @map("created_at")
   
   category          Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -142,6 +157,8 @@ model ProductSize {
   productId Int     @map("product_id")
   size      String
   stock     Int     @default(0)
+  /** ID варіанту (offer) в KeyCRM після синхронізації */
+  keycrmOfferId Int?    @unique @map("keycrm_offer_id")
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   
   @@unique([productId, size])
@@ -184,6 +201,14 @@ model Order {
   bonusPointsSpent Int      @default(0) @map("bonus_points_spent") // скільки бонусів списано при оформленні
   loyaltyDiscountAmount Decimal? @map("loyalty_discount_amount") @db.Decimal(10, 2) // знижка по програмі лояльності (грн)
   status        String?     // Optional status field
+  /** Номер ТТН Нової Пошти (після InternetDocument.save) */
+  novaPoshtaTtn         String? @map("nova_poshta_ttn")
+  /** Ref ЕН у НП (за потреби для друку/редагування) */
+  novaPoshtaDocumentRef String? @map("nova_poshta_document_ref")
+  npStatusCode          String? @map("np_status_code")
+  npStatusName          String? @map("np_status_name")
+  keycrmOrderId         Int?    @map("keycrm_order_id")
+  keycrmBuyerId         Int?    @map("keycrm_buyer_id")
   createdAt     DateTime    @default(now()) @map("created_at")
   
   user          User?       @relation(fields: [userId], references: [id], onDelete: SetNull)

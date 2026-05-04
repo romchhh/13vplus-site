@@ -21,7 +21,9 @@
     "prisma:generate": "prisma generate",
     "add-test-products": "ts-node --project tsconfig.scripts.json scripts/add-test-products.ts",
     "add-categories": "ts-node --project tsconfig.scripts.json scripts/add-categories.ts",
-    "check-vitals": "echo 'Run lighthouse audit after deployment'"
+    "check-vitals": "echo 'Run lighthouse audit after deployment'",
+    "sync-catalog": "ts-node --project tsconfig.scripts.json scripts/sync_catalog.tsx",
+    "test-keycrm-order": "ts-node --project tsconfig.scripts.json scripts/test_keycrm_order.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

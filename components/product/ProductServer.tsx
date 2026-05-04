@@ -7,6 +7,7 @@ interface Product {
   id: number;
   name: string;
   price: number;
+  wholesale_price?: number | null;
   old_price?: number | null;
   discount_percentage?: number | null;
   description?: string | null;
@@ -17,6 +18,14 @@ interface Product {
   has_lining?: boolean;
   lining_description?: string | null;
   category_name?: string | null;
+  weight_kg?: number | null;
+  length_cm?: number | null;
+  width_cm?: number | null;
+  height_cm?: number | null;
+  unit_type?: string | null;
+  currency_code?: string | null;
+  variant_property_name?: string | null;
+  extra_fields?: string | null;
 }
 
 async function getProduct(id: string): Promise<Product | null> {

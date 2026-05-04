@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sqlGetAllOrders, sqlPostOrder } from "@/lib/sql";
 import { creditBonusesForPaidOrder, getBonusPercentForPurchase, type OrderForBonusCredit } from "@/lib/loyalty";
+import { runPostOrderIntegrations } from "@/lib/post-order-sync";
 import crypto from "crypto";
 
 type IncomingOrderItem = {
@@ -58,6 +59,10 @@ export async function POST(req: NextRequest) {
       delivery_method,
       city,
       post_office,
+      /** Ref населеного пункту НП (getCities) — для ТТН */
+      city_ref,
+      /** Ref відділення / поштомату (getWarehouses) */
+      warehouse_ref,
       comment,
       payment_type, // "full" або "prepay"
       bonus_points_to_spend: bonusPointsToSpendRaw,
@@ -283,6 +288,43 @@ export async function POST(req: NextRequest) {
     });
     const createdOrderDbId = postResult.orderId;
     console.log("[POST /api/orders] Order saved to database successfully");
+
+    const paymentStatusForSync: "pending" | "paid" | "canceled" =
+      isTestPayment || isFullyPaidByBonuses ? "paid" : "pending";
+
+    try {
+      await runPostOrderIntegrations({
+        dbOrderId: createdOrderDbId,
+        invoiceId: orderId,
+        customerName: customer_name,
+        phoneNumber: phone_number,
+        email: email ?? null,
+        city,
+        postOffice: post_office,
+        deliveryMethod: delivery_method,
+        cityRef:
+          typeof city_ref === "string" && city_ref.trim()
+            ? city_ref.trim()
+            : null,
+        warehouseRef:
+          typeof warehouse_ref === "string" && warehouse_ref.trim()
+            ? warehouse_ref.trim()
+            : null,
+        comment: comment ?? null,
+        orderTotal,
+        paymentStatus: paymentStatusForSync,
+        normalizedItems: normalizedItems.map((it) => ({
+          product_id: it.product_id,
+          product_name: it.product_name,
+          size: it.size,
+          quantity: it.quantity,
+          price: it.price,
+          color: it.color,
+        })),
+      });
+    } catch (syncErr) {
+      console.error("[POST /api/orders] post-order-sync:", syncErr);
+    }
 
     // Deduct bonus points from user if any were used
     if (effectiveBonusDeduction > 0 && user_id) {

@@ -30,6 +30,9 @@ interface Order {
   comment: string | null;
   paymentType: string;
   paymentStatus: string;
+  novaPoshtaTtn?: string | null;
+  npStatusCode?: string | null;
+  npStatusName?: string | null;
   createdAt: string;
   items: OrderItem[];
 }
@@ -114,6 +117,13 @@ export default function OrderDetailPage() {
             : order.paymentType === "crypto"
               ? "Криптовалюта"
               : order.paymentType;
+
+  const paymentStatusLabel =
+    order.paymentStatus === "paid"
+      ? "Оплачено"
+      : order.paymentStatus === "canceled"
+        ? "Скасовано"
+        : "Очікує оплати";
 
   return (
     <div className="min-h-screen bg-white pt-20 pb-12 px-4">
@@ -247,6 +257,36 @@ export default function OrderDetailPage() {
             </dl>
           </section>
 
+          {order.novaPoshtaTtn && (
+            <section className="border border-gray-200 p-6">
+              <h2 className="text-sm font-bold font-['Montserrat'] uppercase text-gray-500 mb-4">
+                Нова пошта
+              </h2>
+              <dl className="space-y-2 font-['Montserrat'] text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-gray-600">ТТН:</dt>
+                  <dd className="text-right font-mono text-xs sm:text-sm break-all">
+                    {order.novaPoshtaTtn}
+                  </dd>
+                </div>
+                {(order.npStatusName || order.npStatusCode) && (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-gray-600">Статус доставки:</dt>
+                    <dd className="text-right max-w-[60%]">
+                      {order.npStatusName || "—"}
+                      {order.npStatusCode ? (
+                        <span className="text-gray-400 ml-1">({order.npStatusCode})</span>
+                      ) : null}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+              <p className="text-xs text-gray-500 mt-3">
+                Актуальний статус також відображається в особистому кабінеті Нової Пошти за цим номером ТТН.
+              </p>
+            </section>
+          )}
+
           <section className="border border-gray-200 p-6">
             <h2 className="text-sm font-bold font-['Montserrat'] uppercase text-gray-500 mb-4">
               Оплата
@@ -254,8 +294,16 @@ export default function OrderDetailPage() {
             <p className="font-['Montserrat'] text-sm">
               Спосіб оплати: {paymentLabel}
             </p>
-            <p className="font-['Montserrat'] text-sm mt-1 text-green-600 font-medium">
-              Статус: Оплачено
+            <p
+              className={`font-['Montserrat'] text-sm mt-1 font-medium ${
+                order.paymentStatus === "paid"
+                  ? "text-green-600"
+                  : order.paymentStatus === "canceled"
+                    ? "text-red-600"
+                    : "text-amber-700"
+              }`}
+            >
+              Статус оплати: {paymentStatusLabel}
             </p>
           </section>
         </div>

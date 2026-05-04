@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getNovaPoshtaTracking } from "@/lib/nova-poshta";
 
 export async function GET(
   _req: NextRequest,
@@ -58,8 +59,23 @@ export async function GET(
     }
 
     // Same shape as basket/FinalCard: product with imageUrl (first photo url)
+    let npStatusCode = order.npStatusCode;
+    let npStatusName = order.npStatusName;
+    if (order.novaPoshtaTtn) {
+      const live = await getNovaPoshtaTracking(
+        order.novaPoshtaTtn,
+        order.phoneNumber
+      ).catch(() => null);
+      if (live?.name) {
+        npStatusName = live.name;
+        npStatusCode = live.code ?? npStatusCode;
+      }
+    }
+
     const orderWithImageUrl = {
       ...order,
+      npStatusCode,
+      npStatusName,
       items: order.items.map((item) => {
         const product = item.product as { id: number; name: string; media?: { url: string; type: string }[] } | null;
         const firstPhoto = product?.media?.find((m) => m.type === "photo");

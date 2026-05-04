@@ -10,6 +10,7 @@ import Input from "@/components/admin/form/input/InputField";
 import TextArea from "@/components/admin/form/input/TextArea";
 import ToggleSwitch from "@/components/admin/form/ToggleSwitch";
 import Image from "next/image";
+import { mergeVariantColorsFromInputs } from "@/lib/merge-variant-colors";
 
 const seasonOptions = ["Весна", "Літо", "Осінь", "Зима"];
 
@@ -58,6 +59,19 @@ export default function FormElements() {
   const [fabricComposition, setFabricComposition] = useState("");
   const [hasLining, setHasLining] = useState(false);
   const [liningDescription, setLiningDescription] = useState("");
+
+  const [wholesalePrice, setWholesalePrice] = useState("");
+  const [weightKg, setWeightKg] = useState("");
+  const [lengthCm, setLengthCm] = useState("");
+  const [widthCm, setWidthCm] = useState("");
+  const [heightCm, setHeightCm] = useState("");
+  const [unitType, setUnitType] = useState("шт");
+  const [currencyCode, setCurrencyCode] = useState("UAH");
+  const [hasMultipleVariants, setHasMultipleVariants] = useState(true);
+  const [variantPropertyName, setVariantPropertyName] = useState("Колір");
+  const [colorVariantLines, setColorVariantLines] = useState("");
+  const [extraFields, setExtraFields] = useState("");
+  const [singleVariantStock, setSingleVariantStock] = useState("0");
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
@@ -155,6 +169,21 @@ export default function FormElements() {
     setError(null);
 
     try {
+      const mergedColors = mergeVariantColorsFromInputs(colorVariantLines, colors);
+      const effectiveSizes = hasMultipleVariants
+        ? sizes.map((s) => ({ size: s, stock: sizeStocks[s] ?? 0 }))
+        : [
+            {
+              size: "Універсал",
+              stock: Math.max(0, Number(singleVariantStock) || 0),
+            },
+          ];
+      if (hasMultipleVariants && effectiveSizes.length === 0) {
+        setError("Оберіть хоча б один розмір або вимкніть «декілька варіантів».");
+        setLoading(false);
+        return;
+      }
+
       // 1) Upload images first (if any)
       let uploadedMedia: { type: "photo" | "video"; url: string }[] = [];
       if (mediaFiles.length > 0) {
@@ -178,14 +207,17 @@ export default function FormElements() {
           name,
           description,
           price: Number(price),
+          wholesale_price: wholesalePrice.trim()
+            ? Number(wholesalePrice)
+            : null,
           old_price: oldPrice ? Number(oldPrice) : null,
           discount_percentage: discountPercentage
             ? Number(discountPercentage)
             : null,
           priority: Number(priority || 0),
           color,
-          colors,
-          sizes: sizes.map((s) => ({ size: s, stock: sizeStocks[s] ?? 0 })),
+          colors: mergedColors,
+          sizes: effectiveSizes,
           top_sale: topSale,
           limited_edition: limitedEdition,
           season: season.length === 0 ? null : season,
@@ -195,6 +227,15 @@ export default function FormElements() {
           fabric_composition: fabricComposition,
           has_lining: hasLining,
           lining_description: liningDescription,
+          weight_kg: weightKg.trim() ? Number(weightKg) : null,
+          length_cm: lengthCm.trim() ? Number(lengthCm) : null,
+          width_cm: widthCm.trim() ? Number(widthCm) : null,
+          height_cm: heightCm.trim() ? Number(heightCm) : null,
+          unit_type: unitType.trim() || "шт",
+          currency_code: currencyCode.trim().toUpperCase() || "UAH",
+          has_multiple_variants: hasMultipleVariants,
+          variant_property_name: variantPropertyName.trim() || "Колір",
+          extra_fields: extraFields.trim() || null,
         }),
       });
 
@@ -224,6 +265,18 @@ export default function FormElements() {
       setLiningDescription("");
       setSubcategoryId(null);
       setSubcategories([]);
+      setWholesalePrice("");
+      setWeightKg("");
+      setLengthCm("");
+      setWidthCm("");
+      setHeightCm("");
+      setUnitType("шт");
+      setCurrencyCode("UAH");
+      setHasMultipleVariants(true);
+      setVariantPropertyName("Колір");
+      setColorVariantLines("");
+      setExtraFields("");
+      setSingleVariantStock("0");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Помилка при створенні товару"
@@ -238,116 +291,28 @@ export default function FormElements() {
       <PageBreadcrumb pageTitle="Додати Товар" />
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left side: inputs */}
-          <div className="p-4">
-            <ComponentCard title="Дані Товару">
-              <div className="space-y-5">
+          {/* Left: структура як у KeyCRM */}
+          <div className="p-4 space-y-6">
+            <ComponentCard title="Основне">
+              <div className="space-y-4">
                 <div>
-                  <Label>Назва Товару</Label>
+                  <Label>Назва</Label>
                   <Input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    placeholder="Назва товару"
                   />
                 </div>
-                <div>
-                  <Label>Опис</Label>
-                  <TextArea
-                    value={description}
-                    onChange={setDescription}
-                    rows={6}
-                  />
-                </div>
-                <div>
-                  <Label>Ціна</Label>
-                  <Input
-                    type="number"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="Поточна ціна"
-                  />
-                </div>
-                <div>
-                  <Label>Стара ціна (опціонально)</Label>
-                  <Input
-                    type="number"
-                    value={oldPrice}
-                    onChange={(e) => setOldPrice(e.target.value)}
-                    placeholder="Ціна до знижки"
-                  />
-                </div>
-                <div>
-                  <Label>Відсоток знижки (опціонально)</Label>
-                  <Input
-                    type="number"
-                    value={discountPercentage}
-                    onChange={(e) => setDiscountPercentage(e.target.value)}
-                    placeholder="Наприклад: 20"
-                  />
-                </div>
-                <div>
-                  <Label>Пріоритет показу</Label>
-                  <Input
-                    type="number"
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                    placeholder="0 - звичайний, 1 - високий"
-                  />
-                </div>
-                <div>
-                  <Label>Розміри</Label>
-                  <MultiSelect
-                    label="Розміри"
-                    options={multiOptions}
-                    defaultSelected={sizes}
-                    onChange={(values: string[]) => {
-                      // Update selected sizes
-                      setSizes(values);
-                      // Ensure stocks exist for any newly added size
-                      setSizeStocks((prev) => {
-                        const next = { ...prev };
-                        values.forEach((sz: string) => {
-                          if (next[sz] === undefined) next[sz] = 0;
-                        });
-                        // Remove stocks for sizes no longer selected
-                        Object.keys(next).forEach((sz) => {
-                          if (!values.includes(sz)) delete (next as Record<string, number>)[sz];
-                        });
-                        return next;
-                      });
-                    }}
-                    zIndex={51}
-                  />
-                </div>
-
-                {/* Per-size stock editor */}
-                {sizes.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    <Label>Кількість по розмірах</Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {sizes.map((sz) => (
-                        <div key={sz} className="flex items-center gap-2 border rounded px-2 py-1">
-                          <span className="min-w-10 text-sm font-medium">{sz}</span>
-                          <input
-                            type="number"
-                            min={0}
-                            value={sizeStocks[sz] ?? 0}
-                            onChange={(e) => {
-                              const val = Math.max(0, Number(e.target.value) || 0);
-                              setSizeStocks((prev) => ({ ...prev, [sz]: val }));
-                            }}
-                            className="w-20 border border-gray-300 rounded-lg px-2 py-1 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
                 <div>
                   <Label>Категорія</Label>
                   <select
                     value={categoryId ?? ""}
-                    onChange={(e) => setCategoryId(Number(e.target.value))}
+                    onChange={(e) =>
+                      setCategoryId(
+                        e.target.value ? Number(e.target.value) : null
+                      )
+                    }
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   >
                     <option value="">Виберіть категорію</option>
@@ -363,10 +328,14 @@ export default function FormElements() {
                     <Label>Підкатегорія</Label>
                     <select
                       value={subcategoryId ?? ""}
-                      onChange={(e) => setSubcategoryId(Number(e.target.value))}
+                      onChange={(e) =>
+                        setSubcategoryId(
+                          e.target.value ? Number(e.target.value) : null
+                        )
+                      }
                       className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     >
-                      <option value="">Виберіть підкатегорію</option>
+                      <option value="">Необовʼязково</option>
                       {subcategories.map((sub) => (
                         <option key={sub.id} value={sub.id}>
                           {sub.name}
@@ -375,7 +344,20 @@ export default function FormElements() {
                     </select>
                   </div>
                 )}
+              </div>
+            </ComponentCard>
 
+            <ComponentCard title="Додаткові поля">
+              <div className="space-y-4">
+                <div>
+                  <Label>Текстовий блок (для адміністратора / CRM)</Label>
+                  <TextArea
+                    value={extraFields}
+                    onChange={setExtraFields}
+                    rows={4}
+                    placeholder="Довільні примітки, артикули постачальника тощо"
+                  />
+                </div>
                 <div>
                   <MultiSelect
                     label="Сезон"
@@ -388,9 +370,280 @@ export default function FormElements() {
                     onChange={setSeason}
                   />
                 </div>
+                <div>
+                  <Label>Пріоритет показу в каталозі</Label>
+                  <Input
+                    type="number"
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                    placeholder="0 — звичайний"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label className="mb-0">Топ продаж</Label>
+                  <ToggleSwitch
+                    enabled={topSale}
+                    setEnabled={setTopSale}
+                    label="Top Sale"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label className="mb-0">Лімітована серія</Label>
+                  <ToggleSwitch
+                    enabled={limitedEdition}
+                    setEnabled={setLimitedEdition}
+                    label="Limited Edition"
+                  />
+                </div>
+                <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+                  <Label>Склад тканини та підкладка</Label>
+                  <TextArea
+                    value={fabricComposition}
+                    onChange={setFabricComposition}
+                    rows={3}
+                    placeholder="Наприклад: 80% бавовна, 20% поліестер"
+                  />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Підкладка</span>
+                    <ToggleSwitch
+                      enabled={hasLining}
+                      setEnabled={setHasLining}
+                      label="Has Lining"
+                    />
+                  </div>
+                  {hasLining && (
+                    <TextArea
+                      value={liningDescription}
+                      onChange={setLiningDescription}
+                      rows={2}
+                      placeholder="Опис підкладки"
+                    />
+                  )}
+                </div>
+              </div>
+            </ComponentCard>
 
+            <ComponentCard title="Ціни та валюта">
+              <div className="space-y-4">
+                <div>
+                  <Label>Рекомендована ціна (роздріб)</Label>
+                  <Input
+                    type="number"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="Введіть значення"
+                  />
+                </div>
+                <div>
+                  <Label>Оптова ціна</Label>
+                  <Input
+                    type="number"
+                    value={wholesalePrice}
+                    onChange={(e) => setWholesalePrice(e.target.value)}
+                    placeholder="Введіть значення"
+                  />
+                </div>
+                <div>
+                  <Label>Стара ціна (акція)</Label>
+                  <Input
+                    type="number"
+                    value={oldPrice}
+                    onChange={(e) => setOldPrice(e.target.value)}
+                    placeholder="Опційно"
+                  />
+                </div>
+                <div>
+                  <Label>Відсоток знижки</Label>
+                  <Input
+                    type="number"
+                    value={discountPercentage}
+                    onChange={(e) => setDiscountPercentage(e.target.value)}
+                    placeholder="Опційно"
+                  />
+                </div>
+                <div>
+                  <Label>Валюта</Label>
+                  <select
+                    value={currencyCode}
+                    onChange={(e) => setCurrencyCode(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 shadow-sm"
+                  >
+                    <option value="UAH">Ukrainian Hryvnia — UAH</option>
+                  </select>
+                </div>
+              </div>
+            </ComponentCard>
+
+            <ComponentCard title="Розміри за замовчуванням">
+              <p className="text-xs text-gray-500 mb-3">
+                Вага та габарити застосовуються до варіантів, якщо для варіанту не
+                задано окремо (як у KeyCRM).
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Вага (кг)</Label>
+                  <Input
+                    type="number"
+                    step={0.001}
+                    value={weightKg}
+                    onChange={(e) => setWeightKg(e.target.value)}
+                    placeholder="кг"
+                  />
+                </div>
+                <div>
+                  <Label>Одиниці виміру</Label>
+                  <Input
+                    type="text"
+                    value={unitType}
+                    onChange={(e) => setUnitType(e.target.value)}
+                    placeholder="шт"
+                  />
+                </div>
+                <div>
+                  <Label>Довжина (см)</Label>
+                  <Input
+                    type="number"
+                    step={0.01}
+                    value={lengthCm}
+                    onChange={(e) => setLengthCm(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Ширина (см)</Label>
+                  <Input
+                    type="number"
+                    step={0.01}
+                    value={widthCm}
+                    onChange={(e) => setWidthCm(e.target.value)}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Висота (см)</Label>
+                  <Input
+                    type="number"
+                    step={0.01}
+                    value={heightCm}
+                    onChange={(e) => setHeightCm(e.target.value)}
+                  />
+                </div>
+              </div>
+            </ComponentCard>
+
+            <ComponentCard title="Варіанти розмірів">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="mb-0">Товар має декілька варіантів (розміри)</Label>
+                  <ToggleSwitch
+                    enabled={hasMultipleVariants}
+                    setEnabled={setHasMultipleVariants}
+                    label="Variants"
+                  />
+                </div>
+                {hasMultipleVariants ? (
+                  <>
+                    <MultiSelect
+                      label="Розміри"
+                      options={multiOptions}
+                      defaultSelected={sizes}
+                      onChange={(values: string[]) => {
+                        setSizes(values);
+                        setSizeStocks((prev) => {
+                          const next = { ...prev };
+                          values.forEach((sz: string) => {
+                            if (next[sz] === undefined) next[sz] = 0;
+                          });
+                          Object.keys(next).forEach((sz) => {
+                            if (!values.includes(sz))
+                              delete (next as Record<string, number>)[sz];
+                          });
+                          return next;
+                        });
+                      }}
+                      zIndex={51}
+                    />
+                    {sizes.length > 0 && (
+                      <div className="space-y-2">
+                        <Label>Залишок по розмірах</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {sizes.map((sz) => (
+                            <div
+                              key={sz}
+                              className="flex items-center gap-2 border rounded px-2 py-1"
+                            >
+                              <span className="min-w-10 text-sm font-medium">
+                                {sz}
+                              </span>
+                              <input
+                                type="number"
+                                min={0}
+                                value={sizeStocks[sz] ?? 0}
+                                onChange={(e) => {
+                                  const val = Math.max(
+                                    0,
+                                    Number(e.target.value) || 0
+                                  );
+                                  setSizeStocks((prev) => ({
+                                    ...prev,
+                                    [sz]: val,
+                                  }));
+                                }}
+                                className="w-20 border border-gray-300 rounded-lg px-2 py-1 text-sm"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div>
+                    <Label>Залишок (один варіант «Універсал»)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={singleVariantStock}
+                      onChange={(e) => setSingleVariantStock(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+            </ComponentCard>
+
+            <ComponentCard title="Варіанти — властивість #1">
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-center">
+                    <Label>Назва властивості</Label>
+                    <span className="text-xs text-gray-500">
+                      {variantPropertyName.length}/80
+                    </span>
+                  </div>
+                  <Input
+                    type="text"
+                    value={variantPropertyName}
+                    onChange={(e) =>
+                      setVariantPropertyName(e.target.value.slice(0, 80))
+                    }
+                    placeholder="Наприклад: Колір"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between items-center">
+                    <Label>Значення (кожне з нового рядка)</Label>
+                    <span className="text-xs text-gray-500">
+                      {colorVariantLines.split(/\r?\n/).filter((l) => l.trim()).length}
+                      /80 рядків
+                    </span>
+                  </div>
+                  <TextArea
+                    value={colorVariantLines}
+                    onChange={setColorVariantLines}
+                    rows={5}
+                    placeholder={"Чорний\nБілий\nБежевий"}
+                  />
+                </div>
                 <div className="space-y-2">
-                  <Label>Кольори</Label>
+                  <Label>Або додайте з палітри (з hex)</Label>
                   <div className="flex gap-2 flex-wrap">
                     {colors.map((c, idx) => (
                       <button
@@ -409,7 +662,6 @@ export default function FormElements() {
                       </button>
                     ))}
                   </div>
-                  {/* Removed dropdown; using swatch list below */}
                   <div className="flex flex-wrap gap-2">
                     {availableColors.map((c) => (
                       <button
@@ -432,7 +684,7 @@ export default function FormElements() {
                       </button>
                     ))}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <input
                       type="color"
                       value={customColorHex}
@@ -461,61 +713,29 @@ export default function FormElements() {
                       }}
                       className="px-3 py-2 rounded bg-blue-600 text-white text-sm"
                     >
-                      Додати власний
+                      Додати
                     </button>
                   </div>
                 </div>
-
-                {/* Блок: Склад тканини і Підкладка */}
-                <div className="border border-gray-300 rounded-lg p-4 space-y-4 bg-white">
-                  <div>
-                    <Label>Склад тканини</Label>
-                    <TextArea
-                      value={fabricComposition}
-                      onChange={setFabricComposition}
-                      rows={3}
-                      placeholder="Наприклад: 80% бавовна, 20% поліестер"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="mb-0">Підкладка?</Label>
-                    <ToggleSwitch
-                      enabled={hasLining}
-                      setEnabled={setHasLining}
-                      label="Has Lining"
-                    />
-                  </div>
-                </div>
-                {/* Lining description input */}
-                {hasLining && (
-                  <div>
-                    <Label>Опис підкладки</Label>
-                    <TextArea
-                      value={liningDescription}
-                      onChange={setLiningDescription}
-                      rows={2}
-                      placeholder="Опис підкладки товару"
-                    />
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-2">
-                  <Label className="mb-0">Топ продаж?</Label>
-                  <ToggleSwitch
-                    enabled={topSale}
-                    setEnabled={setTopSale}
-                    label="Top Sale"
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label className="mb-0">Лімітована серія?</Label>
-                  <ToggleSwitch
-                    enabled={limitedEdition}
-                    setEnabled={setLimitedEdition}
-                    label="Limited Edition"
+                <div>
+                  <Label>Основний колір (legacy, опційно)</Label>
+                  <Input
+                    type="text"
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                    placeholder="Напр. для фільтрів каталогу"
                   />
                 </div>
               </div>
+            </ComponentCard>
+
+            <ComponentCard title="Опис товару">
+              <TextArea
+                value={description}
+                onChange={setDescription}
+                rows={8}
+                placeholder="Повний опис"
+              />
             </ComponentCard>
           </div>
 
