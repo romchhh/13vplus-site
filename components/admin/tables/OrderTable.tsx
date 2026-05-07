@@ -23,6 +23,8 @@ interface Order {
   delivery_method: string;
   city: string;
   post_office: string;
+  nova_poshta_ttn?: string | null;
+  np_status_name?: string | null;
   payment_type: string;
   status: string;
   created_at: Date;
@@ -220,6 +222,12 @@ export default function OrdersTable() {
                   isHeader
                   className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
                 >
+                  ТТН (НП)
+                </TableCell>
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 text-left text-sm font-semibold text-gray-900"
+                >
                   Оплата
                 </TableCell>
                 <TableCell
@@ -247,7 +255,7 @@ export default function OrdersTable() {
               {loading ? (
                 <TableRow>
                   <TableCell
-                    colSpan={10}
+                    colSpan={11}
                     className="text-center py-6 text-gray-600"
                   >
                     Завантаження...
@@ -256,7 +264,7 @@ export default function OrdersTable() {
               ) : orders.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={10}
+                    colSpan={11}
                     className="text-center py-6 text-gray-600"
                   >
                     Замовлень не знайдено.
@@ -285,6 +293,30 @@ export default function OrdersTable() {
                     </TableCell>
                     <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {order.post_office}
+                    </TableCell>
+                    <TableCell className="px-5 py-4 text-sm text-gray-700">
+                      {order.nova_poshta_ttn ? (
+                        <div className="flex flex-col gap-1">
+                          <span className="font-mono text-xs break-all">
+                            {order.nova_poshta_ttn}
+                          </span>
+                          <a
+                            className="text-xs text-blue-600 hover:underline"
+                            href={`https://novaposhta.ua/tracking/${order.nova_poshta_ttn}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Відстежити
+                          </a>
+                          {order.np_status_name ? (
+                            <span className="text-xs text-gray-500">
+                              {order.np_status_name}
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : (
+                        "—"
+                      )}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-sm text-gray-700">
                       {order.payment_type === "full"

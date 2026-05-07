@@ -26,6 +26,8 @@ export default function EditOrderPage() {
     delivery_method: "",
     city: "",
     post_office: "",
+    nova_poshta_ttn: "",
+    np_status_name: "",
     status: "",
     payment_type: "",
     items: [],
@@ -44,6 +46,8 @@ export default function EditOrderPage() {
           delivery_method: data.delivery_method || "",
           city: data.city || "",
           post_office: data.post_office || "",
+          nova_poshta_ttn: data.nova_poshta_ttn || "",
+          np_status_name: data.np_status_name || "",
           status: data.status || "",
           payment_type: data.payment_type || "",
           items: data.items || [],
@@ -169,6 +173,30 @@ export default function EditOrderPage() {
                 onChange={(e) => handleChange("post_office", e.target.value)}
                 disabled
               />
+            </div>
+            <div>
+              <Label>ТТН Нової Пошти</Label>
+              <Input
+                type="text"
+                value={formData.nova_poshta_ttn || "-"}
+                onChange={(e) => handleChange("nova_poshta_ttn", e.target.value)}
+                disabled
+              />
+              {formData.nova_poshta_ttn ? (
+                <a
+                  className="text-sm text-blue-600 hover:underline inline-block mt-1"
+                  href={`https://novaposhta.ua/tracking/${formData.nova_poshta_ttn}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Відстежити посилку
+                </a>
+              ) : null}
+              {formData.np_status_name ? (
+                <p className="text-sm text-gray-500 mt-1">
+                  Статус: {formData.np_status_name}
+                </p>
+              ) : null}
             </div>
             <div>
               <Label>Спосіб оплати</Label>

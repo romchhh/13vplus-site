@@ -234,6 +234,8 @@ export async function POST(req: NextRequest) {
                 delivery_method: order.deliveryMethod,
                 city: order.city,
                 post_office: order.postOffice,
+                nova_poshta_ttn: order.novaPoshtaTtn ?? null,
+                np_status_name: order.npStatusName ?? null,
                 comment: order.comment,
                 payment_type: order.paymentType,
                 payment_status: "paid",
