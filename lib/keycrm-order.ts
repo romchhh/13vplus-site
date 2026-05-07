@@ -85,7 +85,7 @@ function normalizePhone(phone: string): string {
 
 /** 380XXXXXXXXX для фільтра KeyCRM */
 function uaPhoneDigits(phone: string): string {
-  let d = phone.replace(/\D/g, "");
+  const d = phone.replace(/\D/g, "");
   if (d.startsWith("380") && d.length >= 12) return d.slice(0, 12);
   if (d.startsWith("0") && d.length === 10) return `38${d}`;
   if (d.length === 9) return `380${d}`;

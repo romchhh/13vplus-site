@@ -28,6 +28,9 @@ interface Order {
   paymentStatus: string;
   paymentType?: string | null;
   status: string | null;
+  novaPoshtaTtn?: string | null;
+  npStatusCode?: string | null;
+  npStatusName?: string | null;
   items: Array<{
     id: number;
     quantity: number;
@@ -721,6 +724,24 @@ export default function ProfilePage() {
                             грн
                           </span>
                         </div>
+                        {order.novaPoshtaTtn ? (
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <div className="text-xs sm:text-sm text-gray-600 font-['Montserrat']">
+                              ТТН:{" "}
+                              <span className="font-mono text-gray-900 break-all">
+                                {order.novaPoshtaTtn}
+                              </span>
+                            </div>
+                            <a
+                              href={`https://novaposhta.ua/tracking/${order.novaPoshtaTtn}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs sm:text-sm font-['Montserrat'] font-medium text-black hover:underline text-center py-2 sm:py-0 min-h-[44px] sm:min-h-0 flex items-center justify-center"
+                            >
+                              Відстежити
+                            </a>
+                          </div>
+                        ) : null}
                         <Link
                           href={`/profile/orders/${order.id}`}
                           className="text-sm font-['Montserrat'] font-medium text-black hover:underline text-center py-2 sm:py-0 min-h-[44px] sm:min-h-0 flex items-center justify-center"

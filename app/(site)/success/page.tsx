@@ -21,6 +21,9 @@ interface OrderData {
   items: OrderItem[];
   payment_type: string;
   payment_status: string;
+  nova_poshta_ttn?: string | null;
+  np_status_code?: string | null;
+  np_status_name?: string | null;
 }
 
 type PageState = "loading" | "paid" | "pending" | "not_found" | "invalid";
@@ -205,6 +208,29 @@ function PaymentSuccessContent() {
           <p className="text-lg text-gray-600 mb-6">
             Дякуємо за ваше замовлення. Ваш платіж було успішно оброблено.
           </p>
+
+          {order?.nova_poshta_ttn && (
+            <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 text-left">
+              <p className="text-sm text-gray-500 mb-1">Нова пошта — ТТН</p>
+              <p className="font-mono text-sm text-gray-900 break-all">
+                {order.nova_poshta_ttn}
+              </p>
+              {(order.np_status_name || order.np_status_code) && (
+                <p className="text-sm text-gray-600 mt-2">
+                  Статус: {order.np_status_name || "—"}{" "}
+                  {order.np_status_code ? `(${order.np_status_code})` : ""}
+                </p>
+              )}
+              <a
+                href={`https://novaposhta.ua/tracking/${order.nova_poshta_ttn}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex mt-3 items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Відстежити посилку
+              </a>
+            </div>
+          )}
 
           {order && order.items && order.items.length > 0 ? (
             <div className="mb-6">

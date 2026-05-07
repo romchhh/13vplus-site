@@ -61,6 +61,106 @@ async function npRequest<T>(
   return (await res.json()) as NpApiResponse<T>;
 }
 
+type NpCityRow = { Ref: string; Description: string };
+type NpWarehouseRow = { Ref: string; Description: string; CityRef?: string };
+
+async function resolveCityRefByName(cityName: string): Promise<string | null> {
+  const name = cityName.trim();
+  if (!name) return null;
+  const resp = await npRequest<NpCityRow[]>("AddressGeneral", "getCities", {
+    FindByString: name,
+    Limit: 20,
+  });
+  if (!resp.success || !resp.data?.length) return null;
+  const exact =
+    resp.data.find((c) => c.Description?.toLowerCase() === name.toLowerCase()) ??
+    resp.data[0];
+  return exact?.Ref ?? null;
+}
+
+async function resolveWarehouseRefByText(
+  cityRef: string,
+  warehouseText: string
+): Promise<string | null> {
+  const q = warehouseText.trim();
+  if (!q) return null;
+  const resp = await npRequest<NpWarehouseRow[]>("AddressGeneral", "getWarehouses", {
+    CityRef: cityRef,
+    FindByString: q,
+    Limit: 20,
+  });
+  if (!resp.success || !resp.data?.length) return null;
+  const exact =
+    resp.data.find((w) => w.Description?.toLowerCase() === q.toLowerCase()) ??
+    resp.data[0];
+  return exact?.Ref ?? null;
+}
+
+function splitFullName(fullName: string): {
+  firstName: string;
+  lastName: string;
+  middleName: string;
+} {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { firstName: "—", lastName: "—", middleName: "" };
+  if (parts.length === 1) return { firstName: parts[0]!, lastName: parts[0]!, middleName: "" };
+  if (parts.length === 2) return { firstName: parts[0]!, lastName: parts[1]!, middleName: "" };
+  return {
+    firstName: parts[0]!,
+    lastName: parts[parts.length - 1]!,
+    middleName: parts.slice(1, -1).join(" "),
+  };
+}
+
+type NpCounterpartySaveRow = {
+  Ref?: string;
+};
+
+type NpContactPersonsRow = { Ref?: string };
+
+async function ensureRecipientCounterparty(params: {
+  fullName: string;
+  phoneDigits: string;
+  cityRef: string;
+}): Promise<{ recipientRef: string; contactRef: string } | { error: string }> {
+  const { firstName, lastName, middleName } = splitFullName(params.fullName);
+
+  const saveResp = await npRequest<NpCounterpartySaveRow[]>("Counterparty", "save", {
+    CounterpartyProperty: "Recipient",
+    CounterpartyType: "PrivatePerson",
+    FirstName: firstName,
+    LastName: lastName,
+    MiddleName: middleName,
+    Phone: params.phoneDigits,
+    CityRef: params.cityRef,
+  });
+
+  const recipientRef = saveResp.data?.[0]?.Ref;
+  if (!saveResp.success || !recipientRef) {
+    return {
+      error:
+        (saveResp.errors ?? []).join("; ") ||
+        "Не вдалося створити/отримати Recipient у НП",
+    };
+  }
+
+  const contactResp = await npRequest<NpContactPersonsRow[]>(
+    "Counterparty",
+    "getCounterpartyContactPersons",
+    { Ref: recipientRef }
+  );
+  const contactRef = contactResp.data?.[0]?.Ref;
+  if (!contactResp.success || !contactRef) {
+    return {
+      error:
+        (contactResp.errors ?? []).join("; ") ||
+        "Не вдалося отримати ContactRecipient у НП",
+    };
+  }
+
+  return { recipientRef, contactRef };
+}
+
 export function isNovaPoshtaConfiguredForTtn(): boolean {
   const k = getApiKey();
   if (!k) return false;
@@ -117,6 +217,34 @@ export async function createNovaPoshtaTtn(
     params.serviceType ??
     (params.warehouseRef ? "WarehouseWarehouse" : "WarehouseWarehouse");
 
+  // Якщо з фронта не прийшли Ref-и (користувач вводив руками) — резолвимо їх на сервері.
+  const cityRef =
+    params.cityRef?.trim() ||
+    (await resolveCityRefByName(params.cityName).catch(() => null)) ||
+    "";
+  const warehouseRef =
+    params.warehouseRef?.trim() ||
+    (cityRef
+      ? await resolveWarehouseRefByText(cityRef, params.warehouseDescription).catch(
+          () => null
+        )
+      : null) ||
+    "";
+
+  if (!cityRef || !warehouseRef) {
+    return {
+      error:
+        "CityRecipient not selected; RecipientAddress not selected (не вдалося визначити Ref міста/відділення). Виберіть місто/відділення зі списку або перевірте дані.",
+    };
+  }
+
+  const ensured = await ensureRecipientCounterparty({
+    fullName: params.recipientName,
+    phoneDigits: recipientPhone,
+    cityRef,
+  });
+  if ("error" in ensured) return { error: ensured.error };
+
   const methodProperties: Record<string, unknown> = {
     Sender: process.env.NOVA_POSHTA_SENDER_REF,
     CitySender: process.env.NOVA_POSHTA_CITY_SENDER_REF,
@@ -136,22 +264,10 @@ export async function createNovaPoshtaTtn(
     VolumeGeneral: "0.0004",
   };
 
-  methodProperties.RecipientType = "PrivatePerson";
-
-  if (params.warehouseRef && params.cityRef) {
-    methodProperties.CityRecipient = params.cityRef;
-    methodProperties.RecipientAddress = params.warehouseRef;
-  } else {
-    methodProperties.RecipientCityName = params.cityName;
-    methodProperties.RecipientAddressName = params.warehouseDescription.slice(
-      0,
-      200
-    );
-    methodProperties.RecipientArea = "";
-    methodProperties.RecipientAreaRegions = "";
-    methodProperties.RecipientHouse = "";
-    methodProperties.RecipientFlat = "";
-  }
+  methodProperties.Recipient = ensured.recipientRef;
+  methodProperties.ContactRecipient = ensured.contactRef;
+  methodProperties.CityRecipient = cityRef;
+  methodProperties.RecipientAddress = warehouseRef;
 
   const now = new Date();
   const dd = String(now.getDate()).padStart(2, "0");
