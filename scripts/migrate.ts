@@ -193,6 +193,14 @@ const migrations: Migration[] = [
       CREATE INDEX IF NOT EXISTS "users_email_idx" ON "users"("email");
     `,
   },
+  {
+    id: "20260525120000_add_variant_group_key",
+    description: "Add variant_group_key to products for related color variants",
+    sql: `
+      ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "variant_group_key" VARCHAR(255);
+      CREATE INDEX IF NOT EXISTS "products_variant_group_key_idx" ON "products"("variant_group_key");
+    `,
+  },
 ];
 
 async function ensureMigrationsTable(pool: Pool) {
