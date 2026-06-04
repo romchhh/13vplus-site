@@ -6,7 +6,7 @@
  *
  * Режими:
  *   push (за замовчуванням) — товари з вашої БД (Prisma) у KeyCRM для записів без keycrm_product_id
- *   pull — завантажити товари та офери з KeyCRM у консоль (заглушка збереження в БД як у старій версії)
+ *   pull — застарілий режим (лише консоль). Для імпорту в БД: npm run import-keycrm-catalog
  *
  * Змінні середовища (.env):
  *   DATABASE_URL          — для режиму push
@@ -132,7 +132,7 @@ async function fetchAllProducts(): Promise<KeyCRMProduct[]> {
   let lastPage = 1;
   console.log("📦 Завантаження товарів з KeyCRM...");
   do {
-    const path = `/products?limit=${PAGE_LIMIT}&page=${page}&include=media,category`;
+    const path = `/products?limit=${PAGE_LIMIT}&page=${page}`;
     const response = await keycrmGet<PaginatedResponse<KeyCRMProduct>>(path);
     allProducts.push(...response.data);
     lastPage = response.last_page;

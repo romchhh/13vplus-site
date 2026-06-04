@@ -171,24 +171,42 @@ export async function sqlGetProduct(id: number) {
   )();
 }
 
-// Get related color variants by product name
+// Get related color variants by product name (same model, different colors)
 export async function sqlGetRelatedColorsByName(name: string) {
-  const products = await prisma.product.findMany({
+  const product = await prisma.product.findFirst({
     where: { name },
+    select: {
+      id: true,
+      variantGroupKey: true,
+      color: true,
+      colors: {
+        take: 1,
+        orderBy: { id: "asc" },
+        select: { label: true, hex: true },
+      },
+    },
+  });
+
+  if (!product?.variantGroupKey) {
+    return [];
+  }
+
+  const related = await prisma.product.findMany({
+    where: {
+      variantGroupKey: product.variantGroupKey,
+      NOT: { id: product.id },
+    },
     orderBy: { id: "asc" },
     include: {
       colors: {
         take: 1,
         orderBy: { id: "asc" },
-        select: {
-          label: true,
-          hex: true,
-        },
+        select: { label: true, hex: true },
       },
     },
   });
 
-  return products.map((p) => {
+  return related.map((p) => {
     const firstColor = p.colors[0]
       ? { label: p.colors[0].label, hex: p.colors[0].hex }
       : p.color

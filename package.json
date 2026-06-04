@@ -23,6 +23,9 @@
     "add-categories": "ts-node --project tsconfig.scripts.json scripts/add-categories.ts",
     "check-vitals": "echo 'Run lighthouse audit after deployment'",
     "sync-catalog": "ts-node --project tsconfig.scripts.json scripts/sync_catalog.tsx",
+    "import-keycrm-catalog": "ts-node --project tsconfig.scripts.json scripts/import_keycrm_catalog.ts",
+    "seed-keycrm-first5": "ts-node --project tsconfig.scripts.json scripts/import_keycrm_catalog.ts --reset-catalog --limit=5",
+    "clear-catalog": "ts-node --project tsconfig.scripts.json scripts/clear_catalog.ts",
     "test-keycrm-order": "ts-node --project tsconfig.scripts.json scripts/test_keycrm_order.ts"
   },
   "dependencies": {

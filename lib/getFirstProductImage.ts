@@ -1,7 +1,35 @@
+export const DEFAULT_PRODUCT_IMAGE_FALLBACK =
+  "https://placehold.co/800x1200/e5e5e5/666666?text=13VPLUS";
+
+const INVALID_MEDIA_URLS = new Set(["template-placeholder", "placeholder", "null", "undefined"]);
+
+/** Чи можна віддавати url як файл з /api/images/:filename */
+export function isValidProductMediaFilename(
+  url: string | undefined | null
+): boolean {
+  if (!url?.trim()) return false;
+  const value = url.trim();
+  if (INVALID_MEDIA_URLS.has(value.toLowerCase())) return false;
+  if (value.startsWith("http://") || value.startsWith("https://")) return true;
+  if (value.includes("..") || value.includes("/") || value.includes("\\")) {
+    return false;
+  }
+  return true;
+}
+
+/** Повний src для <Image> / <video> */
+export function resolveProductImageSrc(
+  url: string | undefined | null,
+  fallback = DEFAULT_PRODUCT_IMAGE_FALLBACK
+): string {
+  if (!isValidProductMediaFilename(url)) return fallback;
+  const value = url!.trim();
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  return `/api/images/${value}`;
+}
+
 /**
  * Gets the first photo from a product's media array
- * @param media - Array of media items with url and type properties
- * @returns URL of the first photo, or empty string if no photos found
  */
 export function getFirstProductImage(
   media: { url: string; type: string }[] | undefined
@@ -10,59 +38,54 @@ export function getFirstProductImage(
     return "";
   }
 
-  // Find the first item with type "photo" (media is now ordered by id from DB)
-  const firstPhoto = media.find((m) => m.type === "photo");
-  
-  // If no photo found, return the first media item (could be video)
-  return firstPhoto?.url || media[0]?.url || "";
+  const firstPhoto = media.find((m) => m.type === "photo" && isValidProductMediaFilename(m.url));
+  if (firstPhoto?.url) return firstPhoto.url;
+
+  const firstValid = media.find((m) => isValidProductMediaFilename(m.url));
+  return firstValid?.url || "";
 }
 
 /**
  * Gets the complete image source path for a product
- * @param media - Array of media items OR single first_media object
- * @param fallback - Optional fallback URL if no image found
- * @returns Complete path to image or fallback
  */
 export function getProductImageSrc(
-  media: { url: string; type: string }[] | { url: string; type: string } | undefined | null,
-  fallback = "https://placehold.co/400x600/cccccc/666666?text=No+Image"
+  media:
+    | { url: string; type: string }[]
+    | { url: string; type: string }
+    | undefined
+    | null,
+  fallback = DEFAULT_PRODUCT_IMAGE_FALLBACK
 ): string {
-  // Handle new optimized format (single first_media object)
-  if (media && !Array.isArray(media) && 'url' in media) {
-    return `/api/images/${media.url}`;
+  if (media && !Array.isArray(media) && "url" in media) {
+    return resolveProductImageSrc(media.url, fallback);
   }
-  
-  // Handle old format (array of media)
-  const imageUrl = getFirstProductImage(media as { url: string; type: string }[] | undefined);
-  
-  if (!imageUrl) {
-    return fallback;
-  }
-  
-  return `/api/images/${imageUrl}`;
+
+  const imageUrl = getFirstProductImage(
+    media as { url: string; type: string }[] | undefined
+  );
+  return resolveProductImageSrc(imageUrl, fallback);
 }
 
 /**
  * Gets the first media (photo or video) from a product's media array
- * @param media - Array of media items
- * @returns First media item or null if no media found
  */
 export function getFirstMedia(
-  media: { url: string; type: string }[] | { url: string; type: string } | undefined | null
+  media:
+    | { url: string; type: string }[]
+    | { url: string; type: string }
+    | undefined
+    | null
 ): { url: string; type: string } | null {
   if (!media) return null;
-  
-  // Handle single media object (first_media format)
-  if (!Array.isArray(media) && 'url' in media) {
-    return media;
+
+  if (!Array.isArray(media) && "url" in media) {
+    return isValidProductMediaFilename(media.url) ? media : null;
   }
-  
-  // Handle array of media
+
   if (Array.isArray(media) && media.length > 0) {
-    // Return first item if it exists
-    return media[0];
+    const valid = media.find((m) => isValidProductMediaFilename(m.url));
+    return valid ?? null;
   }
-  
+
   return null;
 }
-

@@ -121,6 +121,8 @@ model Product {
   limitedEdition    Boolean        @default(false) @map("limited_edition")
   season            String[]       @default([])
   color             String?
+  /** Ключ сімейства варіантів (одна модель, різні кольори) */
+  variantGroupKey   String?        @map("variant_group_key") @db.VarChar(255)
   categoryId        Int?           @map("category_id")
   subcategoryId     Int?           @map("subcategory_id")
   fabricComposition String?        @map("fabric_composition")
@@ -149,6 +151,7 @@ model Product {
   orderItems        OrderItem[]
   wishlistedBy      Wishlist[]
   
+  @@index([variantGroupKey])
   @@map("products")
 }
 

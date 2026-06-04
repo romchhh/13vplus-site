@@ -7,7 +7,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getProductImageSrc } from "@/lib/getFirstProductImage";
+import { getProductImageSrc, resolveProductImageSrc } from "@/lib/getFirstProductImage";
 import { useProducts } from "@/lib/useProducts";
 
 // Video component with proper mobile autoplay
@@ -67,7 +67,7 @@ const templateProduct = {
   id: -1,
   name: "Шовкова сорочка без рукавів",
   price: 1780,
-  first_media: { type: "photo", url: "template-placeholder" },
+  first_media: null,
   top_sale: false,
 };
 
@@ -176,7 +176,7 @@ export default function TopSale() {
                     {product.first_media?.type === "video" ? (
                       <>
                         <VideoWithAutoplay
-                          src={`/api/images/${product.first_media.url}`}
+                          src={resolveProductImageSrc(product.first_media?.url)}
                           className="object-cover group-hover:opacity-90 transition duration-300 w-full h-full"
                         />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -263,7 +263,7 @@ export default function TopSale() {
                   {product.first_media?.type === "video" ? (
                     <>
                       <VideoWithAutoplay
-                        src={`/api/images/${product.first_media.url}`}
+                        src={resolveProductImageSrc(product.first_media?.url)}
                         className="object-cover group-hover:opacity-90 transition duration-300 w-full h-full"
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">

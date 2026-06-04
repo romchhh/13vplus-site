@@ -110,31 +110,33 @@ export default function ProductsTable() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        // Перевірка кешу
         const cachedData = localStorage.getItem(CACHE_KEY);
         const cacheExpiry = localStorage.getItem(CACHE_EXPIRY_KEY);
         const now = Date.now();
 
-        if (cachedData && cacheExpiry && now < parseInt(cacheExpiry)) {
-          // Використовуємо кешовані дані
-          console.log("Використання кешованих даних продуктів");
-          setProducts(JSON.parse(cachedData));
-          setLoading(false);
+        if (cachedData && cacheExpiry && now < parseInt(cacheExpiry, 10)) {
+          const parsed = JSON.parse(cachedData) as unknown;
+          if (Array.isArray(parsed)) {
+            setProducts(parsed);
+            setLoading(false);
+            return;
+          }
+          localStorage.removeItem(CACHE_KEY);
+          localStorage.removeItem(CACHE_EXPIRY_KEY);
+        }
+
+        const res = await fetch("/api/products");
+        if (!res.ok) throw new Error("Failed to fetch products");
+        const data: unknown = await res.json();
+
+        if (!Array.isArray(data)) {
+          console.error("Unexpected /api/products response:", data);
+          setProducts([]);
           return;
         }
 
-        // Якщо кеш застарів або відсутній, завантажуємо з сервера
-        console.log("Завантаження продуктів з сервера");
-        const res = await fetch("/api/products");
-        if (!res.ok) throw new Error("Failed to fetch products");
-        const data = await res.json();
-
         setProducts(data);
-        console.log(data[0].name);
 
-        console.log(data[0].media);
-
-        // Зберігаємо в кеш
         localStorage.setItem(CACHE_KEY, JSON.stringify(data));
         localStorage.setItem(
           CACHE_EXPIRY_KEY,
@@ -142,6 +144,7 @@ export default function ProductsTable() {
         );
       } catch (error) {
         console.error("Error fetching products:", error);
+        setProducts([]);
       } finally {
         setLoading(false);
       }

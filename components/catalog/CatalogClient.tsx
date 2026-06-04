@@ -7,7 +7,7 @@ import { useAppContext } from "@/lib/GeneralProvider";
 import SidebarMenu from "../layout/SidebarMenu";
 import Link from "next/link";
 import Image from "next/image";
-import { getProductImageSrc } from "@/lib/getFirstProductImage";
+import { getProductImageSrc, resolveProductImageSrc } from "@/lib/getFirstProductImage";
 import ProductSkeleton from "./ProductSkeleton";
 import { useWishlist } from "@/lib/WishlistProvider";
 import { useSession } from "next-auth/react";
@@ -262,7 +262,7 @@ export default function CatalogClient({
                 </button>
                 {product.first_media?.type === "video" ? (
                   <video
-                    src={`/api/images/${product.first_media.url}`}
+                    src={resolveProductImageSrc(product.first_media?.url)}
                     className="object-cover transition-all duration-300 group-hover:opacity-95 w-full h-full"
                     loop
                     muted

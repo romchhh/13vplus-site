@@ -8,7 +8,7 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Alert from "@/components/shared/Alert";
 import CartAlert from "@/components/shared/CartAlert";
-import { getFirstProductImage } from "@/lib/getFirstProductImage";
+import { getFirstProductImage, getProductImageSrc, resolveProductImageSrc } from "@/lib/getFirstProductImage";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay } from "swiper/modules";
 import "swiper/css";
@@ -217,7 +217,10 @@ export default function ProductClient({ product: initialProduct }: ProductClient
     }
   };
 
-  const media = product.media || [];
+  const rawMedia = product.media || [];
+  const media = rawMedia.filter(
+    (item) => item.url?.trim() && item.type
+  );
   const sizes = (product.sizes || [])
     ?.filter((s) => (s.stock ?? 0) > 0)
     .map((s) => s.size) || [
@@ -233,7 +236,12 @@ export default function ProductClient({ product: initialProduct }: ProductClient
 
   // Avoid SSR hydration flicker
   useEffect(() => setIsMounted(true), []);
-  if (!isMounted || !media?.length) return null;
+  if (!isMounted) return null;
+
+  const galleryMedia =
+    media.length > 0
+      ? media
+      : [{ type: "photo" as const, url: "" }];
 
   return (
     <section className="max-w-[1920px] w-full mx-auto bg-white">
@@ -251,7 +259,7 @@ export default function ProductClient({ product: initialProduct }: ProductClient
             }}
             className="w-full h-full"
           >
-            {media.map((item, i) => (
+            {galleryMedia.map((item, i) => (
               <SwiperSlide key={i}>
                 <div 
                   className="relative w-full h-full bg-white flex items-start justify-center cursor-pointer lg:cursor-default"
@@ -265,7 +273,7 @@ export default function ProductClient({ product: initialProduct }: ProductClient
                   {item.type === "video" ? (
                     <video
                       className="object-cover md:object-contain w-full h-full"
-                      src={`/api/images/${item.url}`}
+                      src={resolveProductImageSrc(item.url)}
                       autoPlay
                       loop
                       muted
@@ -273,7 +281,7 @@ export default function ProductClient({ product: initialProduct }: ProductClient
                     />
                   ) : (
                     <Image
-                      src={`/api/images/${item.url}`}
+                      src={getProductImageSrc(item)}
                       alt={`Product view ${i + 1}`}
                       fill
                       className="object-cover md:object-contain"
@@ -745,13 +753,13 @@ export default function ProductClient({ product: initialProduct }: ProductClient
               spaceBetween={0}
               className="w-full h-full"
             >
-              {media.map((item, i) => (
+              {galleryMedia.map((item, i) => (
                 <SwiperSlide key={i}>
                   <div className="relative w-full h-full flex items-start justify-center">
                     {item.type === "video" ? (
                       <video
                         className="object-contain w-full h-full"
-                        src={`/api/images/${item.url}`}
+                        src={resolveProductImageSrc(item.url)}
                         autoPlay
                         loop
                         muted
@@ -760,7 +768,7 @@ export default function ProductClient({ product: initialProduct }: ProductClient
                       />
                     ) : (
                       <Image
-                        src={`/api/images/${item.url}`}
+                        src={getProductImageSrc(item)}
                         alt={`Product view ${i + 1}`}
                         fill
                         className="object-contain"
