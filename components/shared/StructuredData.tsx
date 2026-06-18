@@ -1,9 +1,12 @@
 "use client";
 
 import {
+  SITE_EMAIL,
   SITE_PHONE_TEL,
+  SITE_STORE_LOCATION,
   SITE_TELEGRAM_URL,
 } from "@/lib/siteContacts";
+import { BRAND_ALTERNATE_NAMES, BRAND_NAME } from "@/lib/seo";
 
 interface ProductStructuredDataProps {
   product: {
@@ -49,7 +52,8 @@ export function ProductStructuredData({ product, baseUrl = defaultBaseUrl }: Pro
     image: imageUrl,
     brand: {
       "@type": "Brand",
-      name: "13VPLUS",
+      name: BRAND_NAME,
+      alternateName: [...BRAND_ALTERNATE_NAMES],
     },
     category: product.category_name || "Жіночий одяг",
     offers: offer,
@@ -65,7 +69,6 @@ export function ProductStructuredData({ product, baseUrl = defaultBaseUrl }: Pro
 }
 
 export function OrganizationStructuredData({
-  name = "13VPLUS",
   url,
   logo,
   baseUrl = defaultBaseUrl,
@@ -73,9 +76,11 @@ export function OrganizationStructuredData({
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name,
+    name: BRAND_NAME,
+    alternateName: [...BRAND_ALTERNATE_NAMES],
     url: url || baseUrl,
     logo: logo || `${baseUrl}/images/13VPLUS BLACK PNG 2.png`,
+    email: SITE_EMAIL,
     sameAs: [
       "https://www.instagram.com/13vplus",
       SITE_TELEGRAM_URL,
@@ -86,6 +91,81 @@ export function OrganizationStructuredData({
       telephone: SITE_PHONE_TEL.replace("tel:", ""),
       availableLanguage: ["Ukrainian"],
     },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+    />
+  );
+}
+
+export function WebSiteStructuredData({ baseUrl = defaultBaseUrl }: { baseUrl?: string }) {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: BRAND_NAME,
+    alternateName: [...BRAND_ALTERNATE_NAMES],
+    url: baseUrl,
+    inLanguage: "uk-UA",
+    publisher: {
+      "@type": "Organization",
+      name: BRAND_NAME,
+      alternateName: [...BRAND_ALTERNATE_NAMES],
+    },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+    />
+  );
+}
+
+export function LocalBusinessStructuredData({ baseUrl = defaultBaseUrl }: { baseUrl?: string }) {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "ClothingStore",
+    name: BRAND_NAME,
+    alternateName: [...BRAND_ALTERNATE_NAMES],
+    url: baseUrl,
+    image: `${baseUrl}/images/13VPLUS BLACK PNG 2.png`,
+    telephone: SITE_PHONE_TEL.replace("tel:", ""),
+    email: SITE_EMAIL,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: SITE_STORE_LOCATION.streetAddress,
+      addressLocality: SITE_STORE_LOCATION.city,
+      addressCountry: SITE_STORE_LOCATION.country,
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: SITE_STORE_LOCATION.latitude,
+      longitude: SITE_STORE_LOCATION.longitude,
+    },
+    hasMap: SITE_STORE_LOCATION.mapsUrl,
+    openingHoursSpecification: [
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday",
+        ],
+        opens: "09:00",
+        closes: "19:00",
+      },
+    ],
+    sameAs: [
+      "https://www.instagram.com/13vplus",
+      SITE_TELEGRAM_URL,
+    ],
   };
 
   return (

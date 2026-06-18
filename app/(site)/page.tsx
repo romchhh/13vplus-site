@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo";
 import Hero from "@/components/main-page/Hero";
 import CategoriesShowcase from "@/components/main-page/CategoriesShowcase";
 
@@ -29,10 +31,9 @@ export const revalidate = 300;
 // Optimize runtime
 export const runtime = 'nodejs';
 
-// Metadata for SEO
-export const metadata = {
-  title: '13VPLUS — Жіночий Одяг | Повсякденний, Домашній Одяг та Купальники',
-  description: '13VPLUS — український бренд жіночого одягу. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі. Індивідуальний пошив під ваші параметри.',
+export const metadata: Metadata = {
+  title: SEO_TITLE,
+  description: SEO_DESCRIPTION,
   alternates: {
     canonical: '/',
   },

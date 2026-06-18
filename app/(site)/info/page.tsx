@@ -1,5 +1,7 @@
 "use client";
 
+import { SITE_STORE_LOCATION } from "@/lib/siteContacts";
+
 export default function InfoPage() {
   return (
     <div className="min-h-screen bg-white">
@@ -21,7 +23,17 @@ export default function InfoPage() {
             </div>
             <div className="p-6 lg:p-8 rounded-xl space-y-4">
               <h3 className="text-lg font-semibold text-black">13 V PLUS — самовивіз</h3>
-              <p className="text-black/80"><strong>Адреса:</strong> м. Київ, вул. Щербаківського, 45А</p>
+              <p className="text-black/80">
+                <strong>Адреса:</strong>{" "}
+                <a
+                  href={SITE_STORE_LOCATION.mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:opacity-70 transition-opacity"
+                >
+                  {SITE_STORE_LOCATION.address}
+                </a>
+              </p>
               <p className="text-black/80"><strong>Оплата:</strong> готівковий та безготівковий розрахунок</p>
             </div>
             <div className="p-6 lg:p-8 rounded-xl">
@@ -60,7 +72,18 @@ export default function InfoPage() {
             Процедура повернення та обміну
           </h2>
           <div className="p-6 lg:p-8 rounded-xl space-y-4 text-black/80">
-            <p>Ви можете самостійно привезти товар до нас у магазин за адресою м. Київ, вул. Щербаківського, 45А — за попереднім записом.</p>
+            <p>
+              Ви можете самостійно привезти товар до нас у магазин за адресою{" "}
+              <a
+                href={SITE_STORE_LOCATION.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:opacity-70 transition-opacity"
+              >
+                {SITE_STORE_LOCATION.address}
+              </a>{" "}
+              — за попереднім записом.
+            </p>
             <p>По Україні обмін можливий за допомогою компанії-перевізника «Нова Пошта». Для оформлення обміну або повернення заповніть форму для повернення, де потрібно вказати: ваше ПІБ, контактний номер, причину повернення, нік при оформленні замовлення та банківську карту, на яку буде зроблено повернення коштів.</p>
             <p>Обміняти чи повернути товар можна протягом <strong>14 днів</strong> з моменту отримання товару.</p>
             <p className="font-semibold text-black">Важливо! Усі затрати, повʼязані з поверненням чи обміном товару, сплачує покупець.</p>

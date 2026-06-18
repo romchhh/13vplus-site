@@ -16,7 +16,13 @@ import { registerServiceWorker } from "@/lib/registerSW";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { WebVitals } from "@/components/shared/WebVitals";
 import MainContent from "@/components/shared/MainContent";
-import { OrganizationStructuredData } from "@/components/shared/StructuredData";
+import { OrganizationStructuredData, WebSiteStructuredData, LocalBusinessStructuredData } from "@/components/shared/StructuredData";
+import {
+  SEO_DESCRIPTION,
+  SEO_KEYWORDS,
+  SEO_OG_DESCRIPTION,
+  SEO_TITLE,
+} from "@/lib/seo";
 
 const montserrat = Montserrat({
   subsets: ["latin", "cyrillic"],
@@ -29,23 +35,39 @@ const montserrat = Montserrat({
   weight: ["300", "400", "500", "600", "700"],
 });
 
+const baseUrl =
+  process.env.PUBLIC_URL ||
+  process.env.NEXT_PUBLIC_PUBLIC_URL ||
+  "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "13VPLUS — Жіночий Одяг | Повсякденний, Домашній Одяг та Купальники",
-  description:
-    "13VPLUS — український бренд жіночого одягу. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі. Індивідуальний пошив під ваші параметри. Для жінок від 22 до 50 років.",
-  keywords:
-    "13VPLUS, жіночий одяг, одяг для жінок, повсякденний одяг, домашній одяг, купальники, український бренд одягу, мінімалізм, лакшері стиль, індивідуальний пошив, одяг на замовлення, українська мода, стильний одяг для жінок",
+  metadataBase: new URL(baseUrl),
+  title: {
+    default: SEO_TITLE,
+    template: "%s | 13VPLUS",
+  },
+  description: SEO_DESCRIPTION,
+  keywords: SEO_KEYWORDS,
   icons: {
     icon: "/images/browser-open.png",
     shortcut: "/images/browser-open.png",
     apple: "/images/browser-open.png",
   },
   openGraph: {
-    title: "13VPLUS — Жіночий Одяг | Повсякденний, Домашній Одяг та Купальники",
-    description:
-      "Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі. Індивідуальний пошив під ваші параметри.",
+    title: SEO_TITLE,
+    description: SEO_OG_DESCRIPTION,
     type: "website",
     locale: "uk_UA",
+    siteName: "13VPLUS",
+    url: baseUrl,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SEO_TITLE,
+    description: SEO_OG_DESCRIPTION,
+  },
+  alternates: {
+    canonical: baseUrl,
   },
   robots: {
     index: true,
@@ -64,6 +86,8 @@ export default function RootLayout({
     <html lang="uk" className={montserrat.className}>
       <head>
         <OrganizationStructuredData url={baseUrl} baseUrl={baseUrl} />
+        <WebSiteStructuredData baseUrl={baseUrl} />
+        <LocalBusinessStructuredData baseUrl={baseUrl} />
         {/* Mobile viewport optimization */}
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
         <meta name="format-detection" content="telephone=no" />

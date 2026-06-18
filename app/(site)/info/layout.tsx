@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { SEO_KEYWORDS } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Доставка та оплата | 13VPLUS",
-  description: "Доставка по Україні та в інші країни, оплата, обмін та повернення товару. 13VPLUS — український бренд жіночого одягу.",
+  title: "Доставка та оплата | 13VPLUS (13 v plus)",
+  description:
+    "Доставка по Україні та в інші країни, оплата, обмін та повернення. 13VPLUS / 13вплюс / 13плюс — український бренд жіночого одягу.",
+  keywords: SEO_KEYWORDS,
 };
 
 export default function InfoLayout({
