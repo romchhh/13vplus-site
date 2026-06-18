@@ -3,6 +3,11 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  SITE_PHONE_DISPLAY,
+  SITE_PHONE_TEL,
+  SITE_TELEGRAM_URL,
+} from "@/lib/siteContacts";
 
 export default function AboutUs() {
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
@@ -93,13 +98,13 @@ export default function AboutUs() {
           <div className="sm:hidden mb-6">
             <div className="flex flex-col items-center gap-3">
               <a
-                href="tel:+380933099503"
+                href={SITE_PHONE_TEL}
                 className="flex items-center gap-2 text-base font-['Montserrat'] text-black font-semibold hover:opacity-70 transition-opacity"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
-                <span>+38 (093) 309-95-03</span>
+                <span>{SITE_PHONE_DISPLAY}</span>
               </a>
             </div>
           </div>
@@ -189,7 +194,7 @@ export default function AboutUs() {
             {/* Telegram Screen */}
             <div className="flex flex-col items-center gap-2 sm:gap-3">
               <Link
-                href="https://t.me/b_13vplus"
+                href={SITE_TELEGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 sm:gap-3 px-4 py-3 sm:px-4 sm:py-3 lg:px-6 lg:py-4 bg-black text-white hover:bg-black/90 transition-colors duration-300 font-['Montserrat'] font-medium uppercase tracking-wider text-sm sm:text-sm lg:text-base"
@@ -205,7 +210,7 @@ export default function AboutUs() {
                 МИ В TELEGRAM
               </Link>
               <Link
-                href="https://t.me/b_13vplus"
+                href={SITE_TELEGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => {

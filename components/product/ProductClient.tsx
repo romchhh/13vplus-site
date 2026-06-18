@@ -13,6 +13,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
+import { SITE_TELEGRAM_URL } from "@/lib/siteContacts";
 
 
 const SIZE_MAP: Record<string, string> = {
@@ -497,7 +498,7 @@ export default function ProductClient({ product: initialProduct }: ProductClient
 
           {/* Telegram Manager Link */}
           <a
-            href="https://t.me/brand13vplus"
+            href={SITE_TELEGRAM_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full text-center border border-gray-400 text-gray-600 hover:border-black hover:text-black py-3 px-4 text-sm md:text-base font-light font-['Montserrat'] cursor-pointer transition-all duration-200"

@@ -11,6 +11,7 @@ import { getProductImageSrc, resolveProductImageSrc } from "@/lib/getFirstProduc
 import ProductSkeleton from "./ProductSkeleton";
 import { useWishlist } from "@/lib/WishlistProvider";
 import { useSession } from "next-auth/react";
+import { subcategoryLeafName } from "@/lib/subcategory";
 
 interface Product {
   id: number;
@@ -133,7 +134,7 @@ export default function CatalogClient({
             </button>
             <h1 className="text-base sm:text-lg font-medium font-['Montserrat'] uppercase tracking-wider text-gray-900 flex items-center">
               {subcategory
-                ? subcategory
+                ? subcategoryLeafName(subcategory)
                 : category
                 ? category
                 : season

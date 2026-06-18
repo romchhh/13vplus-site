@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  SITE_PHONE_DISPLAY,
+  SITE_PHONE_TEL,
+  SITE_SUPPORT_MESSENGERS,
+} from "@/lib/siteContacts";
+
 interface Location {
   title: string;
   address: string;
@@ -20,12 +26,8 @@ export default function ContactsPage() {
       address: "м. Київ, вулиця Данила Щербаківського, 45A",
       addressLink: "https://www.google.com/maps/search/?api=1&query=вулиця+Данила+Щербаківського+45A+Київ",
       workingHours: "з понеділка по неділю з 09:00 до 19:00",
-      phones: ["+38 (093) 309-95-03"],
-      messengers: [
-        { name: "Telegram", link: "https://t.me/13vplusukraineanbrand" },
-        { name: "Viber", link: "viber://chat?number=380933099503" },
-        { name: "WhatsApp", link: "https://wa.me/380933099503" },
-      ],
+      phones: [SITE_PHONE_DISPLAY],
+      messengers: [...SITE_SUPPORT_MESSENGERS],
     },
   ];
 
@@ -68,7 +70,7 @@ export default function ContactsPage() {
                 
                 <div className="space-y-4 pt-6">
                   <a
-                    href="tel:+380680785937"
+                    href={SITE_PHONE_TEL}
                     className="flex items-center gap-4 group hover:opacity-80 transition-all duration-200 p-3 -m-3 rounded-lg hover:bg-black/5"
                   >
                     <div className="w-9 h-9 rounded-full bg-black/10 flex items-center justify-center flex-shrink-0 group-hover:bg-black/20 transition-colors">
@@ -77,7 +79,7 @@ export default function ContactsPage() {
                       </svg>
                     </div>
                     <span className="text-base lg:text-lg font-['Montserrat'] text-black font-semibold">
-                      +38 (068) 078-59-37
+                      {SITE_PHONE_DISPLAY}
                     </span>
                   </a>
                   <a

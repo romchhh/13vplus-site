@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  SITE_PHONE_TEL,
+  SITE_TELEGRAM_URL,
+} from "@/lib/siteContacts";
+
 interface ProductStructuredDataProps {
   product: {
     id: number;
@@ -73,10 +78,12 @@ export function OrganizationStructuredData({
     logo: logo || `${baseUrl}/images/13VPLUS BLACK PNG 2.png`,
     sameAs: [
       "https://www.instagram.com/13vplus",
+      SITE_TELEGRAM_URL,
     ],
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "Customer Service",
+      telephone: SITE_PHONE_TEL.replace("tel:", ""),
       availableLanguage: ["Ukrainian"],
     },
   };

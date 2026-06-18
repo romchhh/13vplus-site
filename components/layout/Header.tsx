@@ -9,6 +9,7 @@ import { useAppContext } from "@/lib/GeneralProvider";
 import { useBasket } from "@/lib/BasketProvider";
 import { useWishlist } from "@/lib/WishlistProvider";
 import { useCategories } from "@/lib/CategoriesProvider";
+import { subcategoryLeafName } from "@/lib/subcategory";
 import SidebarBasket from "./SidebarBasket";
 import SidebarSearch from "./SidebarSearch";
 import SidebarMenu from "./SidebarMenu";
@@ -268,11 +269,11 @@ export default function Header() {
                           <Link
                             key={subcat.id}
                             href={`/catalog?subcategory=${encodeURIComponent(
-                              subcat.name
+                              subcategoryLeafName(subcat.name)
                             )}`}
                               className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
                           >
-                            {subcat.name}
+                            {subcategoryLeafName(subcat.name)}
                           </Link>
                         ))}
                           <Link

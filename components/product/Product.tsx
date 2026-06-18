@@ -7,6 +7,7 @@ import Image from "next/image";
 import Alert from "@/components/shared/Alert";
 import { getFirstProductImage } from "@/lib/getFirstProductImage";
 import { useProduct } from "@/lib/useProducts";
+import { SITE_TELEGRAM_URL } from "@/lib/siteContacts";
 
 const SIZE_MAP: Record<string, string> = {
   "1": "XL",
@@ -274,7 +275,7 @@ export default function Product() {
 
           {/* Telegram Manager Link */}
           <a
-            href="https://t.me/13vplusukraineanbrand"
+            href={SITE_TELEGRAM_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full text-center border border-gray-400 text-gray-600 hover:border-black hover:text-black py-2 px-3 text-sm md:text-base font-light font-['Montserrat'] cursor-pointer transition-all duration-200"

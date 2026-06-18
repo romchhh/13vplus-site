@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { SITE_TELEGRAM_URL } from "@/lib/siteContacts";
 import { useRouter, usePathname } from "next/navigation";
 
 export default function Footer() {
@@ -157,7 +158,7 @@ export default function Footer() {
                 <span>TikTok</span>
               </Link>
               <Link
-                href="https://t.me/b_13vplus"
+                href={SITE_TELEGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 text-sm lg:text-base text-white/70 hover:text-white transition-colors duration-300 group tracking-normal"

@@ -3,6 +3,7 @@ import { prisma } from "./prisma";
 import { unlink } from "fs/promises";
 import path from "path";
 import { unstable_cache } from "next/cache";
+import { subcategoryNameWhere } from "./subcategory";
 
 // Keep sql template literal for backward compatibility (used in migrate route)
 // This will be deprecated but kept for now
@@ -271,15 +272,14 @@ export async function sqlGetProductsByCategory(categoryName: string) {
 
 // Get products by subcategory name
 export async function sqlGetProductsBySubcategoryName(name: string) {
+  const whereConditions = subcategoryNameWhere(name);
+
   return unstable_cache(
     async () => {
       const products = await prisma.product.findMany({
         where: {
           subcategory: {
-            name: {
-              equals: name,
-              mode: "insensitive",
-            },
+            OR: whereConditions,
           },
         },
         orderBy: { id: "desc" },

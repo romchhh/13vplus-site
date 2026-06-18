@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useCategories } from "@/lib/CategoriesProvider";
+import { subcategoryLeafName } from "@/lib/subcategory";
+import { SITE_PHONE_TEL, SITE_TELEGRAM_URL } from "@/lib/siteContacts";
 
 interface SidebarMenuProps {
   isOpen: boolean;
@@ -151,11 +153,11 @@ export default function SidebarMenu({
                     {selectedSubcategories.map((sub) => (
                       <Link
                         key={sub.id}
-                        href={`/catalog?subcategory=${encodeURIComponent(sub.name)}`}
+                        href={`/catalog?subcategory=${encodeURIComponent(subcategoryLeafName(sub.name))}`}
                         className="block py-3 text-base text-black hover:text-black/70 transition-colors border-b border-black/5"
                         onClick={() => setIsOpen(false)}
                       >
-                        {sub.name}
+                        {subcategoryLeafName(sub.name)}
                       </Link>
                     ))}
                   </div>
@@ -259,7 +261,7 @@ export default function SidebarMenu({
                 <span>Instagram</span>
               </Link>
               <Link
-                href="https://t.me/b_13vplus"
+                href={SITE_TELEGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-base text-black hover:text-black/70 transition-colors"
@@ -275,7 +277,7 @@ export default function SidebarMenu({
                 <span>Telegram</span>
               </Link>
               <Link
-                href="tel:+380680785937"
+                href={SITE_PHONE_TEL}
                 className="flex items-center gap-2 text-base text-black hover:text-black/70 transition-colors"
               >
                 <svg

@@ -1,4 +1,5 @@
 import CatalogClient from "./CatalogClient";
+import { subcategoryLeafName } from "@/lib/subcategory";
 import { 
   sqlGetAllProducts, 
   sqlGetProductsByCategory, 
@@ -71,8 +72,15 @@ export default async function CatalogServer(props: CatalogServerProps) {
   ]);
 
   const baseUrl = process.env.PUBLIC_URL || 'http://localhost:3000';
-  const categoryName = props.category || props.subcategory || null;
-  const catalogUrl = `${baseUrl}/catalog${categoryName ? `?category=${encodeURIComponent(categoryName)}` : ""}`;
+  const categoryName = props.category || (props.subcategory ? subcategoryLeafName(props.subcategory) : null);
+  const catalogQuery = props.subcategory
+    ? `subcategory=${encodeURIComponent(props.subcategory)}`
+    : props.category
+      ? `category=${encodeURIComponent(props.category)}`
+      : props.season
+        ? `season=${encodeURIComponent(props.season)}`
+        : "";
+  const catalogUrl = `${baseUrl}/catalog${catalogQuery ? `?${catalogQuery}` : ""}`;
   const pageName = categoryName || "Каталог товарів";
   const pageDescription = categoryName
     ? `Каталог товарів категорії "${categoryName}" від 13VPLUS. Якісний жіночий одяг з індивідуальним пошивом.`
