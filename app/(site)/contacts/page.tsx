@@ -68,7 +68,6 @@ export default function ContactsPage() {
                 </a>
               </div>
             </div>
-
             <StoreLocationBlock variant="page" />
           </div>
         </div>

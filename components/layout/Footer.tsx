@@ -52,7 +52,7 @@ export default function Footer() {
             <div className="flex flex-col gap-2 text-sm text-white/80">
               <p className="font-medium text-left tracking-normal">Індивідуальний пошив</p>
               <p className="text-white/70 text-left tracking-normal">
-                Ми відшиваємо під замовлення будь-який наш виріб у вашому розмірі. Ідеальна посадка гарантована.
+                Додатково ми відшиваємо під замовлення будь-який ваш виріб у нашому магазині. Під ваші параметри. Ідеальна посадка гарантована.
               </p>
             </div>
           </div>
