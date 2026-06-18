@@ -42,12 +42,16 @@ const baseUrl =
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
+  applicationName: "13VPLUS",
   title: {
     default: SEO_TITLE,
     template: "%s | 13VPLUS",
   },
   description: SEO_DESCRIPTION,
   keywords: SEO_KEYWORDS,
+  authors: [{ name: "13VPLUS", url: baseUrl }],
+  creator: "13VPLUS",
+  publisher: "13VPLUS",
   icons: {
     icon: "/images/browser-open.png",
     shortcut: "/images/browser-open.png",
@@ -58,7 +62,7 @@ export const metadata: Metadata = {
     description: SEO_OG_DESCRIPTION,
     type: "website",
     locale: "uk_UA",
-    siteName: "13VPLUS",
+    siteName: "13VPLUS — 13 v plus, 13 в плюс",
     url: baseUrl,
   },
   twitter: {

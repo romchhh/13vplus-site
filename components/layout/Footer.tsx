@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { SITE_TELEGRAM_URL } from "@/lib/siteContacts";
+import { BRAND_NAME, BRAND_SEARCH_PHRASES } from "@/lib/seo";
 import { useRouter, usePathname } from "next/navigation";
 
 export default function Footer() {
@@ -39,14 +40,14 @@ export default function Footer() {
             <Link href="/" className="inline-block">
               <Image
                 src="/images/tg_image_3614117882.png"
-                alt="13VPLUS Logo"
+                alt={`${BRAND_NAME} — ${BRAND_SEARCH_PHRASES}`}
                 width={180}
                 height={60}
                 className="h-10 lg:h-12 w-auto"
               />
             </Link>
             <p className="text-sm lg:text-base text-white/70 leading-relaxed w-full text-left tracking-normal">
-              Український бренд жіночого одягу. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.
+              {BRAND_NAME} ({BRAND_SEARCH_PHRASES}) — офіційний сайт українського бренду жіночого одягу. Повсякденний одяг, домашній одяг та купальники в мінімалістичному лакшері стилі.
             </p>
             <div className="flex flex-col gap-2 text-sm text-white/80">
               <p className="font-medium text-left tracking-normal">Індивідуальний пошив</p>

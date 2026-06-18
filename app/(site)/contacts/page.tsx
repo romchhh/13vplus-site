@@ -20,7 +20,7 @@ export default function ContactsPage() {
               <span className="inline-block">ПІДТРИМКИ</span>
             </h1>
             <p className="text-lg lg:text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed">
-              Зв&apos;яжіться з 13VPLUS (13 v plus, 13вплюс) зручним для вас способом
+              Зв&apos;яжіться з 13VPLUS (13 v plus, 13 в плюс, 13вплюс) зручним для вас способом
             </p>
           </div>
 

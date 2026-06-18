@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo";
+import BrandHomeSeo from "@/components/shared/BrandHomeSeo";
 import Hero from "@/components/main-page/Hero";
 import CategoriesShowcase from "@/components/main-page/CategoriesShowcase";
 
@@ -42,6 +43,7 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <>
+      <BrandHomeSeo />
       {/* Critical above-the-fold content */}
       <Hero />
       

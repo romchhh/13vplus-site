@@ -6,7 +6,7 @@ import {
   SITE_STORE_LOCATION,
   SITE_TELEGRAM_URL,
 } from "@/lib/siteContacts";
-import { BRAND_ALTERNATE_NAMES, BRAND_NAME } from "@/lib/seo";
+import { BRAND_ALTERNATE_NAMES, BRAND_NAME, SEO_DESCRIPTION } from "@/lib/seo";
 
 interface ProductStructuredDataProps {
   product: {
@@ -78,6 +78,7 @@ export function OrganizationStructuredData({
     "@type": "Organization",
     name: BRAND_NAME,
     alternateName: [...BRAND_ALTERNATE_NAMES],
+    description: SEO_DESCRIPTION,
     url: url || baseUrl,
     logo: logo || `${baseUrl}/images/13VPLUS BLACK PNG 2.png`,
     email: SITE_EMAIL,
@@ -107,12 +108,21 @@ export function WebSiteStructuredData({ baseUrl = defaultBaseUrl }: { baseUrl?: 
     "@type": "WebSite",
     name: BRAND_NAME,
     alternateName: [...BRAND_ALTERNATE_NAMES],
+    description: SEO_DESCRIPTION,
     url: baseUrl,
     inLanguage: "uk-UA",
     publisher: {
       "@type": "Organization",
       name: BRAND_NAME,
       alternateName: [...BRAND_ALTERNATE_NAMES],
+    },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${baseUrl}/catalog?search={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
     },
   };
 
@@ -130,6 +140,7 @@ export function LocalBusinessStructuredData({ baseUrl = defaultBaseUrl }: { base
     "@type": "ClothingStore",
     name: BRAND_NAME,
     alternateName: [...BRAND_ALTERNATE_NAMES],
+    description: SEO_DESCRIPTION,
     url: baseUrl,
     image: `${baseUrl}/images/13VPLUS BLACK PNG 2.png`,
     telephone: SITE_PHONE_TEL.replace("tel:", ""),

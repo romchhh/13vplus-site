@@ -25,7 +25,7 @@ export default function AboutUs() {
         {/* Main Content */}
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-center tracking-normal">
-            13vPlus<span className="mx-0.5 lg:mx-1">—</span>це не про одяг.
+            13VPLUS (13 v plus, 13 в плюс)<span className="mx-0.5 lg:mx-1">—</span>це не про одяг.
             <br />
             Це про жінку, яка знає, хто вона,
             <br />

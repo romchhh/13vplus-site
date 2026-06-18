@@ -10,6 +10,7 @@ import { useBasket } from "@/lib/BasketProvider";
 import { useWishlist } from "@/lib/WishlistProvider";
 import { useCategories } from "@/lib/CategoriesProvider";
 import { subcategoryLeafName } from "@/lib/subcategory";
+import { BRAND_NAME, BRAND_SEARCH_PHRASES } from "@/lib/seo";
 import SidebarBasket from "./SidebarBasket";
 import SidebarSearch from "./SidebarSearch";
 import SidebarMenu from "./SidebarMenu";
@@ -215,7 +216,7 @@ export default function Header() {
               <Image
                 height={20}
                 width={75}
-                alt="logo"
+                alt={`${BRAND_NAME} — ${BRAND_SEARCH_PHRASES}`}
                 src="/images/tg_image_3614117882.png"
                 className="h-5 w-auto"
               />
@@ -536,7 +537,7 @@ export default function Header() {
               <Image
                 height="18"
                 width="65"
-                alt="logo"
+                alt={`${BRAND_NAME} — ${BRAND_SEARCH_PHRASES}`}
                 src="/images/tg_image_3614117882.png"
                 className="h-[18px] w-auto"
               />

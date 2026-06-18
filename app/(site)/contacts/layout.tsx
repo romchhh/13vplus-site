@@ -8,15 +8,15 @@ const baseUrl =
   "http://localhost:3000";
 
 export const metadata: Metadata = {
-  title: "Контакти | 13VPLUS (13 v plus, 13вплюс)",
+  title: "Контакти | 13VPLUS (13 v plus, 13 в плюс)",
   description: `${SEO_DESCRIPTION} Адреса магазину: ${SITE_STORE_LOCATION.address}.`,
   keywords: SEO_KEYWORDS,
   alternates: {
     canonical: `${baseUrl}/contacts`,
   },
   openGraph: {
-    title: `Контакти 13VPLUS (13 v plus) | Київ`,
-    description: `Магазин 13вплюс у Києві: ${SITE_STORE_LOCATION.address}. Телефон, Telegram, Google Maps.`,
+    title: "Контакти 13VPLUS (13 v plus, 13 в плюс) | Київ",
+    description: `Магазин 13 v plus / 13 в плюс у Києві: ${SITE_STORE_LOCATION.address}. Телефон, Telegram, Google Maps.`,
     url: `${baseUrl}/contacts`,
     type: "website",
     locale: "uk_UA",
