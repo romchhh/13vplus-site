@@ -1,28 +1,28 @@
-import { revalidateTag } from 'next/cache';
+import { revalidatePath, revalidateTag } from "next/cache";
 
 /**
- * Server action to revalidate product cache
- * Call this after creating/updating/deleting products
+ * Revalidate product cache after creating/updating/deleting products.
  */
-export async function revalidateProducts() {
-  'use server';
-  revalidateTag('products', {});
+export function revalidateProducts() {
+  revalidateTag("products", {});
 }
 
 /**
- * Server action to revalidate category cache
- * Call this after creating/updating/deleting categories
+ * Revalidate category/subcategory cache and related catalog pages.
+ * Call after creating/updating/deleting categories or subcategories.
  */
-export async function revalidateCategories() {
-  'use server';
-  revalidateTag('categories', {});
+export function revalidateCategories() {
+  revalidateTag("categories", {});
+  // Product lists include category/subcategory names in filters and URLs
+  revalidateTag("products", {});
+  revalidatePath("/", "layout");
+  revalidatePath("/catalog", "layout");
 }
 
 /**
- * Server action to revalidate all caches
+ * Revalidate all product and category caches.
  */
-export async function revalidateAll() {
-  'use server';
-  revalidateTag('products', {});
-  revalidateTag('categories', {});
+export function revalidateAll() {
+  revalidateProducts();
+  revalidateCategories();
 }

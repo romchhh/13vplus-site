@@ -4,6 +4,7 @@ import {
   sqlPutSubcategory,
   sqlDeleteSubcategory,
 } from "@/lib/sql";
+import { revalidateCategories } from "@/lib/revalidate";
 
 export async function GET(
   _req: NextRequest,
@@ -76,6 +77,7 @@ export async function PUT(
       categoryId
     );
 
+    revalidateCategories();
     return NextResponse.json(updatedSubcategory);
   } catch (error) {
     console.error("PUT subcategory failed:", error);
@@ -101,6 +103,7 @@ export async function DELETE(
 
   try {
     await sqlDeleteSubcategory(subcategoryId);
+    revalidateCategories();
     return NextResponse.json({ deleted: true });
   } catch (error) {
     console.error("DELETE subcategory failed:", error);

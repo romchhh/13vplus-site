@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sqlGetCategory, sqlPutCategory, sqlDeleteCategory } from "@/lib/sql";
+import { revalidateCategories } from "@/lib/revalidate";
 
 // ========================
 // GET /api/categories/:id
@@ -67,6 +68,7 @@ export async function PUT(
 
     // Default priority to 0 if undefined
     const updated = await sqlPutCategory(id, name, priority ?? 0, mediaType, mediaUrl);
+    revalidateCategories();
     return NextResponse.json(updated);
   } catch (error) {
     console.error("[PUT /api/categories/:id]", error);
@@ -91,6 +93,7 @@ export async function DELETE(
 
   try {
     await sqlDeleteCategory(id);
+    revalidateCategories();
     return NextResponse.json({ deleted: true });
   } catch (error) {
     console.error("[DELETE /api/categories/:id]", error);

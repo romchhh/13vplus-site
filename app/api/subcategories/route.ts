@@ -1,6 +1,9 @@
 // /app/api/subcategories/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { sqlGetSubcategoriesByCategory, sqlPostSubcategory } from "@/lib/sql";
+import { revalidateCategories } from "@/lib/revalidate";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -20,7 +23,7 @@ export async function GET(req: NextRequest) {
     // Add cache headers: cache for 5 minutes
     return NextResponse.json(subcategories, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        "Cache-Control": "no-store, must-revalidate",
       },
     });
   } catch (error) {
@@ -53,6 +56,7 @@ export async function POST(req: NextRequest) {
     }
 
     const newSubcategory = await sqlPostSubcategory(name, categoryId);
+    revalidateCategories();
     return NextResponse.json(newSubcategory, { status: 201 });
   } catch (error) {
     console.error("Failed to create subcategory:", error);

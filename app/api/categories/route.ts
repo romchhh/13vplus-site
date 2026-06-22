@@ -3,8 +3,7 @@ import { sqlGetAllCategories, sqlPostCategory } from "@/lib/sql";
 import { apiLogger } from "@/lib/logger";
 import { revalidateCategories } from "@/lib/revalidate";
 
-// Enable ISR for this route
-export const revalidate = 1200; // 20 minutes
+export const dynamic = "force-dynamic";
 
 // ========================
 // GET /api/categories
@@ -15,7 +14,7 @@ export async function GET() {
     
     return NextResponse.json(categories, {
       headers: {
-        'Cache-Control': 'public, s-maxage=1200, stale-while-revalidate=2400',
+        "Cache-Control": "no-store, must-revalidate",
       },
     });
   } catch (error) {
@@ -50,7 +49,7 @@ export async function POST(req: NextRequest) {
     );
     
     // Revalidate cache after creating new category
-    await revalidateCategories();
+    revalidateCategories();
     
     return NextResponse.json(newCategory, { status: 201 });
   } catch (error) {

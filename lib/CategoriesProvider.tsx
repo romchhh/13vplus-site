@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { cachedFetch, CACHE_KEYS } from "@/lib/cache";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from "react";
+import { clearCache, clearCacheByPrefix, CACHE_KEYS } from "@/lib/cache";
 
 interface Category {
   id: number;
@@ -23,70 +23,91 @@ interface CategoriesContextType {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-  fetchSubcategoriesForCategory: (categoryId: number) => Promise<Subcategory[]>;
+  fetchSubcategoriesForCategory: (categoryId: number, force?: boolean) => Promise<Subcategory[]>;
 }
 
 const CategoriesContext = createContext<CategoriesContextType | undefined>(undefined);
 
+async function fetchFresh<T>(url: string): Promise<T> {
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch: ${response.statusText}`);
+  }
+  return response.json() as Promise<T>;
+}
+
 export function CategoriesProvider({ children }: { children: ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Map<number, Subcategory[]>>(new Map());
+  const subcategoriesRef = useRef(subcategories);
+  subcategoriesRef.current = subcategories;
+
+  const fetchSubcategoriesForCategory = useCallback(
+    async (categoryId: number, force = false): Promise<Subcategory[]> => {
+      if (!force && subcategoriesRef.current.has(categoryId)) {
+        return subcategoriesRef.current.get(categoryId) || [];
+      }
+
+      try {
+        const subData = await fetchFresh<Subcategory[]>(
+          `/api/subcategories?parent_category_id=${categoryId}`
+        );
+
+        setSubcategories((prev) => new Map(prev).set(categoryId, subData));
+        return subData;
+      } catch (err) {
+        console.error(`Failed to fetch subcategories for category ${categoryId}:`, err);
+        const emptyArray: Subcategory[] = [];
+        setSubcategories((prev) => new Map(prev).set(categoryId, emptyArray));
+        return emptyArray;
+      }
+    },
+    []
+  );
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch subcategories on demand (lazy loading)
-  const fetchSubcategoriesForCategory = async (categoryId: number): Promise<Subcategory[]> => {
-    // Check if already loaded
-    if (subcategories.has(categoryId)) {
-      return subcategories.get(categoryId) || [];
-    }
+  const fetchData = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
 
     try {
-      const subData = await cachedFetch<Subcategory[]>(
-        `/api/subcategories?parent_category_id=${categoryId}`,
-        `cache_subcategories_${categoryId}`,
-        5 * 60 * 1000 // 5 minutes
-      );
-      
-      // Update the map
-      setSubcategories(prev => new Map(prev).set(categoryId, subData));
-      return subData;
-    } catch (err) {
-      console.error(`Failed to fetch subcategories for category ${categoryId}:`, err);
-      const emptyArray: Subcategory[] = [];
-      setSubcategories(prev => new Map(prev).set(categoryId, emptyArray));
-      return emptyArray;
-    }
-  };
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
       setError(null);
 
-      // Only fetch categories initially (not subcategories!)
-      const categoriesData = await cachedFetch<Category[]>(
-        "/api/categories",
-        CACHE_KEYS.CATEGORIES,
-        5 * 60 * 1000 // 5 minutes
-      );
+      clearCache(CACHE_KEYS.CATEGORIES);
+      clearCacheByPrefix("cache_subcategories_");
+      setSubcategories(new Map());
 
+      const categoriesData = await fetchFresh<Category[]>("/api/categories");
       setCategories(categoriesData);
-      
-      // Don't fetch all subcategories - load on demand instead!
     } catch (err) {
       console.error("Failed to fetch categories:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch categories");
       setCategories([]);
       setSubcategories(new Map());
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    void fetchData();
+  }, [fetchData]);
+
+  // Refetch when user returns to the tab (e.g. after editing in admin)
+  useEffect(() => {
+    const onFocus = () => {
+      void fetchData({ silent: true });
+    };
+
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [fetchData]);
 
   return (
     <CategoriesContext.Provider
