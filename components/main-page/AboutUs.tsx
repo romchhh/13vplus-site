@@ -14,67 +14,111 @@ export default function AboutUs() {
   return (
     <section
       id="about"
-      className="scroll-mt-20 max-w-[1920px] mx-auto w-full px-6 py-12 lg:py-16 relative overflow-hidden bg-white"
+      className="scroll-mt-20 max-w-[1920px] mx-auto w-full px-9 sm:px-10 lg:px-6 py-12 lg:py-16 relative overflow-hidden bg-white"
     >
       <div className="flex flex-col items-center gap-6 lg:gap-8">
         {/* Title */}
-        <div className="text-black text-center text-3xl lg:text-6xl font-bold font-['Montserrat'] uppercase tracking-wider">
+        <div className="text-black text-center text-[1.75rem] sm:text-3xl lg:text-6xl font-bold font-['Montserrat'] uppercase tracking-wider">
           Про нас
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-center tracking-normal">
-            13VPLUS (13 v plus, 13 в плюс)<span className="mx-0.5 lg:mx-1">—</span>це не про одяг.
+        {/* Main Content — вужча колонка на мобільному, як на макеті */}
+        <div className="w-full max-w-[18.5rem] sm:max-w-xl lg:max-w-4xl mx-auto text-center space-y-5 sm:space-y-6">
+          <p className="text-[1.05rem] sm:text-xl font-normal font-['Montserrat'] text-black/80 leading-[1.55] sm:leading-relaxed text-center tracking-normal">
+            13VPLUS (13 v plus, 13 в плюс)
+            <span className="mx-0.5 lg:mx-1">—</span>
+            це
+            <br className="sm:hidden" /> не про одяг.
             <br />
             Це про жінку, яка знає, хто вона,
             <br />
             і не пояснює свій вибір.
           </p>
-          <p className="text-xl font-normal font-['Montserrat'] text-black/80 leading-relaxed text-center tracking-normal">
-            13vPlus<span className="mx-0.5 lg:mx-1">-</span>одяг, який не маскує, а розкриває тебе.
+          <p className="text-[1.05rem] sm:text-xl font-normal font-['Montserrat'] text-black/80 leading-[1.55] sm:leading-relaxed text-center tracking-normal">
+            13vPlus
+            <span className="mx-0.5 lg:mx-1">-</span>
+            одяг, який не маскує, а
+            <br className="sm:hidden" /> розкриває тебе.
           </p>
 
-          <div className="py-6 border-t border-black/20">
-            <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-6 tracking-normal text-center">
+          <div className="py-5 sm:py-6 border-t border-black/20">
+            <p className="text-xl sm:text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-5 sm:mb-6 tracking-normal text-center">
               Що для нас важливо
             </p>
-            <div className="text-center space-y-4">
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-center tracking-normal">
+            <div className="mx-auto w-fit max-w-full text-left space-y-3.5 sm:space-y-4">
+              <p className="text-[1.05rem] sm:text-xl font-normal font-['Montserrat'] text-black/70 leading-[1.55] sm:leading-relaxed tracking-normal">
                 • комфорт без компромісів
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-center tracking-normal">
-                • якість, яку не лише видно з першого погляду, а й відчуваєш на дотик.
+              <p className="text-[1.05rem] sm:text-xl font-normal font-['Montserrat'] text-black/70 leading-[1.55] sm:leading-relaxed tracking-normal">
+                • якість, яку не лише видно з
+                <br className="sm:hidden" />{" "}
+                першого погляду, а й відчуваєш
+                <br className="sm:hidden" />{" "}
+                на дотик.
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-center tracking-normal">
-                • силуети, що підкреслюють переваги та делікатно приховують зайве
+              <p className="text-[1.05rem] sm:text-xl font-normal font-['Montserrat'] text-black/70 leading-[1.55] sm:leading-relaxed tracking-normal">
+                • силуети, що підкреслюють
+                <br className="sm:hidden" />{" "}
+                переваги та делікатно
+                <br className="sm:hidden" />{" "}
+                приховують зайве
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-center tracking-normal">
-                • одяг, який не маскує, а розкриває особистість
+              <p className="text-[1.05rem] sm:text-xl font-normal font-['Montserrat'] text-black/70 leading-[1.55] sm:leading-relaxed tracking-normal">
+                • одяг, який не маскує, а
+                <br className="sm:hidden" />{" "}
+                розкриває особистість
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-center tracking-normal">
-                • жіночність і тонка сексуальність<span className="mx-0.5 lg:mx-1">-</span>без виклику, але з характером
+              <p className="text-[1.05rem] sm:text-xl font-normal font-['Montserrat'] text-black/70 leading-[1.55] sm:leading-relaxed tracking-normal">
+                • жіночність і тонка
+                <br className="sm:hidden" />{" "}
+                сексуальність
+                <span className="mx-0.5 lg:mx-1">-</span>
+                без виклику,
+                <br className="sm:hidden" />{" "}
+                але з характером
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed text-center tracking-normal">
-                • наші речі це коли дорого виглядаєш без надмірності
-            </p>
+              <p className="text-[1.05rem] sm:text-xl font-normal font-['Montserrat'] text-black/70 leading-[1.55] sm:leading-relaxed tracking-normal">
+                • наші речі це коли дорого
+                <br className="sm:hidden" />{" "}
+                виглядаєш без надмірності
+              </p>
             </div>
           </div>
 
           {/* Individual Tailoring Section */}
-          <div className="mt-8 space-y-6">
-            <div className="pt-6 pb-3 border-t border-black/20">
-              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-6 tracking-normal text-center">
+          <div className="mt-6 sm:mt-8 space-y-6">
+            <div className="pt-5 sm:pt-6 pb-3 border-t border-black/20">
+              <p className="text-xl sm:text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mb-5 sm:mb-6 tracking-normal text-center">
                 Наші переваги
               </p>
-              <p className="text-xl font-normal font-['Montserrat'] text-black/70 leading-relaxed mb-4 text-center tracking-normal">
-                З будь-якого обраного одягу в нашому магазині ми пошиємо річ індивідуально під вашу фігуру та зріст. Ми шиємо для будь-якої фігури, адже краса не має розміру. Кожна річ<span className="mx-0.5 lg:mx-1">-</span>це про впевненість, жіночність і відчуття: «я собі подобаюсь».
+              <p className="text-[1.05rem] sm:text-xl font-normal font-['Montserrat'] text-black/70 leading-[1.55] sm:leading-relaxed mb-4 text-center tracking-normal">
+                З будь-якого обраного одягу в
+                <br className="sm:hidden" />{" "}
+                нашому магазині ми пошиємо
+                <br className="sm:hidden" />{" "}
+                річ індивідуально під вашу
+                <br className="sm:hidden" />{" "}
+                фігуру та зріст. Ми шиємо для
+                <br className="sm:hidden" />{" "}
+                будь-якої фігури, адже краса не
+                <br className="sm:hidden" />{" "}
+                має розміру. Кожна річ
+                <span className="mx-0.5 lg:mx-1">-</span>
+                це про
+                <br className="sm:hidden" />{" "}
+                впевненість, жіночність і
+                <br className="sm:hidden" />{" "}
+                відчуття: «я собі подобаюсь».
               </p>
-              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed mt-8 tracking-normal">
-                13vplus<span className="mx-0.5 lg:mx-1">-</span>це не просто одяг.
+              <p className="text-xl sm:text-2xl font-medium font-['Montserrat'] text-black leading-[1.4] sm:leading-relaxed mt-7 sm:mt-8 tracking-normal text-center">
+                13vplus
+                <span className="mx-0.5 lg:mx-1">-</span>
+                це не просто одяг.
               </p>
-              <p className="text-2xl font-medium font-['Montserrat'] text-black leading-relaxed tracking-normal">
-                Це стан. Це вибір. Це любов у кожній нитці.
+              <p className="text-xl sm:text-2xl font-medium font-['Montserrat'] text-black leading-[1.4] sm:leading-relaxed tracking-normal text-center">
+                Це стан. Це вибір.
+                <br className="sm:hidden" />{" "}
+                Це любов у кожній нитці.
               </p>
             </div>
           </div>
@@ -83,14 +127,16 @@ export default function AboutUs() {
         {/* Social Media Section */}
         <div className="w-full mt-4 lg:mt-6 max-w-6xl mx-auto">
           {/* Title */}
-          <div className="text-center mb-6 lg:mb-8">
-            <h3 className="text-2xl lg:text-4xl font-bold font-['Montserrat'] uppercase tracking-wider text-black mb-2 lg:mb-3">
+          <div className="text-center mb-6 lg:mb-8 max-w-[18.5rem] sm:max-w-none mx-auto">
+            <h3 className="text-[1.35rem] sm:text-2xl lg:text-4xl font-bold font-['Montserrat'] uppercase tracking-wider text-black mb-2 lg:mb-3 leading-snug">
               Ми ближче,
               <br />
               ніж здається!
             </h3>
-            <p className="text-base lg:text-lg font-normal font-['Montserrat'] text-black/80 leading-relaxed tracking-normal">
-              Лімітована колекція — для тих кому важлива унікальність.
+            <p className="text-sm sm:text-base lg:text-lg font-normal font-['Montserrat'] text-black/80 leading-relaxed tracking-normal">
+              Лімітована колекція — для тих кому
+              <br className="sm:hidden" />{" "}
+              важлива унікальність.
             </p>
           </div>
 
