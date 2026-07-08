@@ -201,6 +201,14 @@ const migrations: Migration[] = [
       CREATE INDEX IF NOT EXISTS "products_variant_group_key_idx" ON "products"("variant_group_key");
     `,
   },
+  {
+    id: "20260708120000_add_product_gender",
+    description: "Add gender column to products (women/men)",
+    sql: `
+      ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "gender" VARCHAR(16) NOT NULL DEFAULT 'women';
+      CREATE INDEX IF NOT EXISTS "products_gender_idx" ON "products"("gender");
+    `,
+  },
 ];
 
 async function ensureMigrationsTable(pool: Pool) {

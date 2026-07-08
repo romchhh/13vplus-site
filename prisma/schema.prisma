@@ -141,6 +141,8 @@ model Product {
   extraFields       String?        @map("extra_fields") @db.Text
   /** Після успішного експорту в KeyCRM — ID товару в CRM */
   keycrmProductId   Int?           @unique @map("keycrm_product_id")
+  /** Для кого призначений товар: women | men */
+  gender            String         @default("women") @db.VarChar(16)
   createdAt         DateTime       @default(now()) @map("created_at")
   
   category          Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -152,6 +154,7 @@ model Product {
   wishlistedBy      Wishlist[]
   
   @@index([variantGroupKey])
+  @@index([gender])
   @@map("products")
 }
 

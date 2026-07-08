@@ -10,6 +10,7 @@ import { useBasket } from "@/lib/BasketProvider";
 import { useWishlist } from "@/lib/WishlistProvider";
 import { useCategories } from "@/lib/CategoriesProvider";
 import { subcategoryLeafName } from "@/lib/subcategory";
+import { buildCatalogUrl } from "@/lib/productGender";
 import { BRAND_NAME, BRAND_SEARCH_PHRASES } from "@/lib/seo";
 import SidebarBasket from "./SidebarBasket";
 import SidebarSearch from "./SidebarSearch";
@@ -97,7 +98,7 @@ export default function Header() {
   }, [session?.user?.email]);
   
   // Use categories from context instead of fetching
-  const { categories } = useCategories();
+  const { categories, catalogGender } = useCategories();
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<number | null>(
     null
@@ -141,7 +142,7 @@ export default function Header() {
     async function fetchSubcategories(categoryId: number) {
       try {
         const res = await fetch(
-          `/api/subcategories?parent_category_id=${categoryId}`
+          `/api/subcategories?parent_category_id=${categoryId}&gender=${catalogGender}`
         );
         const data = await res.json();
         setSubcategories(data);
@@ -154,7 +155,7 @@ export default function Header() {
     if (hoveredCategoryId !== null) {
       fetchSubcategories(hoveredCategoryId);
     }
-  }, [hoveredCategoryId]);
+  }, [hoveredCategoryId, catalogGender]);
 
   // Calculate positions for dropdown alignment
   useEffect(() => {
@@ -249,11 +250,12 @@ export default function Header() {
                   }}
                 >
                   <button
-                    onClick={() =>
-                      (window.location.href = `/catalog/${encodeURIComponent(
-                        category.name
-                      )}`)
-                    }
+                    onClick={() => {
+                      window.location.href = buildCatalogUrl({
+                        gender: catalogGender,
+                        category: category.name,
+                      });
+                    }}
                     className="cursor-pointer whitespace-nowrap text-xs font-bold font-['Montserrat'] text-white hover:bg-white hover:text-black hover:px-3 hover:py-1.5 hover:rounded-full transition-all duration-200"
                   >
                     {category.name}
@@ -269,16 +271,20 @@ export default function Header() {
                         {subcategories.map((subcat) => (
                           <Link
                             key={subcat.id}
-                            href={`/catalog?subcategory=${encodeURIComponent(
-                              subcategoryLeafName(subcat.name)
-                            )}`}
+                            href={buildCatalogUrl({
+                              gender: catalogGender,
+                              subcategory: subcategoryLeafName(subcat.name),
+                            })}
                               className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200"
                           >
                             {subcategoryLeafName(subcat.name)}
                           </Link>
                         ))}
                           <Link
-                            href={`/catalog/${encodeURIComponent(category.name)}`}
+                            href={buildCatalogUrl({
+                              gender: catalogGender,
+                              category: category.name,
+                            })}
                             className="text-gray-600 hover:text-black text-xs py-2 font-bold font-['Montserrat'] transition-colors duration-200 underline mt-2"
                           >
                             Переглянути всі

@@ -17,6 +17,7 @@ import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { WebVitals } from "@/components/shared/WebVitals";
 import MainContent from "@/components/shared/MainContent";
 import { OrganizationStructuredData, WebSiteStructuredData, LocalBusinessStructuredData } from "@/components/shared/StructuredData";
+import CategoriesGenderSync from "@/components/shared/CategoriesGenderSync";
 import {
   SEO_DESCRIPTION,
   SEO_KEYWORDS,
@@ -177,6 +178,9 @@ export default function RootLayout({
               <BasketProvider>
                 <WishlistProvider>
                   <CategoriesProvider>
+                    <Suspense fallback={null}>
+                      <CategoriesGenderSync />
+                    </Suspense>
                     <Header />
                     <Suspense fallback={<main id="main-content" className="bg-white mt-16 lg:mt-20 min-h-screen" />}>
                       <MainContent id="main-content">{children}</MainContent>

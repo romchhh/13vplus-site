@@ -12,6 +12,11 @@ import ProductSkeleton from "./ProductSkeleton";
 import { useWishlist } from "@/lib/WishlistProvider";
 import { useSession } from "next-auth/react";
 import { subcategoryLeafName } from "@/lib/subcategory";
+import {
+  PRODUCT_GENDER_LABELS,
+  type ProductGender,
+} from "@/lib/productGender";
+import CatalogGenderTabs from "./CatalogGenderTabs";
 
 interface Product {
   id: number;
@@ -35,12 +40,14 @@ interface Category {
 }
 
 interface CatalogClientProps {
+  gender: ProductGender;
   initialProducts: Product[];
   colors: Color[];
   categories: Category[];
 }
 
 export default function CatalogClient({
+  gender,
   initialProducts,
   colors,
   categories,
@@ -122,8 +129,9 @@ export default function CatalogClient({
   return (
     <>
       <section className="max-w-[1824px] mx-auto px-4 sm:px-6 lg:px-8 pt-2 mt-2 mb-20">
-        {/* Top Controls */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6 space-y-4">
+          <CatalogGenderTabs />
+          <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -139,7 +147,7 @@ export default function CatalogClient({
                 ? category
                 : season
                 ? `Сезон ${season}`
-                : "Усі товари"}
+                : PRODUCT_GENDER_LABELS[gender]}
             </h1>
           </div>
 
@@ -168,6 +176,7 @@ export default function CatalogClient({
               </span>
             )}
           </button>
+          </div>
         </div>
 
         {/* Product Grid - Mobile Optimized */}

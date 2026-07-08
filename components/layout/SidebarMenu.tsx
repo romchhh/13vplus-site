@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useCategories } from "@/lib/CategoriesProvider";
 import { subcategoryLeafName } from "@/lib/subcategory";
+import { buildCatalogUrl } from "@/lib/productGender";
+import { CatalogGenderSidebarToggle } from "@/components/catalog/CatalogGenderTabs";
+import type { ProductGender } from "@/lib/productGender";
 import { SITE_PHONE_TEL, SITE_TELEGRAM_URL } from "@/lib/siteContacts";
 
 interface SidebarMenuProps {
@@ -20,7 +23,7 @@ export default function SidebarMenu({
   const router = useRouter();
   const pathname = usePathname();
   // Use categories from context instead of fetching
-  const { categories, subcategories: subcategoriesMap, loading, error, fetchSubcategoriesForCategory } = useCategories();
+  const { categories, subcategories: subcategoriesMap, loading, error, fetchSubcategoriesForCategory, catalogGender, setCatalogGender } = useCategories();
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [loadingSubcategories, setLoadingSubcategories] = useState(false);
   // Avoid hydration mismatch: server and initial client render show placeholder; real content after mount
@@ -68,13 +71,24 @@ export default function SidebarMenu({
     }
   };
 
-  // Select first category by default when categories load
-  useEffect(() => {
-    if (categories.length > 0 && selectedCategoryId === null) {
-      handleCategorySelect(categories[0].id);
+  const handleGenderChange = (gender: ProductGender) => {
+    setCatalogGender(gender);
+    setSelectedCategoryId(null);
+    if (pathname === "/catalog") {
+      router.push(buildCatalogUrl({ gender }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only run when categories/selectedCategoryId change
-  }, [categories, selectedCategoryId]);
+  };
+
+  // Select first category when categories load or gender changes
+  useEffect(() => {
+    if (categories.length > 0) {
+      const stillExists = categories.some((cat) => cat.id === selectedCategoryId);
+      if (!stillExists) {
+        void handleCategorySelect(categories[0].id);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categories, catalogGender]);
 
   // Block scroll when menu is open
   useEffect(() => {
@@ -109,6 +123,9 @@ export default function SidebarMenu({
           isOpen ? "translate-x-0" : "-translate-x-full"
         } overflow-hidden flex flex-col`}
       >
+        {/* Gender */}
+        <CatalogGenderSidebarToggle gender={catalogGender} onChange={handleGenderChange} />
+
         {/* Categories Scroll - Top */}
         <div className="border-b border-black/10 bg-white">
           <div className="overflow-x-auto scrollbar-hide">
@@ -153,7 +170,10 @@ export default function SidebarMenu({
                     {selectedSubcategories.map((sub) => (
                       <Link
                         key={sub.id}
-                        href={`/catalog?subcategory=${encodeURIComponent(subcategoryLeafName(sub.name))}`}
+                        href={buildCatalogUrl({
+                          gender: catalogGender,
+                          subcategory: subcategoryLeafName(sub.name),
+                        })}
                         className="block py-3 text-base text-black hover:text-black/70 transition-colors border-b border-black/5"
                         onClick={() => setIsOpen(false)}
                       >
@@ -163,7 +183,7 @@ export default function SidebarMenu({
                   </div>
                   <div className="pt-4 pb-0 mt-2 border-t border-black/10">
                     <Link
-                      href="/catalog"
+                      href={buildCatalogUrl({ gender: catalogGender })}
                       className="text-base text-black hover:text-black/70 transition-colors font-medium"
                       onClick={() => setIsOpen(false)}
                     >
@@ -174,7 +194,7 @@ export default function SidebarMenu({
               ) : (
                 <div className="pt-2 pb-2">
                   <Link
-                    href="/catalog"
+                    href={buildCatalogUrl({ gender: catalogGender })}
                     className="text-base text-black hover:text-black/70 transition-colors font-medium"
                     onClick={() => setIsOpen(false)}
                   >

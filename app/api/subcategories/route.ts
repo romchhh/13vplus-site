@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sqlGetSubcategoriesByCategory, sqlPostSubcategory } from "@/lib/sql";
 import { revalidateCategories } from "@/lib/revalidate";
+import { parseProductGender } from "@/lib/productGender";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const subcategories = await sqlGetSubcategoriesByCategory(categoryId);
+    const gender = parseProductGender(searchParams.get("gender")) ?? undefined;
+    const subcategories = await sqlGetSubcategoriesByCategory(categoryId, gender);
     
     // Add cache headers: cache for 5 minutes
     return NextResponse.json(subcategories, {

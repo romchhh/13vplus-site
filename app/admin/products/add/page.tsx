@@ -11,6 +11,8 @@ import TextArea from "@/components/admin/form/input/TextArea";
 import ToggleSwitch from "@/components/admin/form/ToggleSwitch";
 import Image from "next/image";
 import { mergeVariantColorsFromInputs } from "@/lib/merge-variant-colors";
+import ProductGenderField from "@/components/admin/ProductGenderField";
+import { DEFAULT_PRODUCT_GENDER, type ProductGender } from "@/lib/productGender";
 
 const seasonOptions = ["Весна", "Літо", "Осінь", "Зима"];
 
@@ -51,6 +53,7 @@ export default function FormElements() {
   >([]);
 
   const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [gender, setGender] = useState<ProductGender>(DEFAULT_PRODUCT_GENDER);
   const [categories, setCategories] = useState<Category[]>([]);
   const [season, setSeason] = useState<string[]>([]);
   const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
@@ -223,6 +226,7 @@ export default function FormElements() {
           season: season.length === 0 ? null : season,
           category_id: categoryId,
           subcategory_id: subcategoryId,
+          gender,
           media: uploadedMedia,
           fabric_composition: fabricComposition,
           has_lining: hasLining,
@@ -304,6 +308,7 @@ export default function FormElements() {
                     placeholder="Назва товару"
                   />
                 </div>
+                <ProductGenderField value={gender} onChange={setGender} />
                 <div>
                   <Label>Категорія</Label>
                   <select

@@ -4,9 +4,10 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCategories } from "@/lib/CategoriesProvider";
+import { buildCatalogUrl } from "@/lib/productGender";
 
 export default function CategoriesShowcase() {
-  const { categories: allCategories, loading } = useCategories();
+  const { categories: allCategories, loading, catalogGender } = useCategories();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [, setCanScrollLeft] = useState(false);
   const [, setCanScrollRight] = useState(true);
@@ -125,7 +126,7 @@ export default function CategoriesShowcase() {
         <div className="flex gap-4 md:gap-4 lg:gap-6 h-full items-center">{categories.map((category, index) => (
             <Link
               key={category.id}
-              href={`/catalog/${encodeURIComponent(category.name)}`}
+              href={buildCatalogUrl({ gender: catalogGender, category: category.name })}
               className="group relative flex-shrink-0 flex flex-col h-full snap-center snap-always"
               style={{
                 width:

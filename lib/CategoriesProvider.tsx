@@ -2,6 +2,10 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { clearCache, clearCacheByPrefix, CACHE_KEYS } from "@/lib/cache";
+import {
+  DEFAULT_PRODUCT_GENDER,
+  type ProductGender,
+} from "@/lib/productGender";
 
 interface Category {
   id: number;
@@ -20,13 +24,17 @@ interface Subcategory {
 interface CategoriesContextType {
   categories: Category[];
   subcategories: Map<number, Subcategory[]>;
+  catalogGender: ProductGender;
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  setCatalogGender: (gender: ProductGender, options?: { silent?: boolean }) => void;
   fetchSubcategoriesForCategory: (categoryId: number, force?: boolean) => Promise<Subcategory[]>;
 }
 
 const CategoriesContext = createContext<CategoriesContextType | undefined>(undefined);
+
+const STORAGE_KEY = "catalog_gender";
 
 async function fetchFresh<T>(url: string): Promise<T> {
   const response = await fetch(url, { cache: "no-store" });
@@ -39,8 +47,53 @@ async function fetchFresh<T>(url: string): Promise<T> {
 export function CategoriesProvider({ children }: { children: ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Map<number, Subcategory[]>>(new Map());
+  const [catalogGender, setCatalogGenderState] = useState<ProductGender>(DEFAULT_PRODUCT_GENDER);
+  const catalogGenderRef = useRef(catalogGender);
+  catalogGenderRef.current = catalogGender;
+
   const subcategoriesRef = useRef(subcategories);
   subcategoriesRef.current = subcategories;
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async (options?: { silent?: boolean; gender?: ProductGender }) => {
+    const silent = options?.silent ?? false;
+    const activeGender = options?.gender ?? catalogGenderRef.current;
+
+    try {
+      if (!silent) setLoading(true);
+      setError(null);
+
+      clearCache(CACHE_KEYS.CATEGORIES);
+      clearCacheByPrefix("cache_subcategories_");
+      setSubcategories(new Map());
+
+      const categoriesData = await fetchFresh<Category[]>(
+        `/api/categories?gender=${activeGender}`
+      );
+      setCategories(categoriesData);
+    } catch (err) {
+      console.error("Failed to fetch categories:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch categories");
+      setCategories([]);
+      setSubcategories(new Map());
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, []);
+
+  const setCatalogGender = useCallback(
+    (gender: ProductGender, options?: { silent?: boolean }) => {
+      setCatalogGenderState(gender);
+      catalogGenderRef.current = gender;
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(STORAGE_KEY, gender);
+      }
+      void fetchData({ silent: options?.silent, gender });
+    },
+    [fetchData]
+  );
 
   const fetchSubcategoriesForCategory = useCallback(
     async (categoryId: number, force = false): Promise<Subcategory[]> => {
@@ -49,8 +102,9 @@ export function CategoriesProvider({ children }: { children: ReactNode }) {
       }
 
       try {
+        const gender = catalogGenderRef.current;
         const subData = await fetchFresh<Subcategory[]>(
-          `/api/subcategories?parent_category_id=${categoryId}`
+          `/api/subcategories?parent_category_id=${categoryId}&gender=${gender}`
         );
 
         setSubcategories((prev) => new Map(prev).set(categoryId, subData));
@@ -65,44 +119,21 @@ export function CategoriesProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async (options?: { silent?: boolean }) => {
-    const silent = options?.silent ?? false;
-
-    try {
-      if (!silent) {
-        setLoading(true);
-      }
-      setError(null);
-
-      clearCache(CACHE_KEYS.CATEGORIES);
-      clearCacheByPrefix("cache_subcategories_");
-      setSubcategories(new Map());
-
-      const categoriesData = await fetchFresh<Category[]>("/api/categories");
-      setCategories(categoriesData);
-    } catch (err) {
-      console.error("Failed to fetch categories:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch categories");
-      setCategories([]);
-      setSubcategories(new Map());
-    } finally {
-      if (!silent) {
-        setLoading(false);
-      }
-    }
-  }, []);
-
   useEffect(() => {
-    void fetchData();
+    const stored =
+      typeof window !== "undefined"
+        ? (sessionStorage.getItem(STORAGE_KEY) as ProductGender | null)
+        : null;
+    const initialGender =
+      stored === "women" || stored === "men" ? stored : DEFAULT_PRODUCT_GENDER;
+    setCatalogGenderState(initialGender);
+    catalogGenderRef.current = initialGender;
+    void fetchData({ gender: initialGender });
   }, [fetchData]);
 
-  // Refetch when user returns to the tab (e.g. after editing in admin)
   useEffect(() => {
     const onFocus = () => {
-      void fetchData({ silent: true });
+      void fetchData({ silent: true, gender: catalogGenderRef.current });
     };
 
     window.addEventListener("focus", onFocus);
@@ -114,9 +145,11 @@ export function CategoriesProvider({ children }: { children: ReactNode }) {
       value={{
         categories,
         subcategories,
+        catalogGender,
         loading,
         error,
-        refetch: fetchData,
+        refetch: () => fetchData({ gender: catalogGenderRef.current }),
+        setCatalogGender,
         fetchSubcategoriesForCategory,
       }}
     >

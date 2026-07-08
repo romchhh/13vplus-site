@@ -4,6 +4,8 @@ import { unlink } from "fs/promises";
 import path from "path";
 import { unstable_cache } from "next/cache";
 import { subcategoryNameWhere } from "./subcategory";
+import type { ProductGender } from "./productGender";
+import { DEFAULT_PRODUCT_GENDER } from "./productGender";
 
 // Keep sql template literal for backward compatibility (used in migrate route)
 // This will be deprecated but kept for now
@@ -41,8 +43,9 @@ export const sql = Object.assign(
 // =====================
 
 // Get all products - optimized for catalog list (only first photo)
-async function _sqlGetAllProducts() {
+async function _sqlGetAllProducts(gender?: ProductGender) {
   const products = await prisma.product.findMany({
+    where: gender ? { gender } : undefined,
     orderBy: { id: "desc" },
     include: {
       category: {
@@ -74,6 +77,7 @@ async function _sqlGetAllProducts() {
     season: p.season,
     category_id: p.categoryId,
     subcategory_id: p.subcategoryId,
+    gender: p.gender,
     created_at: p.createdAt,
     category_name: p.category?.name || null,
     subcategory_name: p.subcategory?.name || null,
@@ -82,14 +86,17 @@ async function _sqlGetAllProducts() {
 }
 
 // Cached version with 20 minute revalidation
-export const sqlGetAllProducts = unstable_cache(
-  _sqlGetAllProducts,
-  ['all-products'],
-  {
-    revalidate: 1200, // 20 minutes
-    tags: ['products'],
-  }
-);
+export function sqlGetAllProducts(gender?: ProductGender) {
+  const cacheKey = gender ?? "all";
+  return unstable_cache(
+    () => _sqlGetAllProducts(gender),
+    [`all-products-${cacheKey}`],
+    {
+      revalidate: 1200,
+      tags: ["products"],
+    }
+  )();
+}
 
 // Get one product by ID with sizes & media
 export async function sqlGetProduct(id: number) {
@@ -143,6 +150,7 @@ export async function sqlGetProduct(id: number) {
         limited_edition: product.limitedEdition,
         season: product.season,
         color: product.color,
+        gender: product.gender,
         category_id: product.categoryId,
         subcategory_id: product.subcategoryId,
         fabric_composition: product.fabricComposition,
@@ -223,7 +231,11 @@ export async function sqlGetRelatedColorsByName(name: string) {
 }
 
 // Get products by category name
-export async function sqlGetProductsByCategory(categoryName: string) {
+export async function sqlGetProductsByCategory(
+  categoryName: string,
+  gender?: ProductGender
+) {
+  const genderKey = gender ?? "all";
   return unstable_cache(
     async () => {
       const products = await prisma.product.findMany({
@@ -231,6 +243,7 @@ export async function sqlGetProductsByCategory(categoryName: string) {
           category: {
             name: categoryName,
           },
+          ...(gender ? { gender } : {}),
         },
         orderBy: { id: "desc" },
         include: {
@@ -262,7 +275,7 @@ export async function sqlGetProductsByCategory(categoryName: string) {
         first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
       }));
     },
-    [`products-by-category-${categoryName}`],
+    [`products-by-category-${categoryName}-${genderKey}`],
     {
       revalidate: 1200, // 20 minutes
       tags: ['products', `category-${categoryName}`],
@@ -271,8 +284,12 @@ export async function sqlGetProductsByCategory(categoryName: string) {
 }
 
 // Get products by subcategory name
-export async function sqlGetProductsBySubcategoryName(name: string) {
+export async function sqlGetProductsBySubcategoryName(
+  name: string,
+  gender?: ProductGender
+) {
   const whereConditions = subcategoryNameWhere(name);
+  const genderKey = gender ?? "all";
 
   return unstable_cache(
     async () => {
@@ -281,6 +298,7 @@ export async function sqlGetProductsBySubcategoryName(name: string) {
           subcategory: {
             OR: whereConditions,
           },
+          ...(gender ? { gender } : {}),
         },
         orderBy: { id: "desc" },
         include: {
@@ -317,7 +335,7 @@ export async function sqlGetProductsBySubcategoryName(name: string) {
         first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
       }));
     },
-    [`products-by-subcategory-${name}`],
+    [`products-by-subcategory-${name}-${genderKey}`],
     {
       revalidate: 1200, // 20 minutes
       tags: ['products', `subcategory-${name}`],
@@ -326,7 +344,11 @@ export async function sqlGetProductsBySubcategoryName(name: string) {
 }
 
 // Get products by season
-export async function sqlGetProductsBySeason(season: string) {
+export async function sqlGetProductsBySeason(
+  season: string,
+  gender?: ProductGender
+) {
+  const genderKey = gender ?? "all";
   return unstable_cache(
     async () => {
       const products = await prisma.product.findMany({
@@ -334,6 +356,7 @@ export async function sqlGetProductsBySeason(season: string) {
           season: {
             has: season,
           },
+          ...(gender ? { gender } : {}),
         },
         orderBy: { id: "desc" },
         include: {
@@ -365,7 +388,7 @@ export async function sqlGetProductsBySeason(season: string) {
         first_media: p.media[0] ? { type: p.media[0].type, url: p.media[0].url } : null,
       }));
     },
-    [`products-by-season-${season}`],
+    [`products-by-season-${season}-${genderKey}`],
     {
       revalidate: 1200, // 20 minutes
       tags: ['products', `season-${season}`],
@@ -516,6 +539,7 @@ export async function sqlPostProduct(product: {
   color?: string;
   category_id?: number | null;
   subcategory_id?: number | null;
+  gender?: ProductGender;
   fabric_composition?: string;
   has_lining?: boolean;
   lining_description?: string;
@@ -547,6 +571,7 @@ export async function sqlPostProduct(product: {
       color: product.color || null,
       categoryId: product.category_id || null,
       subcategoryId: product.subcategory_id || null,
+      gender: product.gender || DEFAULT_PRODUCT_GENDER,
       fabricComposition: product.fabric_composition || null,
       hasLining: product.has_lining || false,
       liningDescription: product.lining_description || null,
@@ -609,6 +634,7 @@ export async function sqlPutProduct(
     color?: string;
     category_id?: number | null;
     subcategory_id?: number | null;
+    gender?: ProductGender;
     fabric_composition?: string;
     has_lining?: boolean;
     lining_description?: string;
@@ -660,6 +686,7 @@ export async function sqlPutProduct(
         color: update.color || null,
         categoryId: update.category_id || null,
         subcategoryId: update.subcategory_id || null,
+        gender: update.gender || DEFAULT_PRODUCT_GENDER,
         fabricComposition: update.fabric_composition || null,
         hasLining: update.has_lining || false,
         liningDescription: update.lining_description || null,
@@ -1137,6 +1164,36 @@ export const sqlGetAllCategories = unstable_cache(
   }
 );
 
+async function _sqlGetCategoriesByGender(gender: ProductGender) {
+  const categories = await prisma.category.findMany({
+    where: {
+      products: {
+        some: { gender },
+      },
+    },
+    orderBy: { priority: "desc" },
+  });
+
+  return categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    priority: c.priority,
+    mediaType: c.mediaType || null,
+    mediaUrl: c.mediaUrl || null,
+  }));
+}
+
+export function sqlGetCategoriesByGender(gender: ProductGender) {
+  return unstable_cache(
+    () => _sqlGetCategoriesByGender(gender),
+    [`categories-by-gender-${gender}`],
+    {
+      revalidate: 1200,
+      tags: ["categories"],
+    }
+  )();
+}
+
 // Get a single category by ID
 export async function sqlGetCategory(id: number) {
   const category = await prisma.category.findUnique({
@@ -1254,9 +1311,21 @@ export async function sqlGetAllSubcategories() {
 }
 
 // Get all subcategories for a specific category
-export async function sqlGetSubcategoriesByCategory(categoryId: number) {
+export async function sqlGetSubcategoriesByCategory(
+  categoryId: number,
+  gender?: ProductGender
+) {
   const subcategories = await prisma.subcategory.findMany({
-    where: { categoryId },
+    where: {
+      categoryId,
+      ...(gender
+        ? {
+            products: {
+              some: { gender },
+            },
+          }
+        : {}),
+    },
     orderBy: { id: "asc" },
   });
 

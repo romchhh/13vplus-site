@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sqlGetProduct, sqlPutProduct, sqlDeleteProduct } from "@/lib/sql";
 import { apiLogger } from "@/lib/logger";
 import { revalidateProducts } from "@/lib/revalidate";
+import { DEFAULT_PRODUCT_GENDER, parseProductGender } from "@/lib/productGender";
 
 // Enable ISR for this route
 export const revalidate = 1200; // 20 minutes
@@ -119,6 +120,7 @@ export async function PUT(
       color,
       category_id: categoryId,
       subcategory_id: subcategoryId,
+      gender: parseProductGender(body.gender) ?? DEFAULT_PRODUCT_GENDER,
       sizes: Array.isArray(body.sizes)
         ? body.sizes.map(
             (s: string | { size: string; stock?: number }) =>

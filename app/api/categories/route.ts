@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sqlGetAllCategories, sqlPostCategory } from "@/lib/sql";
+import { sqlGetAllCategories, sqlGetCategoriesByGender, sqlPostCategory } from "@/lib/sql";
 import { apiLogger } from "@/lib/logger";
 import { revalidateCategories } from "@/lib/revalidate";
+import { parseProductGender } from "@/lib/productGender";
 
 export const dynamic = "force-dynamic";
 
 // ========================
 // GET /api/categories
 // ========================
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const categories = await sqlGetAllCategories();
+    const genderParam = req.nextUrl.searchParams.get("gender");
+    const gender = parseProductGender(genderParam);
+    const categories = gender
+      ? await sqlGetCategoriesByGender(gender)
+      : await sqlGetAllCategories();
     
     return NextResponse.json(categories, {
       headers: {

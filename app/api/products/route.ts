@@ -11,6 +11,7 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { apiLogger } from "@/lib/logger";
+import { DEFAULT_PRODUCT_GENDER, parseProductGender } from "@/lib/productGender";
 
 // Helper function to determine file type
 function getFileType(mimeType: string, filename: string): "photo" | "video" {
@@ -103,6 +104,7 @@ export async function POST(req: Request) {
         color,
         category_id = null,
         subcategory_id = null,
+        gender = DEFAULT_PRODUCT_GENDER,
         fabric_composition = "",
         has_lining = false,
         lining_description = "",
@@ -148,6 +150,7 @@ export async function POST(req: Request) {
         color,
         category_id,
         subcategory_id,
+        gender: parseProductGender(gender) ?? DEFAULT_PRODUCT_GENDER,
         fabric_composition,
         has_lining,
         lining_description,

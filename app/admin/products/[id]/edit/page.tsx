@@ -12,6 +12,7 @@ import TextArea from "@/components/admin/form/input/TextArea";
 import DropzoneComponent from "@/components/admin/form/form-elements/DropZone";
 import ToggleSwitch from "@/components/admin/form/ToggleSwitch";
 import { mergeVariantColorsFromInputs } from "@/lib/merge-variant-colors";
+import ProductGenderField, { parseProductGenderField } from "@/components/admin/ProductGenderField";
 
 const multiOptions = [
   { value: "O/S", text: "O/S", selected: false },
@@ -64,6 +65,7 @@ export default function EditProductPage() {
     color: "",
     categoryId: null as number | null,
     subcategoryId: null as number | null,
+    gender: "women" as "women" | "men",
     fabricComposition: "",
     hasLining: false,
     liningDescription: "",
@@ -149,6 +151,7 @@ export default function EditProductPage() {
           color: productData.color || "",
           categoryId: productData.category_id || null,
           subcategoryId: productData.subcategory_id || null,
+          gender: parseProductGenderField(productData.gender),
           fabricComposition: productData.fabric_composition || "",
           hasLining: productData.has_lining || false,
           liningDescription: productData.lining_description || "",
@@ -406,6 +409,7 @@ export default function EditProductPage() {
           colors: mergedColors,
           category_id: formData.categoryId,
           subcategory_id: formData.subcategoryId,
+          gender: formData.gender,
           fabric_composition: formData.fabricComposition,
           has_lining: formData.hasLining,
           lining_description: formData.liningDescription,
@@ -452,6 +456,10 @@ export default function EditProductPage() {
                       onChange={(e) => handleChange("name", e.target.value)}
                     />
                   </div>
+                  <ProductGenderField
+                    value={formData.gender}
+                    onChange={(gender) => handleChange("gender", gender)}
+                  />
                   <div>
                     <Label>Категорія</Label>
                     <select
